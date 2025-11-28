@@ -1,5 +1,23 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import * as THREE from 'three';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+
+// Import Service Pages
+import WebDevelopment from './pages/WebDevelopment';
+import AppDevelopment from './pages/AppDevelopment';
+import DigitalMarketing from './pages/DigitalMarketing';
+import GraphicDesigning from './pages/GraphicDesigning';
+import ThreeDServices from './pages/ThreeDServices';
+
+// Import Product Pages
+import AntimageCRM from './pages/AntimageCRM';
+import AntiHRMS from './pages/AntiHRMS';
+import AntiSec from './pages/AntiSec';
+import AntiAI from './pages/AntiAI';
+import AntiChat from './pages/AntiChat';
+
+// Import Other Pages
+import AboutUs from './pages/AboutUs';
+import ContactUs from './pages/ContactUs';
 
 // ============================================
 // ANTIGRAVIITY TECHNOLOGIES - COMPLETE WEBSITE
@@ -87,7 +105,6 @@ const LogoAnimation = ({ onComplete, size = "large" }) => {
 
   return (
     <div className="relative" style={{ overflow: 'visible', padding: '0.5em 0' }}>
-      {/* Scan line */}
       {animationPhase === 'revealing' && (
         <div
           className="absolute top-0 h-full w-[2px] z-20 pointer-events-none"
@@ -104,7 +121,6 @@ const LogoAnimation = ({ onComplete, size = "large" }) => {
         </div>
       )}
 
-      {/* Logo with reveal mask */}
       <div
         className="relative"
         style={{
@@ -127,7 +143,6 @@ const LogoAnimation = ({ onComplete, size = "large" }) => {
             }}
           >AntiGrav</span>
 
-          {/* Levitating ii pair */}
           <span className="inline-flex items-baseline relative" style={{ margin: '0 0.02em' }}>
             <span
               className="inline-block relative"
@@ -137,14 +152,10 @@ const LogoAnimation = ({ onComplete, size = "large" }) => {
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
                 filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-                transform: iiRevealed
-                  ? 'rotate(180deg) translateY(-0.08em)'
-                  : 'rotate(0deg) translateY(0)',
+                transform: iiRevealed ? 'rotate(180deg) translateY(-0.08em)' : 'rotate(0deg) translateY(0)',
                 transition: 'transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)',
                 transformOrigin: 'center center',
-                animation: iiRevealed && animationPhase === 'loop'
-                  ? 'levitate1 3s ease-in-out infinite'
-                  : 'none'
+                animation: iiRevealed && animationPhase === 'loop' ? 'levitate1 3s ease-in-out infinite' : 'none'
               }}
             >
               i
@@ -168,14 +179,10 @@ const LogoAnimation = ({ onComplete, size = "large" }) => {
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
                 filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-                transform: iiRevealed
-                  ? 'rotate(180deg) translateY(-0.12em)'
-                  : 'rotate(0deg) translateY(0)',
+                transform: iiRevealed ? 'rotate(180deg) translateY(-0.12em)' : 'rotate(0deg) translateY(0)',
                 transition: 'transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s',
                 transformOrigin: 'center center',
-                animation: iiRevealed && animationPhase === 'loop'
-                  ? 'levitate2 3s ease-in-out infinite 0.15s'
-                  : 'none'
+                animation: iiRevealed && animationPhase === 'loop' ? 'levitate2 3s ease-in-out infinite 0.15s' : 'none'
               }}
             >
               i
@@ -209,39 +216,6 @@ const LogoAnimation = ({ onComplete, size = "large" }) => {
 };
 
 // ==========================================
-// STATIC LOGO (for footer only)
-// ==========================================
-const StaticLogo = ({ size = "small" }) => {
-  const sizes = {
-    small: "text-xl",
-    medium: "text-2xl"
-  };
-
-  return (
-    <div className={`flex items-baseline ${sizes[size]} tracking-tight font-normal`}>
-      <span className="text-white">AntiGrav</span>
-      <span className="inline-flex items-baseline" style={{ margin: '0 0.02em' }}>
-        <span
-          className="inline-block text-white"
-          style={{
-            transform: 'rotate(180deg) translateY(-0.08em)',
-            animation: 'levitate1 3s ease-in-out infinite'
-          }}
-        >i</span>
-        <span
-          className="inline-block text-white"
-          style={{
-            transform: 'rotate(180deg) translateY(-0.12em)',
-            animation: 'levitate2 3s ease-in-out infinite 0.15s'
-          }}
-        >i</span>
-      </span>
-      <span className="text-white">ty</span>
-    </div>
-  );
-};
-
-// ==========================================
 // INTERACTIVE PARTICLE FIELD (Full Page)
 // ==========================================
 const InteractiveParticles = () => {
@@ -258,7 +232,6 @@ const InteractiveParticles = () => {
     let width = window.innerWidth;
     let height = window.innerHeight;
 
-    // Set canvas size
     const setCanvasSize = () => {
       width = window.innerWidth;
       height = window.innerHeight;
@@ -267,8 +240,7 @@ const InteractiveParticles = () => {
     };
     setCanvasSize();
 
-    // Create particles
-    const particleCount = 120;
+    const particleCount = 50;
     const particles = [];
 
     for (let i = 0; i < particleCount; i++) {
@@ -285,15 +257,10 @@ const InteractiveParticles = () => {
     }
     particlesRef.current = particles;
 
-    // Mouse move handler
     const handleMouseMove = (e) => {
-      mouseRef.current = {
-        x: e.clientX,
-        y: e.clientY
-      };
+      mouseRef.current = { x: e.clientX, y: e.clientY };
     };
 
-    // Mouse leave handler
     const handleMouseLeave = () => {
       mouseRef.current = { x: -1000, y: -1000 };
     };
@@ -302,19 +269,14 @@ const InteractiveParticles = () => {
     window.addEventListener('mouseleave', handleMouseLeave);
     window.addEventListener('resize', setCanvasSize);
 
-    // Animation loop
     const animate = () => {
       ctx.clearRect(0, 0, width, height);
 
       particles.forEach((p, i) => {
-        // Update wobble
         p.wobble += p.wobbleSpeed;
-
-        // Move particle upward
         p.y += p.speedY;
         p.x += p.speedX + Math.sin(p.wobble) * 0.5;
 
-        // Mouse interaction - particles get pushed away
         const dx = p.x - mouseRef.current.x;
         const dy = p.y - mouseRef.current.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -327,16 +289,13 @@ const InteractiveParticles = () => {
           p.y += Math.sin(angle) * force * 4;
         }
 
-        // Reset particle when it goes off screen (top)
         if (p.y < -20) {
           p.y = height + 20;
           p.x = Math.random() * width;
         }
-        // Wrap horizontally
         if (p.x < -20) p.x = width + 20;
         if (p.x > width + 20) p.x = -20;
 
-        // Draw particle with glow
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(255, 255, 255, ${p.opacity})`;
@@ -345,7 +304,6 @@ const InteractiveParticles = () => {
         ctx.fill();
         ctx.shadowBlur = 0;
 
-        // Draw connections to nearby particles
         for (let j = i + 1; j < particles.length; j++) {
           const p2 = particles[j];
           const dx2 = p.x - p2.x;
@@ -362,7 +320,6 @@ const InteractiveParticles = () => {
           }
         }
 
-        // Draw connection to mouse if close
         if (dist < 150 && dist > 0) {
           ctx.beginPath();
           ctx.moveTo(p.x, p.y);
@@ -406,89 +363,43 @@ const InteractiveParticles = () => {
 };
 
 // ==========================================
-// FLOATING PARTICLES (Anti-gravity effect)
-// ==========================================
-const FloatingParticles = ({ count = 30 }) => {
-  const particles = useMemo(() => {
-    return Array.from({ length: count }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      size: Math.random() * 2 + 0.5,
-      speed: Math.random() * 25 + 20,
-      delay: Math.random() * 8,
-      opacity: Math.random() * 0.4 + 0.1,
-      drift: (Math.random() - 0.5) * 40
-    }));
-  }, [count]);
-
-  return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
-      {particles.map((p) => (
-        <div
-          key={p.id}
-          className="absolute rounded-full bg-white"
-          style={{
-            left: `${p.x}%`,
-            width: `${p.size}px`,
-            height: `${p.size}px`,
-            opacity: p.opacity,
-            animation: `floatUp ${p.speed}s linear infinite`,
-            animationDelay: `${p.delay}s`,
-            boxShadow: `0 0 ${p.size * 2}px rgba(255,255,255,${p.opacity * 0.3})`,
-            '--drift': `${p.drift}px`
-          }}
-        />
-      ))}
-    </div>
-  );
-};
-
-// ==========================================
 // NAVIGATION
 // ==========================================
 const Navigation = () => {
-  const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const location = useLocation();
 
   const navItems = [
-    { name: 'Home', href: '#' },
-    { name: 'About Us', href: '#about-us' },
+    { name: 'Home', href: '/' },
+    { name: 'About Us', href: '/about-us' },
     {
       name: 'Services',
-      href: '#services',
+      href: '/#services',
       dropdown: [
-        { name: 'Web Development', href: '#web-development' },
-        { name: 'App Development', href: '#app-development' },
-        { name: 'Digital Marketing', href: '#digital-marketing' },
-        { name: 'Graphic Designing', href: '#graphic-designing' },
-        { name: '3D Services', href: '#3d-services' },
+        { name: 'Web Development', href: '/services/web-development' },
+        { name: 'App Development', href: '/services/app-development' },
+        { name: 'Digital Marketing', href: '/services/digital-marketing' },
+        { name: 'Graphic Designing', href: '/services/graphic-designing' },
+        { name: '3D Services', href: '/services/3d-services' },
       ]
     },
     {
       name: 'Products',
-      href: '#products',
+      href: '/#products',
       dropdown: [
-        { name: 'Antimage CRM', href: '#antimage-crm' },
-        { name: 'AntiHRMS', href: '#antihrms' },
-        { name: 'AntiSec', href: '#antisec' },
-        { name: 'AntiAI', href: '#anti-ai' },
-        { name: 'AntiChat', href: '#anti-chat' },
+        { name: 'AntiMage CRM', href: '/products/antimage-crm' },
+        { name: 'AntiHRMS', href: '/products/antihrms' },
+        { name: 'AntiSec', href: '/products/antisec' },
+        { name: 'AntiAI', href: '/products/antiai' },
+        { name: 'AntiChat', href: '/products/antichat' },
       ]
     },
   ];
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 bg-transparent
-      `}>
+    <nav className="fixed top-0 left-0 right-0 z-50 transition-all duration-500 bg-transparent">
       <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-center relative">
-        {/* Centered navigation items */}
         <div className="hidden md:flex items-center gap-12">
           {navItems.map((item) => (
             <div
@@ -497,8 +408,8 @@ const Navigation = () => {
               onMouseEnter={() => item.dropdown && setActiveDropdown(item.name)}
               onMouseLeave={() => setActiveDropdown(null)}
             >
-              <a
-                href={item.href}
+              <Link
+                to={item.href}
                 className="relative text-base font-medium tracking-wide transition-all duration-300 group flex items-center gap-1"
                 style={{
                   background: 'linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.5) 50%, rgba(180,180,180,0.4) 100%)',
@@ -518,11 +429,9 @@ const Navigation = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 )}
-                {/* Hover shine effect */}
                 <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
-              </a>
+              </Link>
 
-              {/* Dropdown Menu */}
               {item.dropdown && activeDropdown === item.name && (
                 <div
                   className="absolute top-full left-1/2 -translate-x-1/2 mt-2 py-2 min-w-[200px] rounded-xl border border-white/10 backdrop-blur-xl"
@@ -531,20 +440,19 @@ const Navigation = () => {
                     boxShadow: '0 10px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
                   }}
                 >
-                  {/* Dropdown arrow */}
                   <div
                     className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 rotate-45 border-l border-t border-white/10"
                     style={{ background: 'rgba(0, 0, 0, 0.85)' }}
                   />
 
-                  {item.dropdown.map((dropItem, index) => (
-                    <a
+                  {item.dropdown.map((dropItem) => (
+                    <Link
                       key={dropItem.name}
-                      href={dropItem.href}
+                      to={dropItem.href}
                       className="block px-5 py-2.5 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all duration-200"
                     >
                       {dropItem.name}
-                    </a>
+                    </Link>
                   ))}
                 </div>
               )}
@@ -552,10 +460,9 @@ const Navigation = () => {
           ))}
         </div>
 
-        {/* Contact Us CTA button - transparent with white outline on hover */}
         <div className="hidden md:flex items-center absolute right-6">
-          <a
-            href="#contact"
+          <Link
+            to="/contact"
             className="relative text-base font-medium px-7 py-3 rounded-full overflow-hidden transition-all duration-300"
             style={{
               background: 'transparent',
@@ -564,18 +471,12 @@ const Navigation = () => {
             onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.6)'}
             onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'}
           >
-            <span
-              className="relative"
-              style={{
-                color: 'rgba(255,255,255,0.7)',
-              }}
-            >
+            <span className="relative" style={{ color: 'rgba(255,255,255,0.7)' }}>
               Contact Us
             </span>
-          </a>
+          </Link>
         </div>
 
-        {/* Mobile menu button */}
         <button
           className="md:hidden text-white/60 hover:text-white p-2 absolute right-6"
           onClick={() => setMobileOpen(!mobileOpen)}
@@ -595,8 +496,8 @@ const Navigation = () => {
           <div className="px-6 py-6 space-y-4">
             {navItems.map((item) => (
               <div key={item.name}>
-                <a
-                  href={item.href}
+                <Link
+                  to={item.href}
                   className="block text-lg font-medium"
                   style={{
                     background: 'linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.5) 50%, rgba(180,180,180,0.4) 100%)',
@@ -607,18 +508,18 @@ const Navigation = () => {
                   onClick={() => !item.dropdown && setMobileOpen(false)}
                 >
                   {item.name}
-                </a>
+                </Link>
                 {item.dropdown && (
                   <div className="ml-4 mt-2 space-y-2">
                     {item.dropdown.map((dropItem) => (
-                      <a
+                      <Link
                         key={dropItem.name}
-                        href={dropItem.href}
+                        to={dropItem.href}
                         className="block text-base text-white/50 hover:text-white transition-colors"
                         onClick={() => setMobileOpen(false)}
                       >
                         {dropItem.name}
-                      </a>
+                      </Link>
                     ))}
                   </div>
                 )}
@@ -639,33 +540,27 @@ const HeroSection = () => {
 
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center">
-      {/* Ice blue curved reflection at top - full width */}
       <div
-        className="absolute top-0 left-0 right-0 h-[500px] pointer-events-none z-10"
+        className="absolute top-0 left-0 right-0 h-[100px] pointer-events-none z-10"
         style={{
-          background: 'radial-gradient(ellipse 150% 100% at 50% 0%, rgba(56, 189, 248, 0.18) 0%, rgba(56, 189, 248, 0.08) 25%, rgba(125, 211, 252, 0.04) 45%, transparent 70%)',
+          background: 'radial-gradient(ellipse 150% 100% at 50% 0%, rgba(56, 189, 248, 0.03) 0%, rgba(56, 189, 248, 0.015) 25%, rgba(125, 211, 252, 0.01) 45%, transparent 70%)',
         }}
       />
       <div
-        className="absolute top-0 left-0 right-0 h-[350px] pointer-events-none z-10"
+        className="absolute top-0 left-0 right-0 h-[70px] pointer-events-none z-10"
         style={{
-          background: 'radial-gradient(ellipse 120% 100% at 50% 0%, rgba(186, 230, 253, 0.15) 0%, rgba(125, 211, 252, 0.08) 35%, transparent 65%)',
+          background: 'radial-gradient(ellipse 120% 100% at 50% 0%, rgba(186, 230, 253, 0.04) 0%, rgba(125, 211, 252, 0.02) 35%, transparent 65%)',
         }}
       />
       <div
-        className="absolute top-0 left-0 right-0 h-[200px] pointer-events-none z-10"
+        className="absolute top-0 left-0 right-0 h-[40px] pointer-events-none z-10"
         style={{
-          background: 'radial-gradient(ellipse 100% 100% at 50% 0%, rgba(224, 242, 254, 0.25) 0%, rgba(186, 230, 253, 0.12) 40%, transparent 70%)',
+          background: 'radial-gradient(ellipse 100% 100% at 50% 0%, rgba(224, 242, 254, 0.05) 0%, rgba(186, 230, 253, 0.025) 40%, transparent 70%)',
         }}
       />
-      {/* Top edge glow line - ice blue */}
-      {/* <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-sky-300/40 to-transparent z-10" /> */}
 
-      {/* Background container */}
-      <div className="absolute inset-0 overflow-hidden">
-      </div>
+      <div className="absolute inset-0 overflow-hidden"></div>
 
-      {/* Radial glow behind logo */}
       <div
         className="absolute w-[600px] h-[300px] rounded-full pointer-events-none transition-opacity duration-1000"
         style={{
@@ -675,7 +570,6 @@ const HeroSection = () => {
         }}
       />
 
-      {/* Pulsing glow */}
       <div
         className="absolute w-[400px] h-[200px] rounded-full pointer-events-none"
         style={{
@@ -685,7 +579,6 @@ const HeroSection = () => {
         }}
       />
 
-      {/* Energy rings */}
       <div className="absolute pointer-events-none">
         <div
           className="w-[400px] h-[400px] border border-white/[0.03] rounded-full absolute -translate-x-1/2 -translate-y-1/2 transition-opacity duration-1000"
@@ -704,14 +597,11 @@ const HeroSection = () => {
         />
       </div>
 
-      {/* Main Content */}
       <div className="relative z-20 text-center px-6 max-w-4xl mx-auto flex flex-col items-center" style={{ overflow: 'visible' }}>
-        {/* Animated Logo */}
         <div className="flex justify-center w-full" style={{ overflow: 'visible', marginBottom: '-30px' }}>
           <LogoAnimation size="large" onComplete={() => setAnimationComplete(true)} />
         </div>
 
-        {/* Tagline - fades in after logo animation, right aligned below 'y' */}
         <div
           className="transition-all duration-700 w-full"
           style={{
@@ -734,7 +624,6 @@ const HeroSection = () => {
           </p>
         </div>
 
-        {/* Search input - transparent with white outline on focus */}
         <div
           className="max-w-xl mx-auto mb-10 transition-all duration-700 w-full"
           style={{
@@ -776,7 +665,6 @@ const HeroSection = () => {
           </div>
         </div>
 
-        {/* Announcement - chrome style */}
         <div
           className="flex flex-wrap items-center justify-center gap-3 transition-all duration-700"
           style={{
@@ -829,7 +717,6 @@ const HeroSection = () => {
         </div>
       </div>
 
-      {/* Scroll indicator - chrome style */}
       <div
         className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 transition-opacity duration-700"
         style={{ opacity: animationComplete ? 1 : 0, transitionDelay: '1s' }}
@@ -862,20 +749,44 @@ const HeroSection = () => {
 const ProductsSection = () => {
   const products = [
     {
-      title: "Antimage CRM",
+      title: "AntiMage CRM",
       subtitle: "Customer Relationship Management",
       description: "Powerful CRM solution to manage your customer relationships, sales pipeline, and business growth with AI-powered insights.",
-      link: "Explore Antimage CRM →",
+      link: "/products/antimage-crm",
       icon: "◈",
-      gradient: "from-blue-500/20 to-cyan-500/10"
+      gradient: "from-yellow-500/20 to-amber-500/10"
     },
     {
       title: "AntiHRMS",
       subtitle: "Human Resource Management System",
       description: "Complete HR management platform for employee management, payroll, attendance tracking, and performance analytics.",
-      link: "Explore AntiHRMS →",
+      link: "/products/antihrms",
       icon: "◇",
       gradient: "from-purple-500/20 to-pink-500/10"
+    },
+    {
+      title: "AntiSec",
+      subtitle: "Enterprise Security Solutions",
+      description: "Advanced cybersecurity platform providing threat detection, vulnerability management, and real-time security monitoring.",
+      link: "/products/antisec",
+      icon: "⬡",
+      gradient: "from-red-500/20 to-orange-500/10"
+    },
+    {
+      title: "AntiAI",
+      subtitle: "Enterprise AI Platform",
+      description: "Build, deploy, and manage custom AI models. From natural language processing to computer vision solutions.",
+      link: "/products/antiai",
+      icon: "◎",
+      gradient: "from-emerald-500/20 to-teal-500/10"
+    },
+    {
+      title: "AntiChat",
+      subtitle: "Enterprise Communication Platform",
+      description: "Secure, feature-rich communication platform with real-time messaging, video conferencing, and collaboration tools.",
+      link: "/products/antichat",
+      icon: "▣",
+      gradient: "from-indigo-500/20 to-blue-500/10"
     }
   ];
 
@@ -892,13 +803,13 @@ const ProductsSection = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {products.map((product) => (
-            <div
+            <Link
+              to={product.link}
               key={product.title}
-              className="group p-8 md:p-10 border border-white/[0.08] hover:border-white/[0.15] bg-black/30 backdrop-blur-sm hover:bg-white/[0.02] transition-all duration-500 rounded-2xl relative overflow-hidden"
+              className="group p-8 border border-white/[0.08] hover:border-white/[0.15] bg-black/30 backdrop-blur-sm hover:bg-white/[0.02] transition-all duration-500 rounded-2xl relative overflow-hidden block"
             >
-              {/* Background gradient */}
               <div className={`absolute inset-0 bg-gradient-to-br ${product.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
 
               <div className="relative z-10">
@@ -909,24 +820,21 @@ const ProductsSection = () => {
                   <span className="text-xs text-white/30 px-3 py-1 border border-white/10 rounded-full">Product</span>
                 </div>
 
-                <h3 className="text-2xl md:text-3xl text-white mb-2 group-hover:text-white transition-colors">{product.title}</h3>
+                <h3 className="text-xl md:text-2xl text-white mb-2 group-hover:text-white transition-colors">{product.title}</h3>
                 <p className="text-white/40 text-sm mb-4">{product.subtitle}</p>
 
-                <p className="text-white/50 text-sm leading-relaxed mb-8">
+                <p className="text-white/50 text-sm leading-relaxed mb-6">
                   {product.description}
                 </p>
 
-                <a
-                  href="#"
-                  className="inline-flex items-center gap-2 text-white/60 hover:text-white text-sm transition-all group-hover:gap-3"
-                >
-                  {product.link}
+                <div className="inline-flex items-center gap-2 text-white/40 group-hover:text-white/70 text-sm transition-all">
+                  Learn more
                   <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
-                </a>
+                </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
@@ -934,26 +842,7 @@ const ProductsSection = () => {
   );
 };
 
-// ==========================================
-// STATEMENT SECTION
-// ==========================================
-const StatementSection = () => {
-  return (
-    <section className="relative py-40 px-6 overflow-hidden">
-      <div className="max-w-7xl mx-auto relative z-10">
-        <div className="max-w-5xl">
-          <h2 className="text-5xl md:text-7xl lg:text-[100px] text-white font-normal leading-[1.05] mb-4">
-            Understand
-            <span className="text-white/20 ml-4">*</span>
-          </h2>
-          <h2 className="text-5xl md:text-7xl lg:text-[100px] text-white/30 font-normal leading-[1.05] md:text-right">
-            The Universe
-          </h2>
-        </div>
-      </div>
-    </section>
-  );
-};
+
 
 // ==========================================
 // SERVICES SECTION
@@ -965,35 +854,40 @@ const ServicesSection = () => {
       title: "Web Development",
       description: "Modern, responsive websites built with Next.js, React, and cutting-edge frameworks. From landing pages to complex web applications.",
       features: ["Custom Web Apps", "E-commerce Solutions", "Progressive Web Apps"],
-      gradient: "from-blue-500/20 to-indigo-500/10"
+      gradient: "from-blue-500/20 to-indigo-500/10",
+      link: "/services/web-development"
     },
     {
       icon: "◇",
       title: "App Development",
       description: "Native and cross-platform mobile applications for iOS and Android. Seamless user experiences with robust backend integration.",
       features: ["iOS & Android Apps", "Cross-platform Development", "App Maintenance"],
-      gradient: "from-green-500/20 to-emerald-500/10"
+      gradient: "from-green-500/20 to-emerald-500/10",
+      link: "/services/app-development"
     },
     {
       icon: "○",
       title: "Digital Marketing",
       description: "Data-driven marketing strategies to amplify your digital presence. SEO, social media, and performance marketing campaigns.",
       features: ["SEO Optimization", "Social Media Marketing", "PPC Campaigns"],
-      gradient: "from-orange-500/20 to-amber-500/10"
+      gradient: "from-orange-500/20 to-amber-500/10",
+      link: "/services/digital-marketing"
     },
     {
       icon: "◎",
       title: "Graphic Designing",
       description: "Creative visual solutions that communicate your brand story. Logos, brand identities, and marketing collaterals.",
       features: ["Brand Identity", "UI/UX Design", "Print & Digital Media"],
-      gradient: "from-pink-500/20 to-rose-500/10"
+      gradient: "from-pink-500/20 to-rose-500/10",
+      link: "/services/graphic-designing"
     },
     {
       icon: "△",
       title: "3D Services",
       description: "Immersive 3D modeling, animations, and WebGL experiences. Product visualization, architectural renders, and interactive 3D.",
       features: ["3D Modeling", "Product Visualization", "WebGL Experiences"],
-      gradient: "from-purple-500/20 to-violet-500/10"
+      gradient: "from-purple-500/20 to-violet-500/10",
+      link: "/services/3d-services"
     },
   ];
 
@@ -1012,11 +906,11 @@ const ServicesSection = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {services.map((service) => (
-            <div
+            <Link
+              to={service.link}
               key={service.title}
-              className="group p-8 border border-white/[0.06] hover:border-white/[0.15] bg-black/30 backdrop-blur-sm hover:bg-white/[0.02] transition-all duration-500 rounded-xl relative overflow-hidden"
+              className="group p-8 border border-white/[0.06] hover:border-white/[0.15] bg-black/30 backdrop-blur-sm hover:bg-white/[0.02] transition-all duration-500 rounded-xl relative overflow-hidden block"
             >
-              {/* Background gradient */}
               <div className={`absolute inset-0 bg-gradient-to-br ${service.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
 
               <div className="relative z-10">
@@ -1026,7 +920,6 @@ const ServicesSection = () => {
                 <h3 className="text-xl text-white mb-3">{service.title}</h3>
                 <p className="text-white/40 text-sm leading-relaxed mb-6">{service.description}</p>
 
-                {/* Features list */}
                 <div className="space-y-2 mb-6">
                   {service.features.map((feature) => (
                     <div key={feature} className="flex items-center gap-2 text-white/30 text-xs">
@@ -1043,7 +936,7 @@ const ServicesSection = () => {
                   </svg>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
@@ -1077,18 +970,18 @@ const CTASection = () => {
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <a
-            href="#"
+          <Link
+            to="/contact"
             className="px-8 py-3 bg-white text-black text-sm font-medium rounded-full hover:bg-white/90 transition-colors"
           >
             Start Your Project
-          </a>
-          <a
-            href="#"
+          </Link>
+          <Link
+            to="/contact"
             className="px-8 py-3 border border-white/20 text-white/70 hover:text-white hover:border-white/40 text-sm rounded-full transition-colors"
           >
             Schedule a Call
-          </a>
+          </Link>
         </div>
       </div>
     </section>
@@ -1176,33 +1069,180 @@ const NewsSection = () => {
 // FOOTER
 // ==========================================
 const Footer = () => {
+  const location = useLocation();
+  const isServicePage = location.pathname.startsWith('/services/');
+  const isProductPage = location.pathname.startsWith('/products/');
+  const isAboutPage = location.pathname === '/about-us';
+  const isContactPage = location.pathname === '/contact';
+
+  // About Us page gradient colors
+  const aboutGradient = {
+    primary: 'rgba(148, 163, 184, 0.18)',
+    primaryLight: 'rgba(148, 163, 184, 0.08)',
+    secondary: 'rgba(100, 116, 139, 0.04)',
+    secondaryLight: 'rgba(100, 116, 139, 0.15)',
+    glow: 'rgba(203, 213, 225, 0.25)',
+    glowLight: 'rgba(148, 163, 184, 0.12)',
+    line: 'rgba(148, 163, 184, 0.4)'
+  };
+
+  // Contact page gradient colors - Violet/Purple
+  const contactGradient = {
+    primary: 'rgba(139, 92, 246, 0.18)',
+    primaryLight: 'rgba(139, 92, 246, 0.08)',
+    secondary: 'rgba(124, 58, 237, 0.04)',
+    secondaryLight: 'rgba(124, 58, 237, 0.15)',
+    glow: 'rgba(167, 139, 250, 0.25)',
+    glowLight: 'rgba(139, 92, 246, 0.12)',
+    line: 'rgba(139, 92, 246, 0.4)'
+  };
+
+  // Service-specific gradient colors for footer reflection
+  const serviceGradients = {
+    '/services/web-development': {
+      primary: 'rgba(59, 130, 246, 0.18)',
+      primaryLight: 'rgba(59, 130, 246, 0.08)',
+      secondary: 'rgba(99, 102, 241, 0.04)',
+      secondaryLight: 'rgba(99, 102, 241, 0.15)',
+      glow: 'rgba(129, 140, 248, 0.25)',
+      glowLight: 'rgba(99, 102, 241, 0.12)',
+      line: 'rgba(99, 102, 241, 0.4)'
+    },
+    '/services/app-development': {
+      primary: 'rgba(34, 197, 94, 0.18)',
+      primaryLight: 'rgba(34, 197, 94, 0.08)',
+      secondary: 'rgba(16, 185, 129, 0.04)',
+      secondaryLight: 'rgba(16, 185, 129, 0.15)',
+      glow: 'rgba(52, 211, 153, 0.25)',
+      glowLight: 'rgba(16, 185, 129, 0.12)',
+      line: 'rgba(16, 185, 129, 0.4)'
+    },
+    '/services/digital-marketing': {
+      primary: 'rgba(249, 115, 22, 0.18)',
+      primaryLight: 'rgba(249, 115, 22, 0.08)',
+      secondary: 'rgba(245, 158, 11, 0.04)',
+      secondaryLight: 'rgba(245, 158, 11, 0.15)',
+      glow: 'rgba(251, 191, 36, 0.25)',
+      glowLight: 'rgba(245, 158, 11, 0.12)',
+      line: 'rgba(245, 158, 11, 0.4)'
+    },
+    '/services/graphic-designing': {
+      primary: 'rgba(236, 72, 153, 0.18)',
+      primaryLight: 'rgba(236, 72, 153, 0.08)',
+      secondary: 'rgba(244, 63, 94, 0.04)',
+      secondaryLight: 'rgba(244, 63, 94, 0.15)',
+      glow: 'rgba(251, 113, 133, 0.25)',
+      glowLight: 'rgba(244, 63, 94, 0.12)',
+      line: 'rgba(244, 63, 94, 0.4)'
+    },
+    '/services/3d-services': {
+      primary: 'rgba(168, 85, 247, 0.18)',
+      primaryLight: 'rgba(168, 85, 247, 0.08)',
+      secondary: 'rgba(139, 92, 246, 0.04)',
+      secondaryLight: 'rgba(139, 92, 246, 0.15)',
+      glow: 'rgba(167, 139, 250, 0.25)',
+      glowLight: 'rgba(139, 92, 246, 0.12)',
+      line: 'rgba(139, 92, 246, 0.4)'
+    }
+  };
+
+  // Product-specific gradient colors for footer reflection
+  const productGradients = {
+    '/products/antimage-crm': {
+      primary: 'rgba(234, 179, 8, 0.18)',
+      primaryLight: 'rgba(234, 179, 8, 0.08)',
+      secondary: 'rgba(250, 204, 21, 0.04)',
+      secondaryLight: 'rgba(250, 204, 21, 0.15)',
+      glow: 'rgba(253, 224, 71, 0.25)',
+      glowLight: 'rgba(250, 204, 21, 0.12)',
+      line: 'rgba(250, 204, 21, 0.4)'
+    },
+    '/products/antihrms': {
+      primary: 'rgba(168, 85, 247, 0.18)',
+      primaryLight: 'rgba(168, 85, 247, 0.08)',
+      secondary: 'rgba(236, 72, 153, 0.04)',
+      secondaryLight: 'rgba(236, 72, 153, 0.15)',
+      glow: 'rgba(244, 114, 182, 0.25)',
+      glowLight: 'rgba(236, 72, 153, 0.12)',
+      line: 'rgba(236, 72, 153, 0.4)'
+    },
+    '/products/antisec': {
+      primary: 'rgba(239, 68, 68, 0.18)',
+      primaryLight: 'rgba(239, 68, 68, 0.08)',
+      secondary: 'rgba(249, 115, 22, 0.04)',
+      secondaryLight: 'rgba(249, 115, 22, 0.15)',
+      glow: 'rgba(251, 146, 60, 0.25)',
+      glowLight: 'rgba(249, 115, 22, 0.12)',
+      line: 'rgba(249, 115, 22, 0.4)'
+    },
+    '/products/antiai': {
+      primary: 'rgba(16, 185, 129, 0.18)',
+      primaryLight: 'rgba(16, 185, 129, 0.08)',
+      secondary: 'rgba(20, 184, 166, 0.04)',
+      secondaryLight: 'rgba(20, 184, 166, 0.15)',
+      glow: 'rgba(45, 212, 191, 0.25)',
+      glowLight: 'rgba(20, 184, 166, 0.12)',
+      line: 'rgba(20, 184, 166, 0.4)'
+    },
+    '/products/antichat': {
+      primary: 'rgba(99, 102, 241, 0.18)',
+      primaryLight: 'rgba(99, 102, 241, 0.08)',
+      secondary: 'rgba(59, 130, 246, 0.04)',
+      secondaryLight: 'rgba(59, 130, 246, 0.15)',
+      glow: 'rgba(96, 165, 250, 0.25)',
+      glowLight: 'rgba(59, 130, 246, 0.12)',
+      line: 'rgba(59, 130, 246, 0.4)'
+    }
+  };
+
+  const currentServiceGradient = serviceGradients[location.pathname];
+  const currentProductGradient = productGradients[location.pathname];
+
   const links = {
-    "Product": ["Antimage CRM", "AntiHRMS", "AntiSec", "AntiAI", "AntiChat"],
-    "Services": ["Web Development", "App Development", "Digital Marketing", "Graphic Designing", "3D Services"],
-    "Company": ["About Us", "Careers", "Contact",],
-    "Legal": ["Privacy", "Terms", "Security", "Cookies"]
+    "Product": [
+      { name: "AntiMage CRM", href: "/products/antimage-crm" },
+      { name: "AntiHRMS", href: "/products/antihrms" },
+      { name: "AntiSec", href: "/products/antisec" },
+      { name: "AntiAI", href: "/products/antiai" },
+      { name: "AntiChat", href: "/products/antichat" }
+    ],
+    "Services": [
+      { name: "Web Development", href: "/services/web-development" },
+      { name: "App Development", href: "/services/app-development" },
+      { name: "Digital Marketing", href: "/services/digital-marketing" },
+      { name: "Graphic Designing", href: "/services/graphic-designing" },
+      { name: "3D Services", href: "/services/3d-services" }
+    ],
+    "Company": [
+      { name: "About Us", href: "/about-us" },
+      { name: "Careers", href: "/careers" },
+      { name: "Contact", href: "/contact" }
+    ],
+    "Legal": [
+      { name: "Privacy", href: "/privacy" },
+      { name: "Terms", href: "/terms" },
+      { name: "Security", href: "/security" },
+      { name: "Cookies", href: "/cookies" }
+    ]
   };
 
   return (
     <footer className="relative" style={{ overflow: 'visible' }}>
-      {/* Top section with links */}
       <div className="relative border-t border-white/[0.15]">
-        {/* Reflection glow effect */}
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
         <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-white/[0.03] to-transparent pointer-events-none" />
 
         <div className="max-w-5xl mx-auto px-6 py-16 relative z-10">
-          {/* Four Column Links - evenly distributed */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 justify-items-center">
             {Object.entries(links).map(([category, items]) => (
               <div key={category}>
                 <h4 className="text-white text-sm font-medium mb-4">{category}</h4>
                 <ul className="space-y-3">
                   {items.map((item) => (
-                    <li key={item}>
-                      <a href="#" className="text-white/50 hover:text-white text-sm transition-colors">
-                        {item}
-                      </a>
+                    <li key={item.name}>
+                      <Link to={item.href} className="text-white/50 hover:text-white text-sm transition-colors">
+                        {item.name}
+                      </Link>
                     </li>
                   ))}
                 </ul>
@@ -1212,7 +1252,6 @@ const Footer = () => {
         </div>
       </div>
 
-      {/* Large Logo Section */}
       <div className="relative py-4 md:py-0" style={{ overflow: 'visible' }}>
         <div className="w-full px-2 md:px-4" style={{ overflow: 'visible' }}>
           <div className="flex items-baseline justify-center tracking-tighter leading-[0.85] select-none" style={{ fontFamily: "'Outfit', 'Inter', sans-serif", fontWeight: 700, fontSize: 'clamp(60px, 12vw, 200px)', overflow: 'visible', paddingBottom: '0.15em' }}>
@@ -1238,29 +1277,203 @@ const Footer = () => {
         </div>
       </div>
 
-      {/* Bottom bar */}
       <div className="relative border-t border-white/[0.05]" style={{ overflow: 'visible' }}>
-        {/* Half moon curved reflection - ice blue gradient - full width */}
-        <div
-          className="absolute bottom-0 left-0 right-0 h-[500px] pointer-events-none"
-          style={{
-            background: 'radial-gradient(ellipse 150% 100% at 50% 100%, rgba(56, 189, 248, 0.18) 0%, rgba(56, 189, 248, 0.08) 25%, rgba(125, 211, 252, 0.04) 45%, transparent 70%)',
-          }}
-        />
-        <div
-          className="absolute bottom-0 left-0 right-0 h-[350px] pointer-events-none"
-          style={{
-            background: 'radial-gradient(ellipse 120% 100% at 50% 100%, rgba(186, 230, 253, 0.15) 0%, rgba(125, 211, 252, 0.08) 35%, transparent 65%)',
-          }}
-        />
-        <div
-          className="absolute bottom-0 left-0 right-0 h-[200px] pointer-events-none"
-          style={{
-            background: 'radial-gradient(ellipse 100% 100% at 50% 100%, rgba(224, 242, 254, 0.25) 0%, rgba(186, 230, 253, 0.12) 40%, transparent 70%)',
-          }}
-        />
-        {/* Bottom edge glow line - ice blue */}
-        <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-sky-300/40 to-transparent" />
+        {/* Ice blue reflection on homepage */}
+        {!isServicePage && !isProductPage && !isAboutPage && !isContactPage && (
+          <>
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[500px] pointer-events-none"
+              style={{
+                background: 'radial-gradient(ellipse 150% 100% at 50% 100%, rgba(56, 189, 248, 0.18) 0%, rgba(56, 189, 248, 0.08) 25%, rgba(125, 211, 252, 0.04) 45%, transparent 70%)',
+              }}
+            />
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[350px] pointer-events-none"
+              style={{
+                background: 'radial-gradient(ellipse 120% 100% at 50% 100%, rgba(186, 230, 253, 0.15) 0%, rgba(125, 211, 252, 0.08) 35%, transparent 65%)',
+              }}
+            />
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[200px] pointer-events-none"
+              style={{
+                background: 'radial-gradient(ellipse 100% 100% at 50% 100%, rgba(224, 242, 254, 0.25) 0%, rgba(186, 230, 253, 0.12) 40%, transparent 70%)',
+              }}
+            />
+            <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-sky-300/40 to-transparent" />
+          </>
+        )}
+
+        {/* Service-specific gradient reflection on service pages */}
+        {isServicePage && currentServiceGradient && (
+          <>
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[500px] pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse 150% 100% at 50% 100%, ${currentServiceGradient.primary} 0%, ${currentServiceGradient.primaryLight} 25%, ${currentServiceGradient.secondary} 45%, transparent 70%)`,
+              }}
+            />
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[350px] pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse 120% 100% at 50% 100%, ${currentServiceGradient.secondaryLight} 0%, ${currentServiceGradient.secondary} 35%, transparent 65%)`,
+              }}
+            />
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[200px] pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse 100% 100% at 50% 100%, ${currentServiceGradient.glow} 0%, ${currentServiceGradient.glowLight} 40%, transparent 70%)`,
+              }}
+            />
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[1px]"
+              style={{
+                background: `linear-gradient(to right, transparent, ${currentServiceGradient.line}, transparent)`,
+              }}
+            />
+          </>
+        )}
+
+        {/* Product-specific gradient reflection on product pages */}
+        {isProductPage && currentProductGradient && (
+          <>
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[500px] pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse 150% 100% at 50% 100%, ${currentProductGradient.primary} 0%, ${currentProductGradient.primaryLight} 25%, ${currentProductGradient.secondary} 45%, transparent 70%)`,
+              }}
+            />
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[350px] pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse 120% 100% at 50% 100%, ${currentProductGradient.secondaryLight} 0%, ${currentProductGradient.secondary} 35%, transparent 65%)`,
+              }}
+            />
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[200px] pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse 100% 100% at 50% 100%, ${currentProductGradient.glow} 0%, ${currentProductGradient.glowLight} 40%, transparent 70%)`,
+              }}
+            />
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[1px]"
+              style={{
+                background: `linear-gradient(to right, transparent, ${currentProductGradient.line}, transparent)`,
+              }}
+            />
+          </>
+        )}
+
+        {/* About Us page gradient reflection - Silver/Slate */}
+        {isAboutPage && (
+          <>
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[500px] pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse 150% 100% at 50% 100%, ${aboutGradient.primary} 0%, ${aboutGradient.primaryLight} 25%, ${aboutGradient.secondary} 45%, transparent 70%)`,
+              }}
+            />
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[350px] pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse 120% 100% at 50% 100%, ${aboutGradient.secondaryLight} 0%, ${aboutGradient.secondary} 35%, transparent 65%)`,
+              }}
+            />
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[200px] pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse 100% 100% at 50% 100%, ${aboutGradient.glow} 0%, ${aboutGradient.glowLight} 40%, transparent 70%)`,
+              }}
+            />
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[1px]"
+              style={{
+                background: `linear-gradient(to right, transparent, ${aboutGradient.line}, transparent)`,
+              }}
+            />
+          </>
+        )}
+
+        {/* Contact page gradient reflection - Violet/Purple */}
+        {isContactPage && (
+          <>
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[500px] pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse 150% 100% at 50% 100%, ${contactGradient.primary} 0%, ${contactGradient.primaryLight} 25%, ${contactGradient.secondary} 45%, transparent 70%)`,
+              }}
+            />
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[350px] pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse 120% 100% at 50% 100%, ${contactGradient.secondaryLight} 0%, ${contactGradient.secondary} 35%, transparent 65%)`,
+              }}
+            />
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[200px] pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse 100% 100% at 50% 100%, ${contactGradient.glow} 0%, ${contactGradient.glowLight} 40%, transparent 70%)`,
+              }}
+            />
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[1px]"
+              style={{
+                background: `linear-gradient(to right, transparent, ${contactGradient.line}, transparent)`,
+              }}
+            />
+          </>
+        )}
+
+        <div className="max-w-7xl mx-auto px-6 py-1 flex flex-col items-center gap-4 relative z-10 mt-8">
+          <div className="flex gap-4 mb-2">
+            {[
+              {
+                name: 'Twitter',
+                icon: (
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  </svg>
+                ),
+                href: '#'
+              },
+              {
+                name: 'LinkedIn',
+                icon: (
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                  </svg>
+                ),
+                href: '#'
+              },
+              {
+                name: 'Instagram',
+                icon: (
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                  </svg>
+                ),
+                href: '#'
+              },
+              {
+                name: 'Facebook',
+                icon: (
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036c-2.148 0-2.797 1.657-2.797 2.895v1.085h3.988l-.85 3.667h-3.138v7.98h-5.017z" />
+                  </svg>
+                ),
+                href: '#'
+              }
+            ].map((social) => (
+              <a
+                key={social.name}
+                href={social.href}
+                className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:border-white/30 transition-all hover:scale-110 hover:bg-white/5"
+                aria-label={social.name}
+              >
+                {social.icon}
+              </a>
+            ))}
+          </div>
+        </div>
 
         <div className="max-w-7xl mx-auto px-6 py-1 flex flex-col items-center gap-4 relative z-10">
           <p className="text-white/100 text-xs mt-4">
@@ -1268,7 +1481,6 @@ const Footer = () => {
           </p>
         </div>
 
-        {/* Extra padding for reflection space */}
         <div className="h-16" />
       </div>
     </footer>
@@ -1276,27 +1488,66 @@ const Footer = () => {
 };
 
 // ==========================================
+// HOME PAGE
+// ==========================================
+const HomePage = () => {
+  return (
+    <>
+      <HeroSection />
+      <ProductsSection />
+
+      <ServicesSection />
+      <CTASection />
+      <NewsSection />
+    </>
+  );
+};
+
+// ==========================================
+// SCROLL TO TOP ON ROUTE CHANGE
+// ==========================================
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+};
+
+// ==========================================
 // MAIN APP
 // ==========================================
 function App() {
   return (
-    <div className="min-h-screen bg-black text-white relative">
-      {/* Global Interactive Particles */}
-      <InteractiveParticles />
+    <Router>
+      <ScrollToTop />
+      <div className="min-h-screen bg-black text-white relative">
+        <InteractiveParticles />
+        <Navigation />
 
-      <Navigation />
+        <main className="relative z-10">
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/about-us" element={<AboutUs />} />
+            <Route path="/contact" element={<ContactUs />} />
+            <Route path="/services/web-development" element={<WebDevelopment />} />
+            <Route path="/services/app-development" element={<AppDevelopment />} />
+            <Route path="/services/digital-marketing" element={<DigitalMarketing />} />
+            <Route path="/services/graphic-designing" element={<GraphicDesigning />} />
+            <Route path="/services/3d-services" element={<ThreeDServices />} />
+            <Route path="/products/antimage-crm" element={<AntimageCRM />} />
+            <Route path="/products/antihrms" element={<AntiHRMS />} />
+            <Route path="/products/antisec" element={<AntiSec />} />
+            <Route path="/products/antiai" element={<AntiAI />} />
+            <Route path="/products/antichat" element={<AntiChat />} />
+          </Routes>
+        </main>
 
-      <main className="relative z-10">
-        <HeroSection />
-        <ProductsSection />
-        <StatementSection />
-        <ServicesSection />
-        <CTASection />
-        <NewsSection />
-      </main>
-
-      <Footer className="relative z-10" />
-    </div>
+        <Footer />
+      </div>
+    </Router>
   );
 }
 
