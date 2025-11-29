@@ -1,7 +1,9 @@
 import React from 'react';
 import ServicePage from '../components/ServicePage';
+import usePageTitle from '../hooks/usePageTitle';
 
 const ThreeDServices = () => {
+  usePageTitle('3D Services | AntiGraviity');
   const data = {
     title: "3D Services",
     subtitle: "Immersive visual experiences",

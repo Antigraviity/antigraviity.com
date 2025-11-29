@@ -1,7 +1,9 @@
 import React from 'react';
 import ServicePage from '../components/ServicePage';
+import usePageTitle from '../hooks/usePageTitle';
 
 const GraphicDesigning = () => {
+  usePageTitle('Graphic Designing | AntiGraviity');
   const data = {
     title: "Graphic Designing",
     subtitle: "Visual solutions that communicate",

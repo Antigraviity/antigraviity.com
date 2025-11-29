@@ -1,7 +1,9 @@
 import React from 'react';
 import ServicePage from '../components/ServicePage';
+import usePageTitle from '../hooks/usePageTitle';
 
 const DigitalMarketing = () => {
+  usePageTitle('Digital Marketing | AntiGraviity');
   const data = {
     title: "Digital Marketing",
     subtitle: "Amplify your digital presence",

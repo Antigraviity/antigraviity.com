@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import usePageTitle from '../hooks/usePageTitle';
 
 const Careers = () => {
+    usePageTitle('Careers | AntiGraviity');
     const [activeCategory, setActiveCategory] = useState('All');
 
     const benefits = [

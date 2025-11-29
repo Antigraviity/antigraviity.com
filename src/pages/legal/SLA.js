@@ -1,7 +1,9 @@
 import React from 'react';
 import LegalLayout from '../../components/LegalLayout';
+import usePageTitle from '../../hooks/usePageTitle';
 
 const SLA = () => {
+    usePageTitle('Service Level Agreement | AntiGraviity');
     return (
         <LegalLayout title="Service Level Agreement" lastUpdated="November 29, 2025">
             <section>

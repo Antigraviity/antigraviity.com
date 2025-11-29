@@ -1,7 +1,9 @@
 import React from 'react';
 import ProductPage from '../components/ProductPage';
+import usePageTitle from '../hooks/usePageTitle';
 
 const AntiChat = () => {
+  usePageTitle('AntiChat | AntiGraviity');
   const data = {
     title: "AntiChat",
     subtitle: "Enterprise Communication Platform",

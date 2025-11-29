@@ -1,7 +1,9 @@
 import React from 'react';
 import ServicePage from '../components/ServicePage';
+import usePageTitle from '../hooks/usePageTitle';
 
 const AppDevelopment = () => {
+  usePageTitle('App Development | AntiGraviity');
   const data = {
     title: "App Development",
     subtitle: "Native & cross-platform mobile solutions",

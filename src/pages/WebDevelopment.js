@@ -1,7 +1,9 @@
 import React from 'react';
 import ServicePage from '../components/ServicePage';
+import usePageTitle from '../hooks/usePageTitle';
 
 const WebDevelopment = () => {
+  usePageTitle('Web Development | AntiGraviity');
   const data = {
     title: "Web Development",
     subtitle: "Building the future of the web",

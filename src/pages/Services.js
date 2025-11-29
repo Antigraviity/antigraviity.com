@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import usePageTitle from '../hooks/usePageTitle';
 
 const Services = () => {
+    usePageTitle('Services | AntiGraviity');
     const [hoveredService, setHoveredService] = useState(null);
 
     const services = [

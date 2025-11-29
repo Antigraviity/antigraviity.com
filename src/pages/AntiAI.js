@@ -1,7 +1,9 @@
 import React from 'react';
 import ProductPage from '../components/ProductPage';
+import usePageTitle from '../hooks/usePageTitle';
 
 const AntiAI = () => {
+  usePageTitle('AntiAI | AntiGraviity');
   const data = {
     title: "AntiAI",
     subtitle: "Enterprise AI Platform",

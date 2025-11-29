@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import ThreeGlobe from '../components/ThreeGlobe';
+import usePageTitle from '../hooks/usePageTitle';
 
 // Animated Counter Component
 const AnimatedCounter = ({ target, duration = 4000, suffix = '' }) => {
@@ -65,6 +66,7 @@ const AnimatedCounter = ({ target, duration = 4000, suffix = '' }) => {
 };
 
 const AboutUs = () => {
+  usePageTitle('About Us | AntiGraviity');
   const [activeValue, setActiveValue] = useState(0);
 
   const stats = [

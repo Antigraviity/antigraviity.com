@@ -29,6 +29,7 @@ import Products from './pages/Products';
 import CustomCursor from './components/CustomCursor';
 import WhatsAppButton from './components/WhatsAppButton';
 import NotFound from './pages/NotFound';
+import usePageTitle from './hooks/usePageTitle';
 
 // ============================================
 // ANTIGRAVIITY TECHNOLOGIES - COMPLETE WEBSITE
@@ -257,6 +258,7 @@ const LogoAnimation = ({ onComplete, size = "large" }) => {
       )}
 
       <div className={`flex items-baseline justify-center ${sizes[size]} tracking-tight font-semibold select-none relative z-10`} style={{ paddingBottom: '0.3em', lineHeight: '1.3' }}>
+
         {/* AntiGrav */}
         {letters.slice(0, 8).map((letter, idx) => (
           <span
@@ -773,10 +775,10 @@ const Navigation = () => {
   );
 };
 
-// ==========================================
 // HERO SECTION with Logo Animation
 // ==========================================
 const HeroSection = () => {
+  usePageTitle('Home | AntiGraviity');
   const navigate = useNavigate();
   const [animationComplete, setAnimationComplete] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -1125,6 +1127,7 @@ const HeroSection = () => {
         style={{ opacity: animationComplete ? 1 : 0, transitionDelay: '1s' }}
       >
         <div className="flex flex-col items-center gap-2">
+          {/* Main text */}
           <span
             className="text-xs tracking-wider"
             style={{

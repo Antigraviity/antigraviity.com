@@ -1,7 +1,9 @@
 import React from 'react';
 import LegalLayout from '../../components/LegalLayout';
+import usePageTitle from '../../hooks/usePageTitle';
 
 const SaaSAgreement = () => {
+    usePageTitle('SaaS Agreement | AntiGraviity');
     return (
         <LegalLayout title="SaaS Agreement" lastUpdated="November 29, 2025">
             <section>

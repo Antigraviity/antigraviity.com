@@ -1,7 +1,9 @@
 import React from 'react';
 import ProductPage from '../components/ProductPage';
+import usePageTitle from '../hooks/usePageTitle';
 
 const AntimageCRM = () => {
+  usePageTitle('AntiMage CRM | AntiGraviity');
   const data = {
     title: "AntiMage CRM",
     subtitle: "Customer Relationship Management",

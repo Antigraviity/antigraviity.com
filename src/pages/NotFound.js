@@ -1,7 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import usePageTitle from '../hooks/usePageTitle';
 
 const NotFound = () => {
+    usePageTitle('Page Not Found | AntiGraviity');
     const whatsappUrl = 'https://wa.me/916379388462?text=Hello!%20I%20would%20like%20to%20know%20more%20about%20your%20services.';
 
     return (

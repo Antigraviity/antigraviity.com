@@ -1,7 +1,9 @@
 import React from 'react';
 import LegalLayout from '../../components/LegalLayout';
+import usePageTitle from '../../hooks/usePageTitle';
 
 const PrivacyPolicy = () => {
+    usePageTitle('Privacy Policy | AntiGraviity');
     return (
         <LegalLayout title="Privacy Policy" lastUpdated="November 29, 2025">
             <section>

@@ -17,6 +17,7 @@ pnpm-debug.log*
 .env.development
 .env.production
 .env.test
+server/config.js
 
 # Editor & OS files
 .vscode/

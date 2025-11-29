@@ -1,7 +1,9 @@
 import React from 'react';
 import ProductPage from '../components/ProductPage';
+import usePageTitle from '../hooks/usePageTitle';
 
 const AntiHRMS = () => {
+  usePageTitle('AntiHRMS | AntiGraviity');
   const data = {
     title: "AntiHRMS",
     subtitle: "Human Resource Management System",

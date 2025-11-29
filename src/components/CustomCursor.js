@@ -86,10 +86,7 @@ const CustomCursor = () => {
         input, textarea, select {
           cursor: auto;
         }
-        @keyframes orbit {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
+
       `}</style>
 
             {/* Ambient Background Glow - Always visible */}
@@ -103,19 +100,7 @@ const CustomCursor = () => {
                 }}
             />
 
-            {/* Rotating Orbit Ring - Hidden when hovering interactive elements */}
-            <div
-                className="fixed top-0 left-0 pointer-events-none z-[9998] transition-all duration-300 ease-out flex items-center justify-center"
-                style={{
-                    width: '24px',
-                    height: '24px',
-                    transform: `translate(${position.x - 12}px, ${position.y - 12}px)`,
-                    border: `1px dashed ${currentStyle.color}`,
-                    borderRadius: '50%',
-                    animation: 'orbit 10s linear infinite',
-                    opacity: isPointer ? 0 : 1
-                }}
-            />
+
 
             {/* Central Diamond Node - Hidden when hovering interactive elements */}
             <div

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import usePageTitle from '../hooks/usePageTitle';
 
 const Products = () => {
+    usePageTitle('Products | AntiGraviity');
     const [hoveredProduct, setHoveredProduct] = useState(null);
 
     const products = [

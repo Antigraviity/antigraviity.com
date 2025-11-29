@@ -1,7 +1,9 @@
 import React from 'react';
 import LegalLayout from '../../components/LegalLayout';
+import usePageTitle from '../../hooks/usePageTitle';
 
 const TermsOfService = () => {
+    usePageTitle('Terms of Service | AntiGraviity');
     return (
         <LegalLayout title="Terms of Service" lastUpdated="November 29, 2025">
             <section>
