@@ -18,6 +18,7 @@ import AntiChat from './pages/AntiChat';
 // Import Other Pages
 import AboutUs from './pages/AboutUs';
 import ContactUs from './pages/ContactUs';
+import CustomCursor from './components/CustomCursor';
 
 // ============================================
 // ANTIGRAVIITY TECHNOLOGIES - COMPLETE WEBSITE
@@ -54,11 +55,11 @@ const BrandName = ({ className = "", style = {} }) => {
 };
 
 // ==========================================
-// LOGO ANIMATION COMPONENT
+// LOGO ANIMATION COMPONENT - AntiGravity Float Up Reveal
 // ==========================================
 const LogoAnimation = ({ onComplete, size = "large" }) => {
   const [animationPhase, setAnimationPhase] = useState('start');
-  const [scanPosition, setScanPosition] = useState(-5);
+  const [floatProgress, setFloatProgress] = useState(0);
   const [iiRevealed, setIiRevealed] = useState(false);
 
   const sizes = {
@@ -67,149 +68,248 @@ const LogoAnimation = ({ onComplete, size = "large" }) => {
     large: "text-5xl md:text-7xl lg:text-8xl"
   };
 
+  // Letter data with staggered delays
+  const letters = [
+    { char: 'A', position: 0, delay: 0 },
+    { char: 'n', position: 1, delay: 0.06 },
+    { char: 't', position: 2, delay: 0.12 },
+    { char: 'i', position: 3, delay: 0.18 },
+    { char: 'G', position: 4, delay: 0.24 },
+    { char: 'r', position: 5, delay: 0.30 },
+    { char: 'a', position: 6, delay: 0.36 },
+    { char: 'v', position: 7, delay: 0.42 },
+    { char: 'i', position: 8, delay: 0.48, isSpecial: true },
+    { char: 'i', position: 9, delay: 0.54, isSpecial: true },
+    { char: 't', position: 10, delay: 0.60 },
+    { char: 'y', position: 11, delay: 0.66 },
+  ];
+
+  // Start animation
   useEffect(() => {
     const startTimer = setTimeout(() => {
-      setAnimationPhase('revealing');
-    }, 300);
+      setAnimationPhase('floating');
+    }, 400);
     return () => clearTimeout(startTimer);
   }, []);
 
+  // Float progress
   useEffect(() => {
-    if (animationPhase === 'revealing') {
-      const scanInterval = setInterval(() => {
-        setScanPosition(prev => {
-          if (prev >= 105) {
-            clearInterval(scanInterval);
-            setAnimationPhase('revealed');
-            return 105;
+    if (animationPhase === 'floating') {
+      const interval = setInterval(() => {
+        setFloatProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            return 100;
           }
-          if (prev >= 28 && !iiRevealed) {
+          // Trigger ii flip near the end
+          if (prev >= 70 && !iiRevealed) {
             setIiRevealed(true);
           }
-          return prev + 1.2;
+          return prev + 1.5;
         });
-      }, 16);
-      return () => clearInterval(scanInterval);
+      }, 25);
+      return () => clearInterval(interval);
     }
   }, [animationPhase, iiRevealed]);
 
+  // Complete phase
   useEffect(() => {
-    if (animationPhase === 'revealed') {
-      const loopTimer = setTimeout(() => {
-        setAnimationPhase('loop');
+    if (floatProgress >= 100 && animationPhase === 'floating') {
+      const completeTimer = setTimeout(() => {
+        setAnimationPhase('complete');
         if (onComplete) onComplete();
-      }, 800);
-      return () => clearTimeout(loopTimer);
+      }, 400);
+      return () => clearTimeout(completeTimer);
     }
-  }, [animationPhase, onComplete]);
+  }, [floatProgress, animationPhase, onComplete]);
+
+  // Calculate gentle float-up style for each letter
+  const getLetterStyle = (position, delay) => {
+    // Each letter has its own timing based on delay
+    const letterProgress = Math.max(0, Math.min(100, (floatProgress - delay * 100) * 1.8));
+
+    // Easing function for gentle float (ease-out-cubic)
+    const eased = 1 - Math.pow(1 - letterProgress / 100, 3);
+
+    // Start position (below) and float up
+    const startY = 60; // Start 60px below
+    const currentY = startY * (1 - eased);
+
+    // Gentle opacity fade in
+    const opacity = eased;
+
+    // Subtle blur that clears as letter rises
+    const blur = (1 - eased) * 4;
+
+    // Very subtle scale
+    const scale = 0.95 + (eased * 0.05);
+
+    return {
+      transform: `translateY(${currentY}px) scale(${scale})`,
+      opacity: opacity,
+      filter: `blur(${blur}px)`,
+      transition: 'none',
+    };
+  };
+
+  // Special style for the flipping "ii"
+  const getSpecialIStyle = (position, delay, index) => {
+    const baseStyle = getLetterStyle(position, delay);
+
+    if (iiRevealed) {
+      const floatOffset = index === 0 ? '-0.08em' : '-0.12em';
+      const flipProgress = Math.min(1, (floatProgress - 70) / 20);
+
+      if (flipProgress > 0) {
+        return {
+          ...baseStyle,
+          transform: `rotate(180deg) translateY(${floatOffset})`,
+          opacity: 1,
+          filter: 'blur(0px)',
+          transition: `transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 0.1}s`,
+          transformOrigin: 'center center',
+          animation: animationPhase === 'complete' ? `levitate${index + 1} 3s ease-in-out infinite ${index * 0.15}s` : 'none'
+        };
+      }
+    }
+
+    return baseStyle;
+  };
 
   return (
     <div className="relative" style={{ overflow: 'visible', padding: '0.5em 0' }}>
-      {animationPhase === 'revealing' && (
-        <div
-          className="absolute top-0 h-full w-[2px] z-20 pointer-events-none"
-          style={{
-            left: `${scanPosition}%`,
-            background: 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.7), transparent)',
-            boxShadow: '0 0 15px rgba(255,255,255,0.4), 0 0 30px rgba(255,255,255,0.2)',
-          }}
-        >
-          <div
-            className="absolute top-0 h-full w-12 -left-6"
-            style={{ background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.08), transparent)' }}
-          />
+      {/* Floating particles - rising upward like antigravity */}
+      {animationPhase !== 'start' && (
+        <div className="absolute inset-0 pointer-events-none overflow-visible">
+          {[...Array(12)].map((_, i) => {
+            const baseDelay = i * 0.15;
+            const particleProgress = Math.max(0, (floatProgress - baseDelay * 50) / 50);
+            const yOffset = 80 - particleProgress * 160; // Float upward
+            const opacity = particleProgress < 0.5
+              ? particleProgress * 2 * 0.4
+              : (1 - (particleProgress - 0.5) * 2) * 0.4;
+
+            return (
+              <div
+                key={i}
+                className="absolute rounded-full"
+                style={{
+                  width: `${4 + Math.random() * 4}px`,
+                  height: `${4 + Math.random() * 4}px`,
+                  left: `${8 + i * 7.5}%`,
+                  top: '50%',
+                  transform: `translateY(${yOffset}px) translateX(${Math.sin(floatProgress * 0.05 + i) * 10}px)`,
+                  background: 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%)',
+                  opacity: Math.max(0, opacity),
+                  transition: 'none',
+                }}
+              />
+            );
+          })}
         </div>
       )}
 
-      <div
-        className="relative"
-        style={{
-          overflow: 'visible',
-          clipPath: animationPhase === 'start'
-            ? 'inset(0 100% 0 0)'
-            : animationPhase === 'revealing'
-              ? `inset(0 ${Math.max(0, 100 - scanPosition)}% 0 0)`
-              : 'none'
-        }}
-      >
-        <div className={`flex items-baseline justify-center ${sizes[size]} tracking-tight font-semibold select-none`} style={{ paddingBottom: '0.3em', lineHeight: '1.3' }}>
+      {/* Soft glow underneath during float */}
+      {animationPhase === 'floating' && (
+        <div
+          className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
+          style={{
+            bottom: '-20px',
+            width: '80%',
+            height: '40px',
+            background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.1) 0%, transparent 70%)',
+            opacity: Math.sin(floatProgress * 0.05) * 0.5 + 0.5,
+            filter: 'blur(10px)',
+          }}
+        />
+      )}
+
+      {/* Rising air wisps */}
+      {animationPhase === 'floating' && floatProgress < 90 && (
+        <div className="absolute inset-0 pointer-events-none overflow-visible">
+          {[...Array(5)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute"
+              style={{
+                left: `${15 + i * 18}%`,
+                bottom: '0',
+                width: '2px',
+                height: `${30 + Math.sin(floatProgress * 0.1 + i * 2) * 20}px`,
+                background: 'linear-gradient(to top, transparent, rgba(255,255,255,0.15), transparent)',
+                transform: `translateY(${-floatProgress * 1.5 - i * 10}px) scaleY(${0.5 + Math.sin(floatProgress * 0.08 + i) * 0.3})`,
+                opacity: 0.6 - floatProgress * 0.005,
+                filter: 'blur(1px)',
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      <div className={`flex items-baseline justify-center ${sizes[size]} tracking-tight font-semibold select-none relative z-10`} style={{ paddingBottom: '0.3em', lineHeight: '1.3' }}>
+        {/* AntiGrav */}
+        {letters.slice(0, 8).map((letter, idx) => (
           <span
+            key={idx}
+            className="inline-block"
             style={{
+              ...getLetterStyle(letter.position, letter.delay),
               background: 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
-              filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
             }}
-          >AntiGrav</span>
+          >
+            {letter.char}
+          </span>
+        ))}
 
-          <span className="inline-flex items-baseline relative" style={{ margin: '0 0.02em' }}>
+        {/* Special ii */}
+        <span className="inline-flex items-baseline relative" style={{ margin: '0 0.02em' }}>
+          {letters.slice(8, 10).map((letter, idx) => (
             <span
+              key={idx}
               className="inline-block relative"
               style={{
+                ...getSpecialIStyle(letter.position, letter.delay, idx),
                 background: 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
-                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-                transform: iiRevealed ? 'rotate(180deg) translateY(-0.08em)' : 'rotate(0deg) translateY(0)',
-                transition: 'transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                transformOrigin: 'center center',
-                animation: iiRevealed && animationPhase === 'loop' ? 'levitate1 3s ease-in-out infinite' : 'none'
               }}
             >
-              i
-              {iiRevealed && (
+              {letter.char}
+              {iiRevealed && animationPhase === 'complete' && (
                 <span
                   className="absolute left-1/2 -translate-x-1/2 w-3 h-1 rounded-full"
                   style={{
-                    bottom: size === 'large' ? '-0.15em' : '-0.12em',
+                    bottom: size === 'large' ? (idx === 0 ? '-0.15em' : '-0.18em') : (idx === 0 ? '-0.12em' : '-0.15em'),
                     background: 'radial-gradient(ellipse, rgba(255,255,255,0.3) 0%, transparent 70%)',
                     filter: 'blur(2px)',
-                    animation: animationPhase === 'loop' ? 'shadowPulse 3s ease-in-out infinite' : 'none'
+                    animation: `shadowPulse 3s ease-in-out infinite ${idx * 0.15}s`,
                   }}
                 />
               )}
             </span>
-            <span
-              className="inline-block relative"
-              style={{
-                background: 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-                transform: iiRevealed ? 'rotate(180deg) translateY(-0.12em)' : 'rotate(0deg) translateY(0)',
-                transition: 'transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s',
-                transformOrigin: 'center center',
-                animation: iiRevealed && animationPhase === 'loop' ? 'levitate2 3s ease-in-out infinite 0.15s' : 'none'
-              }}
-            >
-              i
-              {iiRevealed && (
-                <span
-                  className="absolute left-1/2 -translate-x-1/2 w-3 h-1 rounded-full"
-                  style={{
-                    bottom: size === 'large' ? '-0.18em' : '-0.15em',
-                    background: 'radial-gradient(ellipse, rgba(255,255,255,0.25) 0%, transparent 70%)',
-                    filter: 'blur(2px)',
-                    animation: animationPhase === 'loop' ? 'shadowPulse 3s ease-in-out infinite 0.15s' : 'none'
-                  }}
-                />
-              )}
-            </span>
-          </span>
+          ))}
+        </span>
 
+        {/* ty */}
+        {letters.slice(10).map((letter, idx) => (
           <span
+            key={idx}
+            className="inline-block"
             style={{
+              ...getLetterStyle(letter.position, letter.delay),
               background: 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
-              filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
             }}
-          >ty</span>
-        </div>
+          >
+            {letter.char}
+          </span>
+        ))}
       </div>
     </div>
   );
@@ -368,7 +468,18 @@ const InteractiveParticles = () => {
 const Navigation = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+
+  // Track scroll position to hide reflection gradients
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const navItems = [
     { name: 'Home', href: '/' },
@@ -397,9 +508,85 @@ const Navigation = () => {
     },
   ];
 
+  const isHomepage = location.pathname === '/';
+
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 transition-all duration-500 bg-transparent">
-      <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-center relative">
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-black/50 backdrop-blur-md' : 'bg-black'}`}>
+      {/* Top reflection gradient - only on homepage, hidden on scroll */}
+      {isHomepage && (
+        <>
+          <div
+            className="absolute top-0 left-0 right-0 h-[150px] pointer-events-none transition-opacity duration-500"
+            style={{
+              background: 'radial-gradient(ellipse 180% 150% at 50% 0%, rgba(56, 189, 248, 0.12) 0%, rgba(56, 189, 248, 0.06) 30%, rgba(125, 211, 252, 0.03) 50%, transparent 75%)',
+              opacity: scrolled ? 0 : 1,
+            }}
+          />
+          <div
+            className="absolute top-0 left-0 right-0 h-[120px] pointer-events-none transition-opacity duration-500"
+            style={{
+              background: 'radial-gradient(ellipse 150% 130% at 50% 0%, rgba(186, 230, 253, 0.1) 0%, rgba(125, 211, 252, 0.05) 40%, transparent 70%)',
+              opacity: scrolled ? 0 : 1,
+            }}
+          />
+          <div
+            className="absolute top-0 left-0 right-0 h-[80px] pointer-events-none transition-opacity duration-500"
+            style={{
+              background: 'radial-gradient(ellipse 120% 120% at 50% 0%, rgba(224, 242, 254, 0.15) 0%, rgba(186, 230, 253, 0.08) 45%, transparent 75%)',
+              opacity: scrolled ? 0 : 1,
+            }}
+          />
+        </>
+      )}
+      <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between relative">
+        {/* Logo - shows on non-homepage pages OR on homepage when scrolled */}
+        <div className="hidden md:flex items-center" style={{ minWidth: '250px' }}>
+          {(location.pathname !== '/' || scrolled) && (
+            <Link to="/" className="flex items-baseline text-4xl font-semibold tracking-tight transition-opacity duration-500" style={{ opacity: scrolled || location.pathname !== '/' ? 1 : 0 }}>
+              <span
+                style={{
+                  background: 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >AntiGrav</span>
+              <span className="inline-flex items-baseline" style={{ margin: '0 0.02em' }}>
+                <span
+                  className="inline-block"
+                  style={{
+                    background: 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    transform: 'rotate(180deg) translateY(-0.08em)',
+                    animation: 'levitate1 3s ease-in-out infinite'
+                  }}
+                >i</span>
+                <span
+                  className="inline-block"
+                  style={{
+                    background: 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    transform: 'rotate(180deg) translateY(-0.12em)',
+                    animation: 'levitate2 3s ease-in-out infinite 0.15s'
+                  }}
+                >i</span>
+              </span>
+              <span
+                style={{
+                  background: 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >ty</span>
+            </Link>
+          )}
+        </div>
+
         <div className="hidden md:flex items-center gap-12">
           {navItems.map((item) => (
             <div
@@ -460,7 +647,7 @@ const Navigation = () => {
           ))}
         </div>
 
-        <div className="hidden md:flex items-center absolute right-6">
+        <div className="hidden md:flex items-center justify-end" style={{ minWidth: '180px' }}>
           <Link
             to="/contact"
             className="relative text-base font-medium px-7 py-3 rounded-full overflow-hidden transition-all duration-300"
@@ -477,8 +664,56 @@ const Navigation = () => {
           </Link>
         </div>
 
+        {/* Mobile Logo - only shows on non-homepage */}
+        <div className="md:hidden flex items-center">
+          {location.pathname !== '/' && (
+            <Link to="/" className="flex items-baseline text-2xl font-semibold tracking-tight">
+              <span
+                style={{
+                  background: 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >AntiGrav</span>
+              <span className="inline-flex items-baseline" style={{ margin: '0 0.02em' }}>
+                <span
+                  className="inline-block"
+                  style={{
+                    background: 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    transform: 'rotate(180deg) translateY(-0.08em)',
+                    animation: 'levitate1 3s ease-in-out infinite'
+                  }}
+                >i</span>
+                <span
+                  className="inline-block"
+                  style={{
+                    background: 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    transform: 'rotate(180deg) translateY(-0.12em)',
+                    animation: 'levitate2 3s ease-in-out infinite 0.15s'
+                  }}
+                >i</span>
+              </span>
+              <span
+                style={{
+                  background: 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >ty</span>
+            </Link>
+          )}
+        </div>
+
         <button
-          className="md:hidden text-white/60 hover:text-white p-2 absolute right-6"
+          className="md:hidden text-white/60 hover:text-white p-2"
           onClick={() => setMobileOpen(!mobileOpen)}
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -641,16 +876,35 @@ const HeroSection = () => {
               transition: 'all 0.3s ease'
             }}
           >
+            {/* Focus glow effect */}
+            <div
+              className="absolute -inset-1 rounded-full opacity-0 transition-opacity duration-300 pointer-events-none"
+              id="searchGlow"
+              style={{
+                background: 'radial-gradient(ellipse 100% 100% at 50% 50%, rgba(56, 189, 248, 0.15) 0%, rgba(125, 211, 252, 0.08) 40%, transparent 70%)',
+                filter: 'blur(8px)',
+              }}
+            />
             <input
               type="text"
               placeholder="What do you want to build?"
-              className="w-full bg-transparent rounded-full px-6 py-4 text-white placeholder-white/30 transition-all text-sm"
+              className="w-full bg-transparent rounded-full px-6 py-4 text-white placeholder-white/30 transition-all text-sm relative z-10"
               style={{ outline: 'none' }}
-              onFocus={(e) => e.currentTarget.parentElement.style.borderColor = 'rgba(255,255,255,0.6)'}
-              onBlur={(e) => e.currentTarget.parentElement.style.borderColor = 'rgba(255,255,255,0.2)'}
+              onFocus={(e) => {
+                e.currentTarget.parentElement.style.borderColor = 'rgba(56, 189, 248, 0.5)';
+                e.currentTarget.parentElement.style.boxShadow = '0 0 20px rgba(56, 189, 248, 0.15), 0 0 40px rgba(125, 211, 252, 0.1)';
+                const glow = e.currentTarget.parentElement.querySelector('#searchGlow');
+                if (glow) glow.style.opacity = '1';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.parentElement.style.borderColor = 'rgba(255,255,255,0.2)';
+                e.currentTarget.parentElement.style.boxShadow = 'none';
+                const glow = e.currentTarget.parentElement.querySelector('#searchGlow');
+                if (glow) glow.style.opacity = '0';
+              }}
             />
             <button
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-full transition-all duration-300"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-full transition-all duration-300 z-20"
               style={{
                 background: 'transparent',
                 border: '1px solid rgba(255,255,255,0.2)',
@@ -747,6 +1001,8 @@ const HeroSection = () => {
 // PRODUCTS SECTION
 // ==========================================
 const ProductsSection = () => {
+  const [hoveredProduct, setHoveredProduct] = useState(null);
+
   const products = [
     {
       title: "AntiMage CRM",
@@ -754,7 +1010,8 @@ const ProductsSection = () => {
       description: "Powerful CRM solution to manage your customer relationships, sales pipeline, and business growth with AI-powered insights.",
       link: "/products/antimage-crm",
       icon: "◈",
-      gradient: "from-yellow-500/20 to-amber-500/10"
+      gradient: "from-yellow-500/20 to-amber-500/10",
+      hoverShadow: "0 0 40px rgba(234, 179, 8, 0.3), 0 0 80px rgba(234, 179, 8, 0.15)"
     },
     {
       title: "AntiHRMS",
@@ -762,7 +1019,8 @@ const ProductsSection = () => {
       description: "Complete HR management platform for employee management, payroll, attendance tracking, and performance analytics.",
       link: "/products/antihrms",
       icon: "◇",
-      gradient: "from-purple-500/20 to-pink-500/10"
+      gradient: "from-purple-500/20 to-pink-500/10",
+      hoverShadow: "0 0 40px rgba(168, 85, 247, 0.3), 0 0 80px rgba(168, 85, 247, 0.15)"
     },
     {
       title: "AntiSec",
@@ -770,7 +1028,8 @@ const ProductsSection = () => {
       description: "Advanced cybersecurity platform providing threat detection, vulnerability management, and real-time security monitoring.",
       link: "/products/antisec",
       icon: "⬡",
-      gradient: "from-red-500/20 to-orange-500/10"
+      gradient: "from-red-500/20 to-orange-500/10",
+      hoverShadow: "0 0 40px rgba(239, 68, 68, 0.3), 0 0 80px rgba(239, 68, 68, 0.15)"
     },
     {
       title: "AntiAI",
@@ -778,7 +1037,8 @@ const ProductsSection = () => {
       description: "Build, deploy, and manage custom AI models. From natural language processing to computer vision solutions.",
       link: "/products/antiai",
       icon: "◎",
-      gradient: "from-emerald-500/20 to-teal-500/10"
+      gradient: "from-emerald-500/20 to-teal-500/10",
+      hoverShadow: "0 0 40px rgba(16, 185, 129, 0.3), 0 0 80px rgba(16, 185, 129, 0.15)"
     },
     {
       title: "AntiChat",
@@ -786,7 +1046,8 @@ const ProductsSection = () => {
       description: "Secure, feature-rich communication platform with real-time messaging, video conferencing, and collaboration tools.",
       link: "/products/antichat",
       icon: "▣",
-      gradient: "from-indigo-500/20 to-blue-500/10"
+      gradient: "from-indigo-500/20 to-blue-500/10",
+      hoverShadow: "0 0 40px rgba(99, 102, 241, 0.3), 0 0 80px rgba(99, 102, 241, 0.15)"
     }
   ];
 
@@ -809,6 +1070,12 @@ const ProductsSection = () => {
               to={product.link}
               key={product.title}
               className="group p-8 border border-white/[0.08] hover:border-white/[0.15] bg-black/30 backdrop-blur-sm hover:bg-white/[0.02] transition-all duration-500 rounded-2xl relative overflow-hidden block"
+              style={{
+                boxShadow: hoveredProduct === product.title ? product.hoverShadow : 'none',
+                transition: 'all 0.5s ease'
+              }}
+              onMouseEnter={() => setHoveredProduct(product.title)}
+              onMouseLeave={() => setHoveredProduct(null)}
             >
               <div className={`absolute inset-0 bg-gradient-to-br ${product.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
 
@@ -848,6 +1115,8 @@ const ProductsSection = () => {
 // SERVICES SECTION
 // ==========================================
 const ServicesSection = () => {
+  const [hoveredService, setHoveredService] = useState(null);
+
   const services = [
     {
       icon: "◈",
@@ -855,6 +1124,7 @@ const ServicesSection = () => {
       description: "Modern, responsive websites built with Next.js, React, and cutting-edge frameworks. From landing pages to complex web applications.",
       features: ["Custom Web Apps", "E-commerce Solutions", "Progressive Web Apps"],
       gradient: "from-blue-500/20 to-indigo-500/10",
+      hoverShadow: "0 0 40px rgba(59, 130, 246, 0.3), 0 0 80px rgba(59, 130, 246, 0.15)",
       link: "/services/web-development"
     },
     {
@@ -863,6 +1133,7 @@ const ServicesSection = () => {
       description: "Native and cross-platform mobile applications for iOS and Android. Seamless user experiences with robust backend integration.",
       features: ["iOS & Android Apps", "Cross-platform Development", "App Maintenance"],
       gradient: "from-green-500/20 to-emerald-500/10",
+      hoverShadow: "0 0 40px rgba(34, 197, 94, 0.3), 0 0 80px rgba(34, 197, 94, 0.15)",
       link: "/services/app-development"
     },
     {
@@ -871,6 +1142,7 @@ const ServicesSection = () => {
       description: "Data-driven marketing strategies to amplify your digital presence. SEO, social media, and performance marketing campaigns.",
       features: ["SEO Optimization", "Social Media Marketing", "PPC Campaigns"],
       gradient: "from-orange-500/20 to-amber-500/10",
+      hoverShadow: "0 0 40px rgba(249, 115, 22, 0.3), 0 0 80px rgba(249, 115, 22, 0.15)",
       link: "/services/digital-marketing"
     },
     {
@@ -879,6 +1151,7 @@ const ServicesSection = () => {
       description: "Creative visual solutions that communicate your brand story. Logos, brand identities, and marketing collaterals.",
       features: ["Brand Identity", "UI/UX Design", "Print & Digital Media"],
       gradient: "from-pink-500/20 to-rose-500/10",
+      hoverShadow: "0 0 40px rgba(236, 72, 153, 0.3), 0 0 80px rgba(236, 72, 153, 0.15)",
       link: "/services/graphic-designing"
     },
     {
@@ -887,6 +1160,7 @@ const ServicesSection = () => {
       description: "Immersive 3D modeling, animations, and WebGL experiences. Product visualization, architectural renders, and interactive 3D.",
       features: ["3D Modeling", "Product Visualization", "WebGL Experiences"],
       gradient: "from-purple-500/20 to-violet-500/10",
+      hoverShadow: "0 0 40px rgba(168, 85, 247, 0.3), 0 0 80px rgba(168, 85, 247, 0.15)",
       link: "/services/3d-services"
     },
   ];
@@ -910,6 +1184,12 @@ const ServicesSection = () => {
               to={service.link}
               key={service.title}
               className="group p-8 border border-white/[0.06] hover:border-white/[0.15] bg-black/30 backdrop-blur-sm hover:bg-white/[0.02] transition-all duration-500 rounded-xl relative overflow-hidden block"
+              style={{
+                boxShadow: hoveredService === service.title ? service.hoverShadow : 'none',
+                transition: 'all 0.5s ease'
+              }}
+              onMouseEnter={() => setHoveredService(service.title)}
+              onMouseLeave={() => setHoveredService(null)}
             >
               <div className={`absolute inset-0 bg-gradient-to-br ${service.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
 
@@ -945,10 +1225,323 @@ const ServicesSection = () => {
 };
 
 // ==========================================
+// TESTIMONIALS SECTION
+// ==========================================
+const TestimonialsSection = () => {
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
+
+  const testimonials = [
+    {
+      name: "Sarah Chen",
+      role: "CTO",
+      company: "TechFlow Solutions",
+      image: "◈",
+      testimonial: "AntiGraviity transformed our entire digital infrastructure. Their attention to detail and innovative approach exceeded all expectations. The team delivered a solution that scaled perfectly with our growth.",
+      gradient: "from-blue-500/20 to-indigo-500/10"
+    },
+    {
+      name: "Michael Rodriguez",
+      role: "Founder & CEO",
+      company: "InnovateLabs",
+      image: "◇",
+      testimonial: "Working with AntiGraviity was a game-changer. They didn't just build our product—they became true partners in our success. The quality of work and dedication to excellence is unmatched.",
+      gradient: "from-emerald-500/20 to-teal-500/10"
+    },
+    {
+      name: "Priya Sharma",
+      role: "Head of Digital",
+      company: "Global Ventures Inc",
+      image: "○",
+      testimonial: "From concept to launch, AntiGraviity delivered exceptional results. Their expertise in modern technologies and design created an experience our users love. Best decision we made this year.",
+      gradient: "from-purple-500/20 to-violet-500/10"
+    },
+    {
+      name: "David Kim",
+      role: "VP of Product",
+      company: "NextGen Systems",
+      image: "△",
+      testimonial: "The team at AntiGraviity brings a rare combination of technical excellence and creative vision. They pushed us to think bigger and delivered a platform that positioned us ahead of our competitors.",
+      gradient: "from-orange-500/20 to-amber-500/10"
+    }
+  ];
+
+  return (
+    <section className="relative py-32 px-6 border-t border-white/[0.05]">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-20">
+          <p className="text-white/30 text-sm mb-4 tracking-wide">— CLIENT STORIES —</p>
+          <h2 className="text-4xl md:text-5xl text-white font-normal mb-6">
+            Trusted by innovators
+          </h2>
+          <p className="text-white/40 max-w-2xl mx-auto">
+            Don't just take our word for it. Here's what our clients say about partnering with us.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+          {testimonials.map((testimonial, index) => (
+            <div
+              key={index}
+              className="group p-8 rounded-2xl border border-white/[0.06] bg-black/30 backdrop-blur-sm hover:border-white/[0.12] transition-all duration-500 relative overflow-hidden cursor-pointer"
+              onMouseEnter={() => setActiveTestimonial(index)}
+            >
+              <div className={`absolute inset-0 bg-gradient-to-br ${testimonial.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+
+              <div className="relative z-10">
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="w-12 h-12 rounded-full border border-white/[0.1] flex items-center justify-center bg-white/[0.02] flex-shrink-0">
+                    <span className="text-2xl text-white/30">{testimonial.image}</span>
+                  </div>
+                  <div>
+                    <h4 className="text-white font-medium">{testimonial.name}</h4>
+                    <p className="text-white/40 text-sm">{testimonial.role}</p>
+                    <p className="text-white/30 text-xs">{testimonial.company}</p>
+                  </div>
+                </div>
+
+                <p className="text-white/50 leading-relaxed mb-4">
+                  "{testimonial.testimonial}"
+                </p>
+
+                <div className="flex gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <svg key={i} className="w-4 h-4 text-yellow-500/70" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Client Logos */}
+        <div className="text-center">
+          <p className="text-white/20 text-xs mb-8 tracking-wide">TRUSTED BY LEADING COMPANIES</p>
+          <div className="flex flex-wrap items-center justify-center gap-12 opacity-40">
+            {['TechFlow', 'InnovateLabs', 'Global Ventures', 'NextGen', 'FutureScale', 'CloudPrime'].map((company, index) => (
+              <div key={index} className="text-white/30 hover:text-white/60 transition-colors text-sm font-medium tracking-wider">
+                {company}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// ==========================================
+// PROCESS/METHODOLOGY SECTION
+// ==========================================
+const ProcessSection = () => {
+  const [activeStep, setActiveStep] = useState(null);
+
+  const steps = [
+    {
+      number: "01",
+      title: "Discovery",
+      description: "We dive deep into your business goals, target audience, and technical requirements to create a solid foundation.",
+      icon: "◈",
+      gradient: "from-blue-500/20 to-indigo-500/10"
+    },
+    {
+      number: "02",
+      title: "Strategy",
+      description: "Our team develops a comprehensive roadmap aligned with your objectives, timeline, and budget constraints.",
+      icon: "◇",
+      gradient: "from-emerald-500/20 to-teal-500/10"
+    },
+    {
+      number: "03",
+      title: "Design",
+      description: "We craft stunning, user-centric designs that blend aesthetics with functionality for optimal experiences.",
+      icon: "○",
+      gradient: "from-purple-500/20 to-violet-500/10"
+    },
+    {
+      number: "04",
+      title: "Development",
+      description: "Using cutting-edge technologies, we build scalable, secure solutions with clean, maintainable code.",
+      icon: "△",
+      gradient: "from-orange-500/20 to-amber-500/10"
+    },
+    {
+      number: "05",
+      title: "Testing",
+      description: "Rigorous quality assurance ensures every feature works flawlessly across all devices and scenarios.",
+      icon: "◎",
+      gradient: "from-pink-500/20 to-rose-500/10"
+    },
+    {
+      number: "06",
+      title: "Launch & Support",
+      description: "We ensure smooth deployment and provide ongoing support to keep your solution performing at its best.",
+      icon: "⬡",
+      gradient: "from-cyan-500/20 to-blue-500/10"
+    }
+  ];
+
+  return (
+    <section className="relative py-32 px-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-20">
+          <p className="text-white/30 text-sm mb-4 tracking-wide">— HOW WE WORK —</p>
+          <h2 className="text-4xl md:text-5xl text-white font-normal mb-6">
+            Our proven process
+          </h2>
+          <p className="text-white/40 max-w-2xl mx-auto">
+            A structured approach that ensures exceptional results at every stage of your project.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {steps.map((step, index) => (
+            <div
+              key={index}
+              className="group p-8 rounded-2xl border border-white/[0.06] bg-black/30 relative overflow-hidden hover:border-white/[0.12] transition-all duration-500 cursor-pointer"
+              onMouseEnter={() => setActiveStep(index)}
+              onMouseLeave={() => setActiveStep(null)}
+            >
+              <div className={`absolute inset-0 bg-gradient-to-br ${step.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+
+              <div className="relative z-10">
+                <div className="flex items-start justify-between mb-6">
+                  <div className="text-5xl text-white/10 group-hover:text-white/20 font-light transition-colors">
+                    {step.number}
+                  </div>
+                  <div className="text-3xl text-white/20 group-hover:text-white/40 transition-colors">
+                    {step.icon}
+                  </div>
+                </div>
+
+                <h3 className="text-2xl text-white mb-3">{step.title}</h3>
+                <p className="text-white/40 text-sm leading-relaxed">
+                  {step.description}
+                </p>
+              </div>
+
+              {/* Connection line to next step */}
+              {index < steps.length - 1 && (
+                <div className="hidden lg:block absolute -right-3 top-1/2 w-6 h-px bg-white/10" />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// ==========================================
+// TECH STACK SECTION
+// ==========================================
+const TechStackSection = () => {
+  const technologies = {
+    frontend: [
+      { name: "React", icon: "⚛", color: "rgba(97, 218, 251, 0.3)" },
+      { name: "Next.js", icon: "▲", color: "rgba(255, 255, 255, 0.3)" },
+      { name: "TypeScript", icon: "TS", color: "rgba(49, 120, 198, 0.3)" },
+      { name: "Tailwind", icon: "🎨", color: "rgba(56, 189, 248, 0.3)" }
+    ],
+    backend: [
+      { name: "Node.js", icon: "◈", color: "rgba(104, 160, 99, 0.3)" },
+      { name: "Python", icon: "🐍", color: "rgba(255, 212, 59, 0.3)" },
+      { name: "Express", icon: "◇", color: "rgba(255, 255, 255, 0.3)" },
+      { name: "GraphQL", icon: "◎", color: "rgba(229, 53, 171, 0.3)" }
+    ],
+    cloud: [
+      { name: "AWS", icon: "☁", color: "rgba(255, 153, 0, 0.3)" },
+      { name: "Vercel", icon: "▲", color: "rgba(255, 255, 255, 0.3)" },
+      { name: "Docker", icon: "🐳", color: "rgba(32, 139, 255, 0.3)" },
+      { name: "MongoDB", icon: "🍃", color: "rgba(71, 162, 72, 0.3)" }
+    ],
+    tools: [
+      { name: "Figma", icon: "◐", color: "rgba(162, 89, 255, 0.3)" },
+      { name: "Git", icon: "⑂", color: "rgba(240, 80, 50, 0.3)" },
+      { name: "VS Code", icon: "◈", color: "rgba(0, 122, 204, 0.3)" },
+      { name: "Postman", icon: "○", color: "rgba(255, 108, 55, 0.3)" }
+    ],
+    "digital marketing": [
+      { name: "Google Analytics", icon: "📊", color: "rgba(251, 188, 5, 0.3)" },
+      { name: "SEO Tools", icon: "🔍", color: "rgba(52, 211, 153, 0.3)" },
+      { name: "Meta Ads", icon: "◈", color: "rgba(24, 119, 242, 0.3)" },
+      { name: "Mailchimp", icon: "✉", color: "rgba(255, 224, 27, 0.3)" }
+    ],
+    "3d services": [
+      { name: "Blender", icon: "🎨", color: "rgba(245, 124, 0, 0.3)" },
+      { name: "Three.js", icon: "△", color: "rgba(255, 255, 255, 0.3)" },
+      { name: "WebGL", icon: "◎", color: "rgba(153, 0, 0, 0.3)" },
+      { name: "Cinema 4D", icon: "◇", color: "rgba(0, 122, 255, 0.3)" }
+    ],
+    "graphic design": [
+      { name: "Photoshop", icon: "Ps", color: "rgba(49, 168, 255, 0.3)" },
+      { name: "Illustrator", icon: "Ai", color: "rgba(255, 154, 0, 0.3)" },
+      { name: "Adobe XD", icon: "Xd", color: "rgba(255, 38, 173, 0.3)" },
+      { name: "Canva", icon: "◐", color: "rgba(0, 193, 213, 0.3)" }
+    ]
+  };
+
+  return (
+    <section className="relative py-32 px-6 bg-white/[0.01]">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-20">
+          <p className="text-white/30 text-sm mb-4 tracking-wide">— TECHNOLOGY STACK —</p>
+          <h2 className="text-4xl md:text-5xl text-white font-normal mb-6">
+            Powered by modern tech
+          </h2>
+          <p className="text-white/40 max-w-2xl mx-auto">
+            We leverage cutting-edge technologies to build robust, scalable, and future-proof solutions.
+          </p>
+        </div>
+
+        <div className="space-y-12">
+          {Object.entries(technologies).map(([category, techs], catIndex) => (
+            <div key={catIndex}>
+              <h3 className="text-white/50 text-sm uppercase tracking-wider mb-6 text-center">
+                {category}
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {techs.map((tech, index) => (
+                  <div
+                    key={index}
+                    className="group p-6 rounded-xl border border-white/[0.06] bg-black/20 hover:border-white/[0.15] transition-all duration-300 relative overflow-hidden"
+                    style={{
+                      transitionDelay: `${index * 50}ms`
+                    }}
+                  >
+                    <div
+                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                      style={{
+                        background: `radial-gradient(circle at center, ${tech.color} 0%, transparent 70%)`
+                      }}
+                    />
+
+                    <div className="relative z-10 text-center">
+                      <div className="text-3xl mb-3 group-hover:scale-110 transition-transform duration-300">
+                        {tech.icon}
+                      </div>
+                      <div className="text-white/60 group-hover:text-white text-sm font-medium transition-colors">
+                        {tech.name}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// ==========================================
 // CTA SECTION
 // ==========================================
 const CTASection = () => {
   return (
+
     <section id="contact" className="relative py-32 px-6 border-t border-white/[0.05]">
       <div className="max-w-3xl mx-auto text-center">
         <div className="inline-flex items-center gap-2 mb-6 px-4 py-2 bg-white/[0.04] rounded-full border border-white/[0.06]">
@@ -1254,7 +1847,7 @@ const Footer = () => {
 
       <div className="relative py-4 md:py-0" style={{ overflow: 'visible' }}>
         <div className="w-full px-2 md:px-4" style={{ overflow: 'visible' }}>
-          <div className="flex items-baseline justify-center tracking-tighter leading-[0.85] select-none" style={{ fontFamily: "'Outfit', 'Inter', sans-serif", fontWeight: 700, fontSize: 'clamp(60px, 12vw, 200px)', overflow: 'visible', paddingBottom: '0.15em' }}>
+          <div className="flex items-baseline justify-center tracking-tighter leading-[0.85] select-none" style={{ fontFamily: "'Outfit', 'Inter', sans-serif", fontWeight: 700, fontSize: 'clamp(60px, 12vw, 200px)', overflow: 'visible', paddingBottom: '0.15em', letterSpacing: '0.01em' }}>
             <span className="text-white">AntiGrav</span>
             <span className="inline-flex items-baseline" style={{ margin: '0 0.02em' }}>
               <span
@@ -1497,8 +2090,10 @@ const HomePage = () => {
       <ProductsSection />
 
       <ServicesSection />
+      <TechStackSection />
+      <TestimonialsSection />
+      <ProcessSection />
       <CTASection />
-      <NewsSection />
     </>
   );
 };
@@ -1519,10 +2114,16 @@ const ScrollToTop = () => {
 // ==========================================
 // MAIN APP
 // ==========================================
+
+
+// ==========================================
+// MAIN APP
+// ==========================================
 function App() {
   return (
     <Router>
       <ScrollToTop />
+      <CustomCursor />
       <div className="min-h-screen bg-black text-white relative">
         <InteractiveParticles />
         <Navigation />

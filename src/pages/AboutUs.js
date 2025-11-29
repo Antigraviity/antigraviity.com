@@ -236,97 +236,133 @@ const AboutUs = () => {
           </p>
 
           {/* World Map Container */}
-          <div className="relative w-full max-w-4xl mx-auto z-10" style={{ aspectRatio: '2/1' }}>
-            {/* World Map SVG */}
+          <div className="relative w-full max-w-5xl mx-auto z-10" style={{ aspectRatio: '2/1' }}>
+            {/* World Map SVG - More Accurate */}
             <svg
               viewBox="0 0 1000 500"
               className="w-full h-full"
               style={{ filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.05))' }}
             >
-              {/* Simplified World Map Path */}
               <defs>
                 <linearGradient id="mapGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="rgba(255,255,255,0.1)" />
-                  <stop offset="100%" stopColor="rgba(255,255,255,0.05)" />
+                  <stop offset="0%" stopColor="rgba(255,255,255,0.08)" />
+                  <stop offset="100%" stopColor="rgba(255,255,255,0.03)" />
                 </linearGradient>
               </defs>
 
-              {/* North America */}
+              {/* North America - Larger and more accurate shape */}
               <path
-                d="M150,120 Q180,100 220,110 L260,100 Q300,90 320,110 L340,130 Q350,150 340,170 L320,200 Q300,220 280,210 L240,220 Q200,230 180,210 L150,180 Q130,150 150,120 Z"
+                d="M80,120 L120,100 L160,90 L200,85 L240,90 L270,100 L290,115 L300,135 L295,160 L280,180 L260,195 L235,205 L210,210 L185,205 L160,195 L140,180 L125,160 L115,140 L100,130 L80,120 Z
+                   M180,210 L200,215 L220,230 L230,250 L225,270 L210,285 L190,290 L170,280 L165,260 L170,240 L180,225 L180,210 Z"
                 fill="url(#mapGradient)"
-                stroke="rgba(255,255,255,0.15)"
+                stroke="rgba(255,255,255,0.12)"
                 strokeWidth="1"
               />
 
               {/* South America */}
               <path
-                d="M280,260 Q300,250 310,270 L320,310 Q330,350 310,380 L290,400 Q270,410 260,390 L250,350 Q240,310 260,280 Z"
+                d="M220,300 L245,295 L265,310 L275,335 L280,365 L275,395 L265,420 L250,440 L230,450 L215,440 L205,420 L200,390 L205,355 L210,325 L220,300 Z"
                 fill="url(#mapGradient)"
-                stroke="rgba(255,255,255,0.15)"
+                stroke="rgba(255,255,255,0.12)"
                 strokeWidth="1"
               />
 
               {/* Europe */}
               <path
-                d="M450,100 Q480,90 510,100 L540,110 Q560,120 550,140 L530,160 Q510,170 490,160 L460,150 Q440,130 450,100 Z"
+                d="M440,95 L470,85 L505,90 L535,100 L555,115 L560,135 L550,155 L530,165 L505,170 L475,165 L450,155 L435,140 L430,120 L435,105 L440,95 Z"
                 fill="url(#mapGradient)"
-                stroke="rgba(255,255,255,0.15)"
+                stroke="rgba(255,255,255,0.12)"
                 strokeWidth="1"
               />
 
               {/* Africa */}
               <path
-                d="M480,180 Q510,170 530,190 L550,230 Q560,280 540,320 L510,350 Q480,360 460,340 L450,300 Q440,250 460,210 Z"
+                d="M460,185 L495,180 L530,190 L555,210 L570,240 L575,280 L570,320 L555,355 L530,380 L495,390 L460,380 L440,350 L430,310 L435,270 L445,230 L455,200 L460,185 Z"
                 fill="url(#mapGradient)"
-                stroke="rgba(255,255,255,0.15)"
+                stroke="rgba(255,255,255,0.12)"
                 strokeWidth="1"
               />
 
-              {/* Asia */}
+              {/* Russia/Northern Asia */}
               <path
-                d="M580,90 Q650,80 720,100 L780,120 Q820,140 800,180 L760,220 Q720,250 680,240 L620,220 Q580,200 570,160 L560,120 Q560,100 580,90 Z"
+                d="M560,70 L620,60 L690,55 L760,60 L820,75 L870,95 L900,120 L910,150 L895,175 L865,190 L820,200 L765,205 L710,200 L660,190 L620,175 L590,155 L570,130 L560,100 L560,70 Z"
                 fill="url(#mapGradient)"
-                stroke="rgba(255,255,255,0.15)"
+                stroke="rgba(255,255,255,0.12)"
                 strokeWidth="1"
               />
 
-              {/* India */}
+              {/* Middle East */}
               <path
-                d="M650,180 Q680,170 700,190 L710,230 Q720,270 700,290 L670,300 Q640,300 640,270 L640,220 Q640,190 650,180 Z"
+                d="M575,185 L610,180 L640,195 L655,220 L650,250 L630,270 L600,275 L575,260 L565,235 L570,205 L575,185 Z"
                 fill="url(#mapGradient)"
-                stroke="rgba(255,255,255,0.15)"
+                stroke="rgba(255,255,255,0.12)"
+                strokeWidth="1"
+              />
+
+              {/* India - Proper triangle shape */}
+              <path
+                d="M665,200 L700,195 L730,210 L745,240 L750,275 L740,310 L720,340 L690,355 L660,345 L645,315 L645,280 L655,245 L665,215 L665,200 Z"
+                fill="url(#mapGradient)"
+                stroke="rgba(255,255,255,0.12)"
+                strokeWidth="1"
+              />
+
+              {/* China/East Asia */}
+              <path
+                d="M745,170 L790,160 L835,170 L870,190 L890,220 L895,255 L880,285 L850,305 L810,315 L770,305 L745,280 L735,250 L740,215 L745,185 L745,170 Z"
+                fill="url(#mapGradient)"
+                stroke="rgba(255,255,255,0.12)"
+                strokeWidth="1"
+              />
+
+              {/* Southeast Asia / Malaysia / Indonesia region */}
+              <path
+                d="M770,330 L810,325 L850,340 L875,365 L880,395 L865,420 L835,435 L795,430 L765,410 L755,380 L760,350 L770,330 Z"
+                fill="url(#mapGradient)"
+                stroke="rgba(255,255,255,0.12)"
                 strokeWidth="1"
               />
 
               {/* Australia */}
               <path
-                d="M780,320 Q820,310 850,330 L870,360 Q880,390 860,410 L820,420 Q780,420 770,390 L770,360 Q770,330 780,320 Z"
+                d="M845,420 L890,410 L935,420 L965,445 L975,480 L960,510 L925,530 L880,535 L840,520 L820,490 L820,455 L830,430 L845,420 Z"
                 fill="url(#mapGradient)"
-                stroke="rgba(255,255,255,0.15)"
+                stroke="rgba(255,255,255,0.12)"
                 strokeWidth="1"
               />
 
-              {/* Connection Lines */}
-              <g stroke="rgba(239,68,68,0.3)" strokeWidth="1" fill="none">
-                <path d="M670,250 Q500,200 230,150" strokeDasharray="5,5">
+              {/* Japan */}
+              <path
+                d="M895,175 L915,170 L930,185 L935,210 L925,235 L905,245 L890,235 L885,210 L890,190 L895,175 Z"
+                fill="url(#mapGradient)"
+                stroke="rgba(255,255,255,0.12)"
+                strokeWidth="1"
+              />
+
+              {/* Connection Lines from Chennai */}
+              <g stroke="rgba(239,68,68,0.35)" strokeWidth="1.5" fill="none">
+                {/* Chennai to Chicago */}
+                <path d="M695,310 Q450,200 200,160" strokeDasharray="8,4">
                   <animate attributeName="stroke-dashoffset" from="100" to="0" dur="3s" repeatCount="indefinite" />
                 </path>
-                <path d="M670,250 Q600,200 500,130" strokeDasharray="5,5">
-                  <animate attributeName="stroke-dashoffset" from="100" to="0" dur="2.5s" repeatCount="indefinite" />
+                {/* Chennai to Dhaka */}
+                <path d="M695,310 Q730,280 760,250" strokeDasharray="8,4">
+                  <animate attributeName="stroke-dashoffset" from="50" to="0" dur="2s" repeatCount="indefinite" />
                 </path>
-                <path d="M670,250 Q750,300 820,370" strokeDasharray="5,5">
-                  <animate attributeName="stroke-dashoffset" from="100" to="0" dur="2s" repeatCount="indefinite" />
+                {/* Chennai to Malaysia */}
+                <path d="M695,310 Q750,350 800,380" strokeDasharray="8,4">
+                  <animate attributeName="stroke-dashoffset" from="50" to="0" dur="2.2s" repeatCount="indefinite" />
                 </path>
-                <path d="M670,250 Q720,220 760,180" strokeDasharray="5,5">
-                  <animate attributeName="stroke-dashoffset" from="100" to="0" dur="2.2s" repeatCount="indefinite" />
+                {/* Chennai to Singapore */}
+                <path d="M695,310 Q760,370 810,410" strokeDasharray="8,4">
+                  <animate attributeName="stroke-dashoffset" from="50" to="0" dur="2.5s" repeatCount="indefinite" />
                 </path>
               </g>
             </svg>
 
             {/* Location Markers */}
             {/* USA - Chicago */}
-            <div className="absolute" style={{ top: '30%', left: '18%' }}>
+            <div className="absolute" style={{ top: '28%', left: '18%' }}>
               <div className="relative">
                 <div className="w-3 h-3 bg-red-500 rounded-full" />
                 <div className="absolute inset-0 w-3 h-3 bg-red-500 rounded-full animate-ping" />
@@ -336,7 +372,7 @@ const AboutUs = () => {
             </div>
 
             {/* Bangladesh - Dhaka */}
-            <div className="absolute" style={{ top: '36%', left: '70%' }}>
+            <div className="absolute" style={{ top: '42%', left: '76%' }}>
               <div className="relative">
                 <div className="w-3 h-3 bg-red-500 rounded-full" />
                 <div className="absolute inset-0 w-3 h-3 bg-red-500 rounded-full animate-ping" style={{ animationDelay: '0.5s' }} />
@@ -346,27 +382,27 @@ const AboutUs = () => {
             </div>
 
             {/* India - Chennai (HQ) */}
-            <div className="absolute" style={{ top: '48%', left: '66%' }}>
+            <div className="absolute" style={{ top: '56%', left: '69%' }}>
               <div className="relative">
                 <div className="w-4 h-4 bg-white rounded-full border-2 border-red-500" />
                 <div className="absolute inset-0 w-4 h-4 bg-red-500 rounded-full animate-ping" />
                 <div className="absolute -inset-2 w-8 h-8 bg-red-500/20 rounded-full animate-pulse" />
               </div>
-              <div className="absolute top-6 left-1/2 -translate-x-1/2 text-xs text-white font-medium whitespace-nowrap">HQ - Chennai</div>
+              <div className="absolute top-6 left-1/2 -translate-x-1/2 text-xs text-white font-medium whitespace-nowrap">Chennai, India</div>
             </div>
 
             {/* Malaysia */}
-            <div className="absolute" style={{ top: '54%', left: '73%' }}>
+            <div className="absolute" style={{ top: '70%', left: '80%' }}>
               <div className="relative">
                 <div className="w-3 h-3 bg-red-500 rounded-full" />
                 <div className="absolute inset-0 w-3 h-3 bg-red-500 rounded-full animate-ping" style={{ animationDelay: '1s' }} />
                 <div className="absolute -inset-1 w-5 h-5 bg-red-500/30 rounded-full animate-pulse" style={{ animationDelay: '1s' }} />
               </div>
-              <div className="absolute top-5 left-1/2 -translate-x-1/2 text-xs text-white/60 whitespace-nowrap">Malaysia</div>
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs text-white/60 whitespace-nowrap">Malaysia</div>
             </div>
 
             {/* Singapore */}
-            <div className="absolute" style={{ top: '56%', left: '74.5%' }}>
+            <div className="absolute" style={{ top: '78%', left: '81%' }}>
               <div className="relative">
                 <div className="w-3 h-3 bg-red-500 rounded-full" />
                 <div className="absolute inset-0 w-3 h-3 bg-red-500 rounded-full animate-ping" style={{ animationDelay: '1.5s' }} />
@@ -377,17 +413,13 @@ const AboutUs = () => {
           </div>
 
           {/* Legend */}
-          <div className="flex items-center justify-center gap-8 mt-12">
+          <div className="flex items-center justify-center gap-8 mt-12 relative z-10">
             <div className="flex items-center gap-2">
-              <div className="relative">
-                <div className="w-3 h-3 bg-white rounded-full border-2 border-red-500" />
-              </div>
+              <div className="w-3 h-3 bg-white rounded-full border-2 border-red-500" />
               <span className="text-white/50 text-sm">Headquarters</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="relative">
-                <div className="w-3 h-3 bg-red-500 rounded-full" />
-              </div>
+              <div className="w-3 h-3 bg-red-500 rounded-full" />
               <span className="text-white/50 text-sm">Client Locations</span>
             </div>
           </div>
