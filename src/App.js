@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 
 // Import Service Pages
 import WebDevelopment from './pages/WebDevelopment';
@@ -18,10 +18,17 @@ import AntiChat from './pages/AntiChat';
 // Import Other Pages
 import AboutUs from './pages/AboutUs';
 import ContactUs from './pages/ContactUs';
+import Careers from './pages/Careers';
+import PrivacyPolicy from './pages/legal/PrivacyPolicy';
+import TermsOfService from './pages/legal/TermsOfService';
+import SaaSAgreement from './pages/legal/SaaSAgreement';
+import SLA from './pages/legal/SLA';
+import AcceptableUsePolicy from './pages/legal/AcceptableUsePolicy';
 import Services from './pages/Services';
 import Products from './pages/Products';
 import CustomCursor from './components/CustomCursor';
 import WhatsAppButton from './components/WhatsAppButton';
+import NotFound from './pages/NotFound';
 
 // ============================================
 // ANTIGRAVIITY TECHNOLOGIES - COMPLETE WEBSITE
@@ -512,31 +519,42 @@ const Navigation = () => {
   ];
 
   const isHomepage = location.pathname === '/';
+  const isLegalPage = location.pathname.startsWith('/privacy') ||
+    location.pathname.startsWith('/terms') ||
+    location.pathname.startsWith('/saas-agreement') ||
+    location.pathname.startsWith('/sla') ||
+    location.pathname.startsWith('/aup');
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-black/50 backdrop-blur-md' : 'bg-black'}`}>
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isLegalPage
+      ? (scrolled ? 'bg-white/80 backdrop-blur-md border-b border-gray-200' : 'bg-white border-b border-gray-100')
+      : (scrolled ? 'bg-black/50 backdrop-blur-md' : 'bg-black')
+      }`}>
       {/* Top reflection gradient - only on homepage, hidden on scroll */}
       {isHomepage && (
         <>
+          {/* Curved half-moon reflection */}
           <div
-            className="absolute top-0 left-0 right-0 h-[150px] pointer-events-none transition-opacity duration-500"
+            className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none transition-opacity duration-500"
             style={{
-              background: 'radial-gradient(ellipse 180% 150% at 50% 0%, rgba(56, 189, 248, 0.12) 0%, rgba(56, 189, 248, 0.06) 30%, rgba(125, 211, 252, 0.03) 50%, transparent 75%)',
+              width: '140%',
+              height: '200px',
+              borderRadius: '0 0 50% 50%',
+              background: 'radial-gradient(ellipse 100% 100% at 50% 0%, rgba(56, 189, 248, 0.15) 0%, rgba(125, 211, 252, 0.08) 30%, rgba(186, 230, 253, 0.04) 50%, transparent 70%)',
               opacity: scrolled ? 0 : 1,
+              filter: 'blur(20px)',
             }}
           />
+          {/* Inner glow */}
           <div
-            className="absolute top-0 left-0 right-0 h-[120px] pointer-events-none transition-opacity duration-500"
+            className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none transition-opacity duration-500"
             style={{
-              background: 'radial-gradient(ellipse 150% 130% at 50% 0%, rgba(186, 230, 253, 0.1) 0%, rgba(125, 211, 252, 0.05) 40%, transparent 70%)',
+              width: '100%',
+              height: '150px',
+              borderRadius: '0 0 50% 50%',
+              background: 'radial-gradient(ellipse 100% 100% at 50% 0%, rgba(224, 242, 254, 0.12) 0%, rgba(186, 230, 253, 0.06) 40%, transparent 65%)',
               opacity: scrolled ? 0 : 1,
-            }}
-          />
-          <div
-            className="absolute top-0 left-0 right-0 h-[80px] pointer-events-none transition-opacity duration-500"
-            style={{
-              background: 'radial-gradient(ellipse 120% 120% at 50% 0%, rgba(224, 242, 254, 0.15) 0%, rgba(186, 230, 253, 0.08) 45%, transparent 75%)',
-              opacity: scrolled ? 0 : 1,
+              filter: 'blur(10px)',
             }}
           />
         </>
@@ -546,46 +564,20 @@ const Navigation = () => {
         <div className="hidden md:flex items-center" style={{ minWidth: '250px' }}>
           {(location.pathname !== '/' || scrolled) && (
             <Link to="/" className="flex items-baseline text-4xl font-semibold tracking-tight transition-opacity duration-500" style={{ opacity: scrolled || location.pathname !== '/' ? 1 : 0 }}>
-              <span
-                style={{
-                  background: 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
-              >AntiGrav</span>
-              <span className="inline-flex items-baseline" style={{ margin: '0 0.02em' }}>
-                <span
-                  className="inline-block"
-                  style={{
-                    background: 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    transform: 'rotate(180deg) translateY(-0.08em)',
-                    animation: 'levitate1 3s ease-in-out infinite'
-                  }}
-                >i</span>
-                <span
-                  className="inline-block"
-                  style={{
-                    background: 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    transform: 'rotate(180deg) translateY(-0.12em)',
-                    animation: 'levitate2 3s ease-in-out infinite 0.15s'
-                  }}
-                >i</span>
+              <span style={{ color: isLegalPage ? '#1a1a1a' : undefined, background: isLegalPage ? undefined : 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)', WebkitBackgroundClip: isLegalPage ? undefined : 'text', WebkitTextFillColor: isLegalPage ? undefined : 'transparent', backgroundClip: isLegalPage ? undefined : 'text' }}>
+                AntiGrav
               </span>
-              <span
-                style={{
-                  background: 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
-              >ty</span>
+              <span className="inline-flex items-baseline" style={{ margin: '0 0.02em' }}>
+                <span className="inline-block" style={{ color: isLegalPage ? '#1a1a1a' : undefined, background: isLegalPage ? undefined : 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)', WebkitBackgroundClip: isLegalPage ? undefined : 'text', WebkitTextFillColor: isLegalPage ? undefined : 'transparent', backgroundClip: isLegalPage ? undefined : 'text', transform: 'rotate(180deg) translateY(-0.08em)', animation: 'levitate1 3s ease-in-out infinite' }}>
+                  i
+                </span>
+                <span className="inline-block" style={{ color: isLegalPage ? '#1a1a1a' : undefined, background: isLegalPage ? undefined : 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)', WebkitBackgroundClip: isLegalPage ? undefined : 'text', WebkitTextFillColor: isLegalPage ? undefined : 'transparent', backgroundClip: isLegalPage ? undefined : 'text', transform: 'rotate(180deg) translateY(-0.12em)', animation: 'levitate2 3s ease-in-out infinite 0.15s' }}>
+                  i
+                </span>
+              </span>
+              <span style={{ color: isLegalPage ? '#1a1a1a' : undefined, background: isLegalPage ? undefined : 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)', WebkitBackgroundClip: isLegalPage ? undefined : 'text', WebkitTextFillColor: isLegalPage ? undefined : 'transparent', backgroundClip: isLegalPage ? undefined : 'text' }}>
+                ty
+              </span>
             </Link>
           )}
         </div>
@@ -601,45 +593,56 @@ const Navigation = () => {
               <Link
                 to={item.href}
                 className="relative text-base font-medium tracking-wide transition-all duration-300 group flex items-center gap-1"
-                style={{
-                  background: 'linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.5) 50%, rgba(180,180,180,0.4) 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
+                style={
+                  isLegalPage
+                    ? { color: '#1a1a1a' }
+                    : {
+                      background: 'linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.5) 50%, rgba(180,180,180,0.4) 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                    }
+                }
               >
                 {item.name}
                 {item.dropdown && (
                   <svg
                     className={`w-4 h-4 transition-transform duration-200 ${activeDropdown === item.name ? 'rotate-180' : ''}`}
                     fill="none"
-                    stroke="rgba(255,255,255,0.5)"
+                    stroke={isLegalPage ? "rgba(26,26,26,0.5)" : "rgba(255,255,255,0.5)"}
                     viewBox="0 0 24 24"
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 )}
-                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
+                <span className={`absolute inset-0 bg-gradient-to-r from-transparent ${isLegalPage ? 'via-gray-900/40' : 'via-white/40'} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm`} />
               </Link>
 
               {item.dropdown && activeDropdown === item.name && (
                 <div
-                  className="absolute top-full left-1/2 -translate-x-1/2 mt-2 py-2 min-w-[200px] rounded-xl border border-white/10 backdrop-blur-xl"
+                  className={`absolute top-full left-1/2 -translate-x-1/2 mt-2 py-2 min-w-[200px] rounded-xl backdrop-blur-xl ${isLegalPage ? 'border border-gray-200' : 'border border-white/10'
+                    }`}
                   style={{
-                    background: 'rgba(0, 0, 0, 0.85)',
-                    boxShadow: '0 10px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
+                    background: isLegalPage ? 'rgba(255, 255, 255, 0.95)' : 'rgba(0, 0, 0, 0.85)',
+                    boxShadow: isLegalPage
+                      ? '0 10px 40px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.5)'
+                      : '0 10px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
                   }}
                 >
                   <div
-                    className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 rotate-45 border-l border-t border-white/10"
-                    style={{ background: 'rgba(0, 0, 0, 0.85)' }}
+                    className={`absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 rotate-45 ${isLegalPage ? 'border-l border-t border-gray-200' : 'border-l border-t border-white/10'
+                      }`}
+                    style={{ background: isLegalPage ? 'rgba(255, 255, 255, 0.95)' : 'rgba(0, 0, 0, 0.85)' }}
                   />
 
                   {item.dropdown.map((dropItem) => (
                     <Link
                       key={dropItem.name}
                       to={dropItem.href}
-                      className="block px-5 py-2.5 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all duration-200"
+                      className={`block px-5 py-2.5 text-sm transition-all duration-200 ${isLegalPage
+                        ? 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
+                        : 'text-white/70 hover:text-white hover:bg-white/5'
+                        }`}
                     >
                       {dropItem.name}
                     </Link>
@@ -656,12 +659,12 @@ const Navigation = () => {
             className="relative text-base font-medium px-7 py-3 rounded-full overflow-hidden transition-all duration-300"
             style={{
               background: 'transparent',
-              border: '1px solid rgba(255,255,255,0.2)',
+              border: isLegalPage ? '1px solid rgba(26,26,26,0.2)' : '1px solid rgba(255,255,255,0.2)',
             }}
-            onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.6)'}
-            onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'}
+            onMouseEnter={(e) => e.currentTarget.style.borderColor = isLegalPage ? 'rgba(26,26,26,0.6)' : 'rgba(255,255,255,0.6)'}
+            onMouseLeave={(e) => e.currentTarget.style.borderColor = isLegalPage ? 'rgba(26,26,26,0.2)' : 'rgba(255,255,255,0.2)'}
           >
-            <span className="relative" style={{ color: 'rgba(255,255,255,0.7)' }}>
+            <span className="relative" style={{ color: isLegalPage ? 'rgba(26,26,26,0.7)' : 'rgba(255,255,255,0.7)' }}>
               Contact Us
             </span>
           </Link>
@@ -774,6 +777,7 @@ const Navigation = () => {
 // HERO SECTION with Logo Animation
 // ==========================================
 const HeroSection = () => {
+  const navigate = useNavigate();
   const [animationComplete, setAnimationComplete] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -881,7 +885,7 @@ const HeroSection = () => {
 
   const handleSearch = (path) => {
     if (path) {
-      window.location.href = path;
+      navigate(path);
       return;
     }
 
@@ -890,10 +894,10 @@ const HeroSection = () => {
 
     // If there are suggestions, navigate to the first one
     if (filteredSuggestions.length > 0) {
-      window.location.href = filteredSuggestions[0].path;
+      navigate(filteredSuggestions[0].path);
     } else {
-      // Default to services page if no match
-      window.location.href = '/services';
+      // Redirect to not-found page if no match
+      navigate('/not-found');
     }
   };
 
@@ -1814,6 +1818,11 @@ const Footer = () => {
   const isProductsListing = location.pathname === '/products';
   const isAboutPage = location.pathname === '/about-us';
   const isContactPage = location.pathname === '/contact';
+  const isLegalPage = location.pathname.startsWith('/privacy') ||
+    location.pathname.startsWith('/terms') ||
+    location.pathname.startsWith('/saas-agreement') ||
+    location.pathname.startsWith('/sla') ||
+    location.pathname.startsWith('/aup');
 
   // About Us page gradient colors
   const aboutGradient = {
@@ -1981,28 +1990,29 @@ const Footer = () => {
       { name: "Contact", href: "/contact" }
     ],
     "Legal": [
-      { name: "Privacy", href: "/privacy" },
-      { name: "Terms", href: "/terms" },
-      { name: "Security", href: "/security" },
-      { name: "Cookies", href: "/cookies" }
+      { name: "Privacy Policy", href: "/privacy" },
+      { name: "Terms of Service", href: "/terms" },
+      { name: "SaaS Agreement", href: "/saas-agreement" },
+      { name: "Service Level Agreement", href: "/sla" },
+      { name: "Acceptable Use Policy", href: "/aup" }
     ]
   };
 
   return (
-    <footer className="relative" style={{ overflow: 'visible' }}>
-      <div className="relative border-t border-white/[0.15]">
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-        <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-white/[0.03] to-transparent pointer-events-none" />
+    <footer className={`relative ${isLegalPage ? 'bg-white' : ''}`} style={{ overflow: 'visible' }}>
+      <div className={`relative ${isLegalPage ? 'border-t border-gray-200' : 'border-t border-white/[0.15]'}`}>
+        <div className={`absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent ${isLegalPage ? 'via-gray-300' : 'via-white/30'} to-transparent`} />
+        <div className={`absolute top-0 left-0 right-0 h-20 bg-gradient-to-b ${isLegalPage ? 'from-gray-100/50' : 'from-white/[0.03]'} to-transparent pointer-events-none`} />
 
         <div className="max-w-5xl mx-auto px-6 py-16 relative z-10">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 justify-items-center">
             {Object.entries(links).map(([category, items]) => (
               <div key={category}>
-                <h4 className="text-white text-sm font-medium mb-4">{category}</h4>
+                <h4 className={`text-sm font-medium mb-4 ${isLegalPage ? 'text-gray-900' : 'text-white'}`}>{category}</h4>
                 <ul className="space-y-3">
                   {items.map((item) => (
                     <li key={item.name}>
-                      <Link to={item.href} className="text-white/50 hover:text-white text-sm transition-colors">
+                      <Link to={item.href} className={`text-sm transition-colors ${isLegalPage ? 'text-gray-600 hover:text-gray-900' : 'text-white/50 hover:text-white'}`}>
                         {item.name}
                       </Link>
                     </li>
@@ -2016,32 +2026,75 @@ const Footer = () => {
 
       <div className="relative py-4 md:py-0" style={{ overflow: 'visible' }}>
         <div className="w-full px-2 md:px-4" style={{ overflow: 'visible' }}>
-          <div className="flex items-baseline justify-center tracking-tighter leading-[0.85] select-none" style={{ fontFamily: "'Outfit', 'Inter', sans-serif", fontWeight: 700, fontSize: 'clamp(60px, 12vw, 200px)', overflow: 'visible', paddingBottom: '0.15em', letterSpacing: '0.01em' }}>
-            <span className="text-white">AntiGrav</span>
+          <div className="flex items-baseline justify-center tracking-tighter leading-[0.85] select-none relative" style={{ fontFamily: "'Outfit', 'Inter', sans-serif", fontWeight: 700, fontSize: 'clamp(60px, 12vw, 200px)', overflow: 'visible', paddingBottom: '0.25em', letterSpacing: '0.01em' }}>
+            {/* Particles for legal pages */}
+            {isLegalPage && (
+              <div className="absolute inset-0 pointer-events-none" style={{ transform: 'scale(1.5)' }}>
+                {[...Array(120)].map((_, i) => {
+                  const size = Math.random() * 3 + 1;
+                  const x = Math.random() * 100;
+                  const y = Math.random() * 100;
+                  const duration = Math.random() * 3 + 2;
+                  const delay = Math.random() * 2;
+                  const opacity = Math.random() * 0.3 + 0.1;
+
+                  return (
+                    <div
+                      key={i}
+                      className="absolute rounded-full bg-black"
+                      style={{
+                        width: `${size}px`,
+                        height: `${size}px`,
+                        left: `${x}%`,
+                        top: `${y}%`,
+                        opacity: opacity,
+                        animation: `float ${duration}s ease-in-out ${delay}s infinite alternate`
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            )}
+
+            <span className={isLegalPage ? 'text-gray-900' : 'text-white'}>AntiGrav</span>
             <span className="inline-flex items-baseline" style={{ margin: '0 0.02em' }}>
               <span
-                className="inline-block text-white"
+                className={`inline-block ${isLegalPage ? 'text-gray-900' : 'text-white'}`}
                 style={{
                   transform: 'rotate(180deg) translateY(-0.03em)',
                   animation: 'levitate1 3s ease-in-out infinite'
                 }}
               >i</span>
               <span
-                className="inline-block text-white"
+                className={`inline-block ${isLegalPage ? 'text-gray-900' : 'text-white'}`}
                 style={{
                   transform: 'rotate(180deg) translateY(-0.06em)',
                   animation: 'levitate2 3s ease-in-out infinite 0.15s'
                 }}
               >i</span>
             </span>
-            <span className="text-white">ty</span>
+            <span className={isLegalPage ? 'text-gray-900' : 'text-white'}>ty</span>
           </div>
+
+          {/* Add float animation for particles */}
+          {isLegalPage && (
+            <style jsx>{`
+              @keyframes float {
+                0% {
+                  transform: translateY(0px) translateX(0px);
+                }
+                100% {
+                  transform: translateY(-20px) translateX(10px);
+                }
+              }
+            `}</style>
+          )}
         </div>
       </div>
 
-      <div className="relative border-t border-white/[0.05]" style={{ overflow: 'visible' }}>
+      <div className={`relative ${isLegalPage ? 'border-t border-gray-200' : 'border-t border-white/[0.05]'}`} style={{ overflow: 'visible' }}>
         {/* Ice blue reflection on homepage */}
-        {!isServicePage && !isProductPage && !isAboutPage && !isContactPage && !isServicesListing && !isProductsListing && (
+        {!isServicePage && !isProductPage && !isAboutPage && !isContactPage && !isServicesListing && !isProductsListing && !isLegalPage && (
           <>
             <div
               className="absolute bottom-0 left-0 right-0 h-[500px] pointer-events-none"
@@ -2249,15 +2302,6 @@ const Footer = () => {
           <div className="flex gap-4 mb-2">
             {[
               {
-                name: 'Twitter',
-                icon: (
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                  </svg>
-                ),
-                href: '#'
-              },
-              {
                 name: 'LinkedIn',
                 icon: (
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -2283,12 +2327,24 @@ const Footer = () => {
                   </svg>
                 ),
                 href: '#'
+              },
+              {
+                name: 'Twitter',
+                icon: (
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  </svg>
+                ),
+                href: '#'
               }
             ].map((social) => (
               <a
                 key={social.name}
                 href={social.href}
-                className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:border-white/30 transition-all hover:scale-110 hover:bg-white/5"
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 ${isLegalPage
+                  ? 'border border-gray-300 text-gray-600 hover:text-gray-900 hover:border-gray-400 hover:bg-gray-100'
+                  : 'border border-white/10 text-white/40 hover:text-white hover:border-white/30 hover:bg-white/5'
+                  }`}
                 aria-label={social.name}
               >
                 {social.icon}
@@ -2298,7 +2354,7 @@ const Footer = () => {
         </div>
 
         <div className="max-w-7xl mx-auto px-6 py-1 flex flex-col items-center gap-4 relative z-10">
-          <p className="text-white/100 text-xs mt-4">
+          <p className={`text-xs mt-4 ${isLegalPage ? 'text-gray-900' : 'text-white/100'}`}>
             © 2025 AntiGraviity Technologies Pvt. Ltd. All rights reserved.
           </p>
         </div>
@@ -2348,38 +2404,82 @@ const ScrollToTop = () => {
 // ==========================================
 // MAIN APP
 // ==========================================
+// ==========================================
+// MAIN LAYOUT COMPONENT
+// ==========================================
+const MainLayout = () => {
+  const location = useLocation();
+  const isLegalPage = location.pathname.startsWith('/privacy') ||
+    location.pathname.startsWith('/terms') ||
+    location.pathname.startsWith('/saas-agreement') ||
+    location.pathname.startsWith('/sla') ||
+    location.pathname.startsWith('/aup');
+
+  // Dynamically set body background color to handle overscroll/panning
+  useEffect(() => {
+    if (isLegalPage) {
+      document.body.style.backgroundColor = '#ffffff';
+      document.body.classList.add('bg-white');
+      document.body.classList.remove('bg-black');
+    } else {
+      document.body.style.backgroundColor = '#000000';
+      document.body.classList.add('bg-black');
+      document.body.classList.remove('bg-white');
+    }
+
+    return () => {
+      document.body.style.backgroundColor = '';
+      document.body.classList.remove('bg-white', 'bg-black');
+    };
+  }, [isLegalPage]);
+
+  return (
+    <div className={`min-h-screen relative w-full overflow-x-hidden ${isLegalPage ? 'bg-white text-gray-900' : 'bg-black text-white'}`}>
+      {!isLegalPage && <InteractiveParticles />}
+      <Navigation />
+
+      <main className="relative z-10">
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/about-us" element={<AboutUs />} />
+          <Route path="/careers" element={<Careers />} />
+          <Route path="/contact" element={<ContactUs />} />
+          <Route path="/services" element={<Services />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/services/web-development" element={<WebDevelopment />} />
+          <Route path="/services/app-development" element={<AppDevelopment />} />
+          <Route path="/services/digital-marketing" element={<DigitalMarketing />} />
+          <Route path="/services/graphic-designing" element={<GraphicDesigning />} />
+          <Route path="/services/3d-services" element={<ThreeDServices />} />
+          <Route path="/products/antimage-crm" element={<AntimageCRM />} />
+          <Route path="/products/antihrms" element={<AntiHRMS />} />
+          <Route path="/products/antisec" element={<AntiSec />} />
+          <Route path="/products/antiai" element={<AntiAI />} />
+          <Route path="/products/antichat" element={<AntiChat />} />
+          <Route path="/not-found" element={<NotFound />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/saas-agreement" element={<SaaSAgreement />} />
+          <Route path="/sla" element={<SLA />} />
+          <Route path="/aup" element={<AcceptableUsePolicy />} />
+        </Routes>
+      </main>
+
+      <Footer />
+    </div>
+  );
+};
+
+// ==========================================
+// MAIN APP
+// ==========================================
 function App() {
   return (
     <Router>
       <ScrollToTop />
       <CustomCursor />
       <WhatsAppButton />
-      <div className="min-h-screen bg-black text-white relative">
-        <InteractiveParticles />
-        <Navigation />
-
-        <main className="relative z-10">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/about-us" element={<AboutUs />} />
-            <Route path="/contact" element={<ContactUs />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/services/web-development" element={<WebDevelopment />} />
-            <Route path="/services/app-development" element={<AppDevelopment />} />
-            <Route path="/services/digital-marketing" element={<DigitalMarketing />} />
-            <Route path="/services/graphic-designing" element={<GraphicDesigning />} />
-            <Route path="/services/3d-services" element={<ThreeDServices />} />
-            <Route path="/products/antimage-crm" element={<AntimageCRM />} />
-            <Route path="/products/antihrms" element={<AntiHRMS />} />
-            <Route path="/products/antisec" element={<AntiSec />} />
-            <Route path="/products/antiai" element={<AntiAI />} />
-            <Route path="/products/antichat" element={<AntiChat />} />
-          </Routes>
-        </main>
-
-        <Footer />
-      </div>
+      <MainLayout />
     </Router>
   );
 }

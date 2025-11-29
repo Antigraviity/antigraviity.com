@@ -690,7 +690,7 @@ const AboutUs = () => {
               Start a Project
             </Link>
             <Link
-              to="/#services"
+              to="/services"
               className="px-8 py-3 border border-white/20 text-white/70 hover:text-white hover:border-white/40 text-sm rounded-full transition-colors"
             >
               Explore Our Services
