@@ -73,10 +73,34 @@ const ContactUs = () => {
         </svg>
       ),
       title: "Email Us",
-      value: "hello@antigraviity.com",
-      subtext: "We'll respond within 24 hours",
+      value: "info@antigraviity.com",
+      subtext: "General inquiries",
       gradient: "from-blue-500/20 to-cyan-500/10",
-      href: "mailto:hello@antigraviity.com"
+      href: "mailto:info@antigraviity.com"
+    },
+    {
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      ),
+      title: "Sales Inquiries",
+      value: "sales@antigraviity.com",
+      subtext: "For business & partnerships",
+      gradient: "from-emerald-500/20 to-teal-500/10",
+      href: "mailto:sales@antigraviity.com"
+    },
+    {
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      ),
+      title: "Direct Contact",
+      value: "gokul.s@antigraviity.com",
+      subtext: "Reach out to our founder",
+      gradient: "from-purple-500/20 to-pink-500/10",
+      href: "mailto:gokul.s@antigraviity.com"
     },
     {
       icon: (
@@ -85,10 +109,10 @@ const ContactUs = () => {
         </svg>
       ),
       title: "Call Us",
-      value: "+91 98765 43210",
+      value: "+91 63793 88462",
       subtext: "Mon-Fri, 9am-6pm IST",
-      gradient: "from-emerald-500/20 to-teal-500/10",
-      href: "tel:+919876543210"
+      gradient: "from-orange-500/20 to-amber-500/10",
+      href: "tel:+916379388462"
     },
     {
       icon: (
@@ -507,17 +531,15 @@ const ContactUs = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
+              href="https://wa.me/916379388462?text=Hello!%20I%20would%20like%20to%20know%20more%20about%20your%20services."
+              target="_blank"
+              rel="noopener noreferrer"
               className="px-8 py-3 bg-white text-black text-sm font-medium rounded-full hover:bg-white/90 transition-colors"
             >
               Start a Conversation
             </a>
             <Link
-              to="/#services"
+              to="/services"
               className="px-8 py-3 border border-white/20 text-white/70 hover:text-white hover:border-white/40 text-sm rounded-full transition-colors"
             >
               View Our Services

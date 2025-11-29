@@ -20,6 +20,10 @@ const CustomCursor = () => {
             color: 'rgba(139, 92, 246, 0.5)', // Violet
             glow: 'rgba(139, 92, 246, 0.2)'
         },
+        mainServices: {
+            color: 'rgba(163, 230, 53, 0.5)', // Lime
+            glow: 'rgba(163, 230, 53, 0.2)'
+        },
         services: {
             '/services/web-development': { color: 'rgba(59, 130, 246, 0.5)', glow: 'rgba(59, 130, 246, 0.2)' }, // Blue
             '/services/app-development': { color: 'rgba(34, 197, 94, 0.5)', glow: 'rgba(34, 197, 94, 0.2)' }, // Green
@@ -42,6 +46,7 @@ const CustomCursor = () => {
 
         if (path === '/about-us') return gradients.about;
         if (path === '/contact') return gradients.contact;
+        if (path === '/services') return gradients.mainServices;
         if (path.startsWith('/services/')) return gradients.services[path] || gradients.default;
         if (path.startsWith('/products/')) return gradients.products[path] || gradients.default;
 

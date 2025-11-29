@@ -18,7 +18,10 @@ import AntiChat from './pages/AntiChat';
 // Import Other Pages
 import AboutUs from './pages/AboutUs';
 import ContactUs from './pages/ContactUs';
+import Services from './pages/Services';
+import Products from './pages/Products';
 import CustomCursor from './components/CustomCursor';
+import WhatsAppButton from './components/WhatsAppButton';
 
 // ============================================
 // ANTIGRAVIITY TECHNOLOGIES - COMPLETE WEBSITE
@@ -486,7 +489,7 @@ const Navigation = () => {
     { name: 'About Us', href: '/about-us' },
     {
       name: 'Services',
-      href: '/#services',
+      href: '/services',
       dropdown: [
         { name: 'Web Development', href: '/services/web-development' },
         { name: 'App Development', href: '/services/app-development' },
@@ -497,7 +500,7 @@ const Navigation = () => {
     },
     {
       name: 'Products',
-      href: '/#products',
+      href: '/products',
       dropdown: [
         { name: 'AntiMage CRM', href: '/products/antimage-crm' },
         { name: 'AntiHRMS', href: '/products/antihrms' },
@@ -772,6 +775,155 @@ const Navigation = () => {
 // ==========================================
 const HeroSection = () => {
   const [animationComplete, setAnimationComplete] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+
+  // Search suggestions data with metadata
+  const searchSuggestions = [
+    // Services
+    {
+      title: 'Web Development',
+      path: '/services/web-development',
+      type: 'service',
+      icon: '◈',
+      keywords: ['web', 'website', 'web development', 'react', 'nextjs', 'next.js', 'vue', 'angular', 'frontend', 'backend', 'fullstack', 'full stack', 'responsive', 'landing page', 'ecommerce', 'e-commerce', 'online store', 'portal', 'webapp', 'web app', 'pwa', 'progressive web app', 'cms', 'wordpress', 'node', 'javascript', 'typescript', 'html', 'css'],
+      description: 'Modern websites & web apps'
+    },
+    {
+      title: 'App Development',
+      path: '/services/app-development',
+      type: 'service',
+      icon: '◇',
+      keywords: ['app', 'mobile', 'ios', 'android', 'app development', 'mobile app', 'application', 'native', 'hybrid', 'cross-platform', 'react native', 'flutter', 'swift', 'kotlin', 'iphone', 'ipad', 'tablet', 'smartphone', 'mobile development', 'apk', 'play store', 'app store', 'firebase'],
+      description: 'iOS & Android applications'
+    },
+    {
+      title: 'Digital Marketing',
+      path: '/services/digital-marketing',
+      type: 'service',
+      icon: '○',
+      keywords: ['marketing', 'seo', 'digital marketing', 'social media', 'social', 'facebook', 'instagram', 'twitter', 'linkedin', 'ads', 'advertising', 'ppc', 'google ads', 'meta ads', 'content marketing', 'email marketing', 'campaign', 'analytics', 'optimization', 'sem', 'smm', 'influencer', 'brand awareness', 'lead generation', 'conversion'],
+      description: 'SEO & social campaigns'
+    },
+    {
+      title: 'Graphic Designing',
+      path: '/services/graphic-designing',
+      type: 'service',
+      icon: '◎',
+      keywords: ['design', 'graphic', 'logo', 'ui', 'ux', 'graphic design', 'branding', 'brand identity', 'visual design', 'creative', 'illustration', 'photoshop', 'illustrator', 'figma', 'sketch', 'poster', 'flyer', 'banner', 'business card', 'packaging', 'print', 'typography', 'color', 'layout', 'mockup', 'prototype', 'wireframe', 'user interface', 'user experience'],
+      description: 'Brand identity & UI/UX'
+    },
+    {
+      title: '3D Services',
+      path: '/services/3d-services',
+      type: 'service',
+      icon: '△',
+      keywords: ['3d', 'modeling', 'animation', '3d services', 'three dimensional', 'render', 'rendering', 'blender', 'maya', 'cinema 4d', 'c4d', '3ds max', 'zbrush', 'webgl', 'threejs', 'three.js', 'product visualization', 'architectural', 'cgi', 'vfx', 'motion graphics', 'ar', 'vr', 'augmented reality', 'virtual reality', 'metaverse'],
+      description: '3D modeling & visualization'
+    },
+    // Products
+    {
+      title: 'AntiMage CRM',
+      path: '/products/antimage-crm',
+      type: 'product',
+      icon: '◈',
+      keywords: ['crm', 'antimage', 'customer', 'customer relationship', 'sales', 'pipeline', 'lead management', 'contact management', 'client', 'customer management', 'salesforce', 'hubspot', 'relationship management', 'deals', 'opportunities', 'funnel', 'automation', 'customer service'],
+      description: 'Customer relationship management'
+    },
+    {
+      title: 'AntiHRMS',
+      path: '/products/antihrms',
+      type: 'product',
+      icon: '◇',
+      keywords: ['hrms', 'hr', 'payroll', 'antihrms', 'human resources', 'employee', 'attendance', 'leave', 'recruitment', 'hiring', 'onboarding', 'performance', 'appraisal', 'workforce', 'staff', 'personnel', 'benefits', 'compensation', 'time tracking', 'timesheet'],
+      description: 'HR management system'
+    },
+    {
+      title: 'AntiSec',
+      path: '/products/antisec',
+      type: 'product',
+      icon: '⬡',
+      keywords: ['security', 'cybersecurity', 'antisec', 'cyber', 'threat', 'protection', 'firewall', 'antivirus', 'malware', 'encryption', 'vulnerability', 'penetration testing', 'pen test', 'security audit', 'compliance', 'data protection', 'network security', 'endpoint', 'siem', 'monitoring'],
+      description: 'Enterprise security platform'
+    },
+    {
+      title: 'AntiAI',
+      path: '/products/antiai',
+      type: 'product',
+      icon: '◎',
+      keywords: ['ai', 'antiai', 'artificial intelligence', 'machine learning', 'ml', 'deep learning', 'neural network', 'nlp', 'natural language', 'computer vision', 'chatbot', 'bot', 'automation', 'predictive', 'data science', 'tensorflow', 'pytorch', 'gpt', 'llm', 'large language model', 'generative ai'],
+      description: 'AI & ML solutions'
+    },
+    {
+      title: 'AntiChat',
+      path: '/products/antichat',
+      type: 'product',
+      icon: '▣',
+      keywords: ['chat', 'messaging', 'communication', 'antichat', 'team chat', 'collaboration', 'slack', 'teams', 'discord', 'instant messaging', 'group chat', 'video call', 'voice call', 'conferencing', 'meeting', 'workspace', 'channels', 'direct message', 'dm'],
+      description: 'Team communication platform'
+    },
+  ];
+
+  // Filter suggestions based on search query
+  const getFilteredSuggestions = () => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return [];
+
+    return searchSuggestions.filter(suggestion =>
+      suggestion.title.toLowerCase().includes(query) ||
+      suggestion.keywords.some(keyword => keyword.includes(query) || query.includes(keyword)) ||
+      suggestion.description.toLowerCase().includes(query)
+    ).slice(0, 5); // Limit to 5 suggestions
+  };
+
+  const filteredSuggestions = getFilteredSuggestions();
+
+  const handleSearch = (path) => {
+    if (path) {
+      window.location.href = path;
+      return;
+    }
+
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return;
+
+    // If there are suggestions, navigate to the first one
+    if (filteredSuggestions.length > 0) {
+      window.location.href = filteredSuggestions[0].path;
+    } else {
+      // Default to services page if no match
+      window.location.href = '/services';
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      if (selectedIndex >= 0 && filteredSuggestions[selectedIndex]) {
+        handleSearch(filteredSuggestions[selectedIndex].path);
+      } else {
+        handleSearch();
+      }
+      setShowSuggestions(false);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex(prev =>
+        prev < filteredSuggestions.length - 1 ? prev + 1 : prev
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex(prev => prev > 0 ? prev - 1 : -1);
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
+      setSelectedIndex(-1);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setSearchQuery(e.target.value);
+    setShowSuggestions(true);
+    setSelectedIndex(-1);
+  };
 
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center">
@@ -888,6 +1040,9 @@ const HeroSection = () => {
             <input
               type="text"
               placeholder="What do you want to build?"
+              value={searchQuery}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
               className="w-full bg-transparent rounded-full px-6 py-4 text-white placeholder-white/30 transition-all text-sm relative z-10"
               style={{ outline: 'none' }}
               onFocus={(e) => {
@@ -895,15 +1050,21 @@ const HeroSection = () => {
                 e.currentTarget.parentElement.style.boxShadow = '0 0 20px rgba(56, 189, 248, 0.15), 0 0 40px rgba(125, 211, 252, 0.1)';
                 const glow = e.currentTarget.parentElement.querySelector('#searchGlow');
                 if (glow) glow.style.opacity = '1';
+                setShowSuggestions(true);
               }}
               onBlur={(e) => {
-                e.currentTarget.parentElement.style.borderColor = 'rgba(255,255,255,0.2)';
-                e.currentTarget.parentElement.style.boxShadow = 'none';
-                const glow = e.currentTarget.parentElement.querySelector('#searchGlow');
-                if (glow) glow.style.opacity = '0';
+                // Delay to allow click on suggestion
+                setTimeout(() => {
+                  e.currentTarget.parentElement.style.borderColor = 'rgba(255,255,255,0.2)';
+                  e.currentTarget.parentElement.style.boxShadow = 'none';
+                  const glow = e.currentTarget.parentElement.querySelector('#searchGlow');
+                  if (glow) glow.style.opacity = '0';
+                  setShowSuggestions(false);
+                }, 200);
               }}
             />
             <button
+              onClick={handleSearch}
               className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-full transition-all duration-300 z-20"
               style={{
                 background: 'transparent',
@@ -916,58 +1077,42 @@ const HeroSection = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
             </button>
-          </div>
-        </div>
 
-        <div
-          className="flex flex-wrap items-center justify-center gap-3 transition-all duration-700"
-          style={{
-            opacity: animationComplete ? 1 : 0,
-            transform: animationComplete ? 'translateY(0)' : 'translateY(15px)',
-            transitionDelay: '0.6s'
-          }}
-        >
-          <span
-            className="text-sm"
-            style={{
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(120,120,120,0.3) 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >✦</span>
-          <span
-            className="text-sm"
-            style={{
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(120,120,120,0.3) 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
-            Now offering{' '}
-            <span
-              style={{
-                background: 'linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(180,180,180,0.7) 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}
-            >Enterprise Solutions</span>{' '}
-            for global partners
-          </span>
-          <a
-            href="#news"
-            className="text-sm transition-opacity hover:opacity-80"
-            style={{
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(150,150,150,0.5) 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
-            Read announcement →
-          </a>
+            {/* Search Suggestions Dropdown */}
+            {showSuggestions && filteredSuggestions.length > 0 && (
+              <div
+                className="absolute top-full left-0 right-0 mt-2 rounded-2xl border border-white/10 backdrop-blur-xl overflow-hidden z-30"
+                style={{
+                  background: 'rgba(0, 0, 0, 0.85)',
+                  boxShadow: '0 10px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
+                }}
+              >
+                {filteredSuggestions.map((suggestion, index) => (
+                  <div
+                    key={suggestion.path}
+                    onClick={() => handleSearch(suggestion.path)}
+                    onMouseEnter={() => setSelectedIndex(index)}
+                    className="flex items-center gap-4 px-5 py-3 cursor-pointer transition-all duration-200"
+                    style={{
+                      background: selectedIndex === index ? 'rgba(255,255,255,0.08)' : 'transparent',
+                      borderBottom: index < filteredSuggestions.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none'
+                    }}
+                  >
+                    <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-white/5 text-white/40 text-lg">
+                      {suggestion.icon}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-white text-sm font-medium mb-0.5">{suggestion.title}</div>
+                      <div className="text-white/40 text-xs">{suggestion.description}</div>
+                    </div>
+                    <div className="px-2 py-1 rounded-full bg-white/5 text-white/30 text-xs capitalize">
+                      {suggestion.type}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1665,6 +1810,8 @@ const Footer = () => {
   const location = useLocation();
   const isServicePage = location.pathname.startsWith('/services/');
   const isProductPage = location.pathname.startsWith('/products/');
+  const isServicesListing = location.pathname === '/services';
+  const isProductsListing = location.pathname === '/products';
   const isAboutPage = location.pathname === '/about-us';
   const isContactPage = location.pathname === '/contact';
 
@@ -1688,6 +1835,28 @@ const Footer = () => {
     glow: 'rgba(167, 139, 250, 0.25)',
     glowLight: 'rgba(139, 92, 246, 0.12)',
     line: 'rgba(139, 92, 246, 0.4)'
+  };
+
+  // Services Listing page gradient colors - Neon Lime
+  const servicesListingGradient = {
+    primary: 'rgba(163, 230, 53, 0.18)',
+    primaryLight: 'rgba(163, 230, 53, 0.08)',
+    secondary: 'rgba(190, 242, 100, 0.04)',
+    secondaryLight: 'rgba(190, 242, 100, 0.15)',
+    glow: 'rgba(236, 252, 203, 0.25)',
+    glowLight: 'rgba(163, 230, 53, 0.12)',
+    line: 'rgba(163, 230, 53, 0.4)'
+  };
+
+  // Products Listing page gradient colors - Bright Cyan
+  const productsListingGradient = {
+    primary: 'rgba(34, 211, 238, 0.18)',
+    primaryLight: 'rgba(34, 211, 238, 0.08)',
+    secondary: 'rgba(103, 232, 249, 0.04)',
+    secondaryLight: 'rgba(103, 232, 249, 0.15)',
+    glow: 'rgba(207, 250, 254, 0.25)',
+    glowLight: 'rgba(34, 211, 238, 0.12)',
+    line: 'rgba(34, 211, 238, 0.4)'
   };
 
   // Service-specific gradient colors for footer reflection
@@ -1872,7 +2041,7 @@ const Footer = () => {
 
       <div className="relative border-t border-white/[0.05]" style={{ overflow: 'visible' }}>
         {/* Ice blue reflection on homepage */}
-        {!isServicePage && !isProductPage && !isAboutPage && !isContactPage && (
+        {!isServicePage && !isProductPage && !isAboutPage && !isContactPage && !isServicesListing && !isProductsListing && (
           <>
             <div
               className="absolute bottom-0 left-0 right-0 h-[500px] pointer-events-none"
@@ -2016,6 +2185,66 @@ const Footer = () => {
           </>
         )}
 
+        {/* Services Listing page gradient reflection - Neon Lime */}
+        {isServicesListing && (
+          <>
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[500px] pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse 150% 100% at 50% 100%, ${servicesListingGradient.primary} 0%, ${servicesListingGradient.primaryLight} 25%, ${servicesListingGradient.secondary} 45%, transparent 70%)`,
+              }}
+            />
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[350px] pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse 120% 100% at 50% 100%, ${servicesListingGradient.secondaryLight} 0%, ${servicesListingGradient.secondary} 35%, transparent 65%)`,
+              }}
+            />
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[200px] pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse 100% 100% at 50% 100%, ${servicesListingGradient.glow} 0%, ${servicesListingGradient.glowLight} 40%, transparent 70%)`,
+              }}
+            />
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[1px]"
+              style={{
+                background: `linear-gradient(to right, transparent, ${servicesListingGradient.line}, transparent)`,
+              }}
+            />
+          </>
+        )}
+
+        {/* Products Listing page gradient reflection - Bright Cyan */}
+        {isProductsListing && (
+          <>
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[500px] pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse 150% 100% at 50% 100%, ${productsListingGradient.primary} 0%, ${productsListingGradient.primaryLight} 25%, ${productsListingGradient.secondary} 45%, transparent 70%)`,
+              }}
+            />
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[350px] pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse 120% 100% at 50% 100%, ${productsListingGradient.secondaryLight} 0%, ${productsListingGradient.secondary} 35%, transparent 65%)`,
+              }}
+            />
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[200px] pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse 100% 100% at 50% 100%, ${productsListingGradient.glow} 0%, ${productsListingGradient.glowLight} 40%, transparent 70%)`,
+              }}
+            />
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[1px]"
+              style={{
+                background: `linear-gradient(to right, transparent, ${productsListingGradient.line}, transparent)`,
+              }}
+            />
+          </>
+        )}
+
         <div className="max-w-7xl mx-auto px-6 py-1 flex flex-col items-center gap-4 relative z-10 mt-8">
           <div className="flex gap-4 mb-2">
             {[
@@ -2124,6 +2353,7 @@ function App() {
     <Router>
       <ScrollToTop />
       <CustomCursor />
+      <WhatsAppButton />
       <div className="min-h-screen bg-black text-white relative">
         <InteractiveParticles />
         <Navigation />
@@ -2133,6 +2363,8 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/about-us" element={<AboutUs />} />
             <Route path="/contact" element={<ContactUs />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/products" element={<Products />} />
             <Route path="/services/web-development" element={<WebDevelopment />} />
             <Route path="/services/app-development" element={<AppDevelopment />} />
             <Route path="/services/digital-marketing" element={<DigitalMarketing />} />
