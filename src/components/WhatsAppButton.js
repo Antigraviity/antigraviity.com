@@ -14,6 +14,37 @@ const WhatsAppButton = () => {
         location.pathname.startsWith('/sla') ||
         location.pathname.startsWith('/aup');
 
+    const getPulseColor = () => {
+        if (isLegalPage) return 'rgba(26, 26, 26, 0.25)';
+
+        const path = location.pathname;
+
+        // Exact matches from App.js footer gradients
+        if (path === '/services') return 'rgba(163, 230, 53, 0.3)'; // Neon Lime
+        if (path === '/products') return 'rgba(34, 211, 238, 0.3)'; // Bright Cyan
+        if (path === '/about-us') return 'rgba(148, 163, 184, 0.3)'; // Silver/Slate
+        if (path === '/contact') return 'rgba(139, 92, 246, 0.3)'; // Violet/Purple
+
+        // Service specific pages
+        if (path === '/services/web-development') return 'rgba(59, 130, 246, 0.3)';
+        if (path === '/services/app-development') return 'rgba(34, 197, 94, 0.3)';
+        if (path === '/services/digital-marketing') return 'rgba(249, 115, 22, 0.3)';
+        if (path === '/services/graphic-designing') return 'rgba(236, 72, 153, 0.3)';
+        if (path === '/services/3d-services') return 'rgba(168, 85, 247, 0.3)';
+
+        // Product specific pages
+        if (path === '/products/antimage-crm') return 'rgba(234, 179, 8, 0.3)';
+        if (path === '/products/antihrms') return 'rgba(168, 85, 247, 0.3)';
+        if (path === '/products/antisec') return 'rgba(239, 68, 68, 0.3)';
+        if (path === '/products/antiai') return 'rgba(16, 185, 129, 0.3)';
+        if (path === '/products/antichat') return 'rgba(99, 102, 241, 0.3)';
+
+        // Fallback for careers or other pages
+        if (path.startsWith('/careers')) return 'rgba(236, 72, 153, 0.3)';
+
+        return 'rgba(56, 189, 248, 0.3)'; // Default Sky Blue (Home)
+    };
+
     return (
         <a
             href={whatsappUrl}
@@ -28,7 +59,7 @@ const WhatsAppButton = () => {
             <div
                 className="absolute inset-0 rounded-full transition-all duration-300"
                 style={{
-                    background: isLegalPage ? 'rgba(26, 26, 26, 0.1)' : 'rgba(255, 255, 255, 0.1)',
+                    background: getPulseColor(),
                     transform: isHovered ? 'scale(1.3)' : 'scale(1)',
                     opacity: isHovered ? 0 : 1,
                     animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
@@ -50,17 +81,22 @@ const WhatsAppButton = () => {
             >
                 {/* WhatsApp Icon */}
                 <svg
-                    className="w-7 h-7"
+                    className="w-8 h-8"
                     fill="none"
-                    stroke={isLegalPage ? "rgba(26, 26, 26, 0.7)" : "rgba(255, 255, 255, 0.7)"}
-                    strokeWidth="1.5"
+                    stroke={isLegalPage ? "rgba(26, 26, 26, 0.9)" : "rgba(255, 255, 255, 0.9)"}
+                    strokeWidth="2"
                     viewBox="0 0 24 24"
                     xmlns="http://www.w3.org/2000/svg"
                 >
                     <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        d="M8.625 9.75a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 01.778-.332 48.294 48.294 0 005.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"
+                        d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2z"
+                    />
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M16.92 14.38c-.27-.14-1.59-.79-1.84-.88-.25-.09-.43-.14-.61.14-.18.27-.71.88-.86 1.06-.15.18-.3.2-.58.07-.27-.13-1.14-.42-2.17-1.34-.8-.71-1.34-1.58-1.5-1.85-.15-.27-.02-.41.11-.55.13-.13.27-.33.41-.49.14-.16.18-.27.27-.45.09-.18.04-.33-.02-.46-.07-.13-.61-1.47-.84-2.01-.22-.53-.44-.46-.61-.47-.16-.01-.34-.01-.52-.01-.18 0-.47.07-.72.33-.25.27-.95.93-.95 2.27 0 1.34.97 2.63 1.11 2.82.13.18 1.92 2.94 4.65 4.12 2.73 1.18 2.73.79 3.23.74.5-.05 1.59-.65 1.81-1.28.23-.63.23-1.17.16-1.28-.07-.11-.25-.18-.52-.32z"
                     />
                 </svg>
             </div>
@@ -94,8 +130,8 @@ const WhatsAppButton = () => {
             transform: scale(1);
           }
           50% {
-            opacity: 0.5;
-            transform: scale(1.2);
+            opacity: 0.6;
+            transform: scale(1.4);
           }
         }
       `}</style>
