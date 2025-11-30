@@ -30,6 +30,7 @@ import CustomCursor from './components/CustomCursor';
 import WhatsAppButton from './components/WhatsAppButton';
 import NotFound from './pages/NotFound';
 import usePageTitle from './hooks/usePageTitle';
+import ThreeGlobe from './components/ThreeGlobe';
 
 // ============================================
 // ANTIGRAVIITY TECHNOLOGIES - COMPLETE WEBSITE
@@ -672,10 +673,29 @@ const Navigation = () => {
           </Link>
         </div>
 
-        {/* Mobile Logo - only shows on non-homepage */}
-        <div className="md:hidden flex items-center">
-          {location.pathname !== '/' && (
-            <Link to="/" className="flex items-baseline text-2xl font-semibold tracking-tight">
+        {/* Mobile Contact Us Button - left side */}
+        <Link
+          to="/contact"
+          className="md:hidden text-sm font-medium px-4 py-2 rounded-full transition-all duration-300 relative z-10"
+          style={{
+            background: 'transparent',
+            border: isLegalPage ? '1px solid rgba(26,26,26,0.2)' : '1px solid rgba(255,255,255,0.2)',
+            color: isLegalPage ? 'rgba(26,26,26,0.7)' : 'rgba(255,255,255,0.7)',
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.borderColor = isLegalPage ? 'rgba(26,26,26,0.6)' : 'rgba(255,255,255,0.6)'}
+          onMouseLeave={(e) => e.currentTarget.style.borderColor = isLegalPage ? 'rgba(26,26,26,0.2)' : 'rgba(255,255,255,0.2)'}
+        >
+          Contact
+        </Link>
+
+        {/* Mobile Logo - shows on non-homepage OR on homepage when scrolled, centered */}
+        <div className="md:hidden flex items-center absolute left-1/2 -translate-x-1/2">
+          {(location.pathname !== '/' || scrolled) && (
+            <Link
+              to="/"
+              className="flex items-baseline text-2xl font-semibold tracking-tight transition-opacity duration-500"
+              style={{ opacity: scrolled || location.pathname !== '/' ? 1 : 0 }}
+            >
               <span
                 style={{
                   background: 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)',
@@ -721,7 +741,7 @@ const Navigation = () => {
         </div>
 
         <button
-          className="md:hidden text-white/60 hover:text-white p-2"
+          className="md:hidden text-white/60 hover:text-white p-2 ml-auto relative z-10"
           onClick={() => setMobileOpen(!mobileOpen)}
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -768,6 +788,22 @@ const Navigation = () => {
                 )}
               </div>
             ))}
+
+            {/* Contact Us Button */}
+            <div className="pt-4">
+              <Link
+                to="/contact"
+                className="block text-center text-base font-medium px-7 py-3 rounded-full transition-all duration-300"
+                style={{
+                  background: 'transparent',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  color: 'rgba(255,255,255,0.7)',
+                }}
+                onClick={() => setMobileOpen(false)}
+              >
+                Contact Us
+              </Link>
+            </div>
           </div>
         </div>
       )}
@@ -963,6 +999,18 @@ const HeroSection = () => {
         }}
       />
 
+      {/* Rotating Diamond Globe Background */}
+      <div
+        key="globe-background"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] pointer-events-none z-0 opacity-80"
+        style={{
+          transition: 'opacity 1s ease-in-out',
+          opacity: animationComplete ? 0.8 : 0
+        }}
+      >
+        <ThreeGlobe />
+      </div>
+
       <div
         className="absolute w-[400px] h-[200px] rounded-full pointer-events-none"
         style={{
@@ -991,7 +1039,7 @@ const HeroSection = () => {
       </div>
 
       <div className="relative z-20 text-center px-6 max-w-4xl mx-auto flex flex-col items-center" style={{ overflow: 'visible' }}>
-        <div className="flex justify-center w-full" style={{ overflow: 'visible', marginBottom: '-30px' }}>
+        <div className="flex justify-center w-full" style={{ overflow: 'visible', marginBottom: '-20px' }}>
           <LogoAnimation size="large" onComplete={() => setAnimationComplete(true)} />
         </div>
 
@@ -1010,7 +1058,6 @@ const HeroSection = () => {
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
-              marginTop: '-8px'
             }}
           >
             Elevating Businesses.
@@ -1377,111 +1424,11 @@ const ServicesSection = () => {
 };
 
 // ==========================================
-// TESTIMONIALS SECTION
+// TESTIMONIALS SECTION (COMMENTED OUT - Removed from homepage)
+// To re-enable, uncomment the component below and add <TestimonialsSection /> back to HomePage
 // ==========================================
-const TestimonialsSection = () => {
-  const [activeTestimonial, setActiveTestimonial] = useState(0);
 
-  const testimonials = [
-    {
-      name: "Sarah Chen",
-      role: "CTO",
-      company: "TechFlow Solutions",
-      image: "◈",
-      testimonial: "AntiGraviity transformed our entire digital infrastructure. Their attention to detail and innovative approach exceeded all expectations. The team delivered a solution that scaled perfectly with our growth.",
-      gradient: "from-blue-500/20 to-indigo-500/10"
-    },
-    {
-      name: "Michael Rodriguez",
-      role: "Founder & CEO",
-      company: "InnovateLabs",
-      image: "◇",
-      testimonial: "Working with AntiGraviity was a game-changer. They didn't just build our product—they became true partners in our success. The quality of work and dedication to excellence is unmatched.",
-      gradient: "from-emerald-500/20 to-teal-500/10"
-    },
-    {
-      name: "Priya Sharma",
-      role: "Head of Digital",
-      company: "Global Ventures Inc",
-      image: "○",
-      testimonial: "From concept to launch, AntiGraviity delivered exceptional results. Their expertise in modern technologies and design created an experience our users love. Best decision we made this year.",
-      gradient: "from-purple-500/20 to-violet-500/10"
-    },
-    {
-      name: "David Kim",
-      role: "VP of Product",
-      company: "NextGen Systems",
-      image: "△",
-      testimonial: "The team at AntiGraviity brings a rare combination of technical excellence and creative vision. They pushed us to think bigger and delivered a platform that positioned us ahead of our competitors.",
-      gradient: "from-orange-500/20 to-amber-500/10"
-    }
-  ];
 
-  return (
-    <section className="relative py-32 px-6 border-t border-white/[0.05]">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-20">
-          <p className="text-white/30 text-sm mb-4 tracking-wide">— CLIENT STORIES —</p>
-          <h2 className="text-4xl md:text-5xl text-white font-normal mb-6">
-            Trusted by innovators
-          </h2>
-          <p className="text-white/40 max-w-2xl mx-auto">
-            Don't just take our word for it. Here's what our clients say about partnering with us.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-          {testimonials.map((testimonial, index) => (
-            <div
-              key={index}
-              className="group p-8 rounded-2xl border border-white/[0.06] bg-black/30 backdrop-blur-sm hover:border-white/[0.12] transition-all duration-500 relative overflow-hidden cursor-pointer"
-              onMouseEnter={() => setActiveTestimonial(index)}
-            >
-              <div className={`absolute inset-0 bg-gradient-to-br ${testimonial.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-
-              <div className="relative z-10">
-                <div className="flex items-start gap-4 mb-6">
-                  <div className="w-12 h-12 rounded-full border border-white/[0.1] flex items-center justify-center bg-white/[0.02] flex-shrink-0">
-                    <span className="text-2xl text-white/30">{testimonial.image}</span>
-                  </div>
-                  <div>
-                    <h4 className="text-white font-medium">{testimonial.name}</h4>
-                    <p className="text-white/40 text-sm">{testimonial.role}</p>
-                    <p className="text-white/30 text-xs">{testimonial.company}</p>
-                  </div>
-                </div>
-
-                <p className="text-white/50 leading-relaxed mb-4">
-                  "{testimonial.testimonial}"
-                </p>
-
-                <div className="flex gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <svg key={i} className="w-4 h-4 text-yellow-500/70" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Client Logos */}
-        <div className="text-center">
-          <p className="text-white/20 text-xs mb-8 tracking-wide">TRUSTED BY LEADING COMPANIES</p>
-          <div className="flex flex-wrap items-center justify-center gap-12 opacity-40">
-            {['TechFlow', 'InnovateLabs', 'Global Ventures', 'NextGen', 'FutureScale', 'CloudPrime'].map((company, index) => (
-              <div key={index} className="text-white/30 hover:text-white/60 transition-colors text-sm font-medium tracking-wider">
-                {company}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-};
 
 // ==========================================
 // PROCESS/METHODOLOGY SECTION
@@ -2379,7 +2326,7 @@ const HomePage = () => {
 
       <ServicesSection />
       <TechStackSection />
-      <TestimonialsSection />
+      {/* <TestimonialsSection /> */}
       <ProcessSection />
       <CTASection />
     </>
