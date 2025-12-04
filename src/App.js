@@ -1060,7 +1060,7 @@ const HeroSection = () => {
               backgroundClip: 'text',
             }}
           >
-            Elevating Biz.
+            Elevating Businesses.
           </p>
         </div>
 
