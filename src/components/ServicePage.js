@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { getTechnology } from '../data/technologyStack';
 
 const ServicePage = ({
   title,
@@ -239,12 +240,30 @@ const ServicePage = ({
           <p className="text-white/30 text-sm mb-4 tracking-wide">— TECHNOLOGIES —</p>
           <h2 className="text-3xl md:text-4xl text-white font-normal mb-12">Tools & Technologies</h2>
 
-          <div className="flex flex-wrap gap-4">
-            {technologies.map((tech, index) => (
-              <div key={index} className="px-6 py-3 border border-white/[0.1] rounded-full text-white/60 text-sm hover:border-white/30 hover:text-white transition-all">
-                {tech}
-              </div>
-            ))}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {technologies.map((techName, index) => {
+              const tech = getTechnology(techName);
+              return (
+                <div
+                  key={index}
+                  className="group p-4 rounded-xl border border-white/[0.06] bg-black/20 hover:border-white/[0.15] transition-all duration-300 relative overflow-hidden flex flex-col items-center justify-center gap-3"
+                >
+                  <div
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                    style={{
+                      background: `radial-gradient(circle at center, ${tech.color} 0%, transparent 70%)`
+                    }}
+                  />
+
+                  <div className="relative z-10 text-2xl group-hover:scale-110 transition-transform duration-300">
+                    {tech.icon}
+                  </div>
+                  <div className="relative z-10 text-white/60 group-hover:text-white text-xs font-medium transition-colors text-center">
+                    {tech.name}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
