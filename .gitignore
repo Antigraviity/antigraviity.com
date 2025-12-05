@@ -33,3 +33,7 @@ Thumbs.db
 .yarn/build-state.yml
 .yarn/install-state.gz
 
+
+# Deployment Keys
+key
+key.pub
