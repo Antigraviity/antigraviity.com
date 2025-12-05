@@ -39,6 +39,9 @@ const WhatsAppButton = () => {
         if (path === '/products/antiai') return 'rgba(16, 185, 129, 0.3)';
         if (path === '/products/antichat') return 'rgba(99, 102, 241, 0.3)';
 
+        // Pricing pages
+        if (path.startsWith('/pricing/')) return 'rgba(245, 158, 11, 0.3)'; // Amber
+
         // Fallback for careers or other pages
         if (path.startsWith('/careers')) return 'rgba(236, 72, 153, 0.3)';
 

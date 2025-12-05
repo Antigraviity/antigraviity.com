@@ -6,6 +6,8 @@ const CustomCursor = () => {
     const [isPointer, setIsPointer] = useState(false);
     const location = useLocation();
 
+    // Updated: 2025-12-06 - Pricing pages use amber color
+
     // Gradient definitions matching Footer component
     const gradients = {
         default: {
@@ -49,8 +51,9 @@ const CustomCursor = () => {
         if (path === '/services') return gradients.mainServices;
         if (path.startsWith('/services/')) return gradients.services[path] || gradients.default;
         if (path.startsWith('/products/')) return gradients.products[path] || gradients.default;
+        if (path.startsWith('/pricing/')) return { color: 'rgba(194, 120, 60, 0.5)', glow: 'rgba(180, 100, 40, 0.3)' }; // Brownish-Orange to match footer gradient
 
-        return gradients.default;
+        return gradients.default; // Default sky blue
     };
 
     const currentStyle = getCurrentStyle();
