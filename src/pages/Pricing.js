@@ -192,11 +192,6 @@ const Pricing = () => {
     const navigate = useNavigate();
     usePageTitle('Pricing | AntiGraviity');
 
-    useEffect(() => {
-        if (!category || !pricingData[category]) {
-            navigate('/pricing/web-development', { replace: true });
-        }
-    }, [category, navigate]);
 
     const data = pricingData[category] || pricingData['web-development'];
 

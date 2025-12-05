@@ -1981,8 +1981,8 @@ const MainLayout = () => {
   const prevPathRef = useRef(location.pathname);
 
   useEffect(() => {
-    // Check if navigating between pricing sub-pages
-    const isPricingNav = location.pathname.startsWith('/pricing') && prevPathRef.current.startsWith('/pricing');
+    // Check if navigating to pricing pages (skip preloader to avoid stuck issue with redirects)
+    const isPricingNav = location.pathname.startsWith('/pricing');
 
     if (!isPricingNav) {
       // Start preloader on location change
