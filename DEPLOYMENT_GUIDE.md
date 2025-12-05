@@ -10,13 +10,11 @@ This guide documents the complete process for deploying a React frontend with a 
     ```bash
     npm run build
     ```
-    *This creates a `build` folder.*
 
 ### Node.js Server
-1.  **Serve Static Files**: Ensure your `server/index.js` serves the React build.
+1.  **Serve Static Files**: Ensure your `server/index.js` serves the React build using `app.use` (NOT `app.get('*')`).
     ```javascript
     const path = require('path');
-    // ...
     app.use(express.static(path.join(__dirname, '../build')));
     
     // Catch-all handler for React Router
@@ -32,54 +30,26 @@ This guide documents the complete process for deploying a React frontend with a 
 
 ## 2. Server Setup (CyberPanel)
 
-1.  **Create Website**: In CyberPanel, create a website for your domain (e.g., `antigraviity.com`).
-2.  **File Structure**:
-    *   Go to File Manager: `public_html`.
-    *   Upload the `build` folder from your local machine.
-    *   Upload the `server` folder.
-    *   Upload `package.json`.
-    *   **Result**:
-        ```
-        /home/domain.com/public_html/
-        ├── build/
-        ├── server/
-        ├── package.json
-        ```
-
-3.  **Install Dependencies**:
-    *   Open Terminal in CyberPanel (or SSH).
-    *   Navigate to your folder: `cd /home/domain.com/public_html`
-    *   Install: `npm install`
+1.  **Create Website**: in CyberPanel, create a website for your domain.
+2.  **File Structure**: Upload `build`, `server`, and `package.json` to `public_html`.
+3.  **Install Dependencies**: Run `npm install` in `public_html`.
 
 ## 3. Process Management (PM2)
 
 Start your Node.js server so it runs in the background.
 
 ```bash
-pm2 start server/index.js --name "my-app"
+PORT=5000 pm2 start server/index.js --name "antigraviity-backend"
 pm2 save
 pm2 startup
 ```
-*Check status: `pm2 status`*
 
-## 4. OpenLiteSpeed Configuration (The Critical Part)
+## 4. OpenLiteSpeed Configuration
 
-OpenLiteSpeed needs to know how to talk to your Node app (Reverse Proxy). **Do not rely on .htaccess for this.**
-
-### Step A: Edit vHost Config
-You need to edit the configuration file directly.
 **File Path**: `/usr/local/lsws/conf/vhosts/domain.com/vhost.conf`
 
-Run:
-```bash
-nano /usr/local/lsws/conf/vhosts/domain.com/vhost.conf
-```
-
-### Step B: Add External App & Context
-Add the following blocks to the bottom of the file (before the closing `}` if inside a block, or at the end):
-
+Add these blocks:
 ```apache
-# 1. Define the Node.js App
 extprocessor node_server {
   type                    proxy
   address                 127.0.0.1:5000
@@ -90,49 +60,70 @@ extprocessor node_server {
   respBuffer              0
 }
 
-# 2. Map traffic to the App
 context / {
   type                    proxy
   handler                 node_server
   addDefaultCharset       off
 }
 ```
-*Note: Replace `127.0.0.1:5000` with your actual port.*
+**Restart Server**: `systemctl restart lsws`
 
-### Step C: Restart Server
-```bash
-systemctl restart lsws
+## 5. CI/CD Setup (GitHub Actions)
+
+To enable auto-deployment when you push to GitHub:
+
+### A. Workflow File
+Create `.github/workflows/deploy.yml` in your project:
+```yaml
+name: Deploy to CyberPanel
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Deploy via SSH
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.PORT }}
+        script: |
+          cd /home/antigraviity.com/public_html
+          git pull origin main
+          npm install
+          npm run build
+          PORT=5000 pm2 restart antigraviity-backend --update-env
 ```
 
-## 5. SSL & Security
+### B. Server Git Setup
+Run this on your VPS once:
+```bash
+cd /home/antigraviity.com/public_html
+git init
+git remote add origin https://github.com/YOUR_USERNAME/REPO.git
+git fetch
+git reset --hard origin/main
+```
 
-1.  **Issue SSL**: In CyberPanel > Websites > List Websites > Issue SSL.
-2.  **Force HTTPS**: Edit `/home/domain.com/public_html/.htaccess`:
-    ```apache
-    RewriteEngine On
-    RewriteCond %{HTTPS} !=on
-    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-    ```
-3.  **Restart Again**: `systemctl restart lsws` (Required for SSL to take effect).
+### C. Server Keys
+1.  **Generate Keys**: Run `ssh-keygen -t rsa -b 4096` locally.
+2.  **Authorize**: Add the `public_key` content to `~/.ssh/authorized_keys` on the server.
+3.  **Secrets**: Add `SSH_PRIVATE_KEY`, `HOST`, `USERNAME`, `PORT` to GitHub Repository Secrets.
 
-## 6. Troubleshooting Common Errors
+## 6. Troubleshooting
 
-### ❌ 500 Internal Server Error
-*   **Cause**: Usually a conflict in `.htaccess`.
-*   **Fix**: Check `.htaccess` for lines like `RewriteRule ... [P]`. OpenLiteSpeed does **not** support the `[P]` flag in .htaccess. **Delete those lines.** The proxy is handled in `vhost.conf` (Step 4).
+### ❌ 503 Service Unavailable
+*   **Cause**: Port mismatch. App running on 3000, Proxy looking for 5000.
+*   **Fix**: `PORT=5000 pm2 restart antigraviity-backend --update-env`
 
-### ❌ 403 Forbidden
-*   **Cause**: The proxy context exists, but the `extprocessor` (External App) is missing or named incorrectly.
-*   **Fix**: Ensure the `handler` name in `context /` matches the `extprocessor` name exactly (e.g., `node_server`).
-
-### ❌ React Router "PathError" / Server Crashes
-*   **Cause**: `app.get('*', ...)` can sometimes fail with newer Express/Path-to-Regexp versions.
-*   **Fix**: Use `app.use(...)` for the catch-all route instead of `app.get`.
+### ❌ PathError / Server Crash
+*   **Cause**: `app.get('*', ...)` syntax issues.
+*   **Fix**: Use `app.use((req, res) => res.sendFile(...))` instead.
 
 ### ❌ Email "Invalid Login"
-*   **Cause**: Using a regular Gmail password.
-*   **Fix**:
-    1.  Enable 2FA on Google Account.
-    2.  Generate an **App Password**.
-    3.  Update `server/config.js` with the 16-char App Password.
-    4.  Restart app: `pm2 restart my-app`.
+*   **Cause**: Regular password used.
+*   **Fix**: Use Gmail **App Password** in `config.js`.

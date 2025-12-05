@@ -33,7 +33,7 @@ app.post('/api/contact', async (req, res) => {
     const { name, email, company, budget, service, message } = req.body;
 
     const mailOptions = {
-        from: `"${name}" <${email}>`,
+        from: `"AntiGraviity Contact" <${config.email.user}>`,
         to: config.email.user,
         subject: `New Contact Form Submission: ${name} - ${service}`,
         html: `
