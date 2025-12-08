@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import usePageTitle from '../hooks/usePageTitle';
+import CustomSelect from '../components/CustomSelect';
 
 const ContactUs = () => {
   usePageTitle('Contact Us | AntiGraviity');
@@ -379,38 +380,28 @@ const ContactUs = () => {
 
                   {/* Service & Budget Row */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <select
+                    <CustomSelect
                       name="service"
                       value={formData.service}
                       onChange={handleChange}
                       onFocus={() => setActiveField('service')}
                       onBlur={() => setActiveField(null)}
-                      className={`w-full px-4 py-3 bg-white/[0.03] border rounded-xl text-white text-sm focus:outline-none focus:border-violet-500/50 focus:bg-white/[0.05] appearance-none cursor-pointer ${activeField === 'service' ? 'border-violet-500/50 bg-white/[0.05]' : 'border-white/[0.08]'
-                        } ${!formData.service ? 'text-white/30' : ''}`}
-                      style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(255,255,255,0.3)'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', backgroundSize: '20px' }}
-                    >
-                      {services.map((s) => (
-                        <option key={s.value} value={s.value} className="bg-black text-white">
-                          {s.label}
-                        </option>
-                      ))}
-                    </select>
-                    <select
+                      options={services}
+                      placeholder="Select a service"
+                      activeField={activeField}
+                      fieldName="service"
+                    />
+                    <CustomSelect
                       name="budget"
                       value={formData.budget}
                       onChange={handleChange}
                       onFocus={() => setActiveField('budget')}
                       onBlur={() => setActiveField(null)}
-                      className={`w-full px-4 py-3 bg-white/[0.03] border rounded-xl text-white text-sm focus:outline-none focus:border-violet-500/50 focus:bg-white/[0.05] appearance-none cursor-pointer ${activeField === 'budget' ? 'border-violet-500/50 bg-white/[0.05]' : 'border-white/[0.08]'
-                        } ${!formData.budget ? 'text-white/30' : ''}`}
-                      style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(255,255,255,0.3)'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', backgroundSize: '20px' }}
-                    >
-                      {budgetRanges.map((b) => (
-                        <option key={b.value} value={b.value} className="bg-black text-white">
-                          {b.label}
-                        </option>
-                      ))}
-                    </select>
+                      options={budgetRanges}
+                      placeholder="Select budget range"
+                      activeField={activeField}
+                      fieldName="budget"
+                    />
                   </div>
 
                   {/* Message */}
