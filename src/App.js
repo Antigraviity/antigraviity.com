@@ -124,7 +124,6 @@ const Navigation = () => {
         { name: 'AntiChat', href: '/products/antichat' },
       ]
     },
-    { name: 'Pricing', href: '/pricing' },
   ];
 
   const isHomepage = location.pathname === '/';
