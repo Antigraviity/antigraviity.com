@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import './fonts/Croogla.css';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 
 // Import Service Pages
@@ -171,21 +172,15 @@ const Navigation = () => {
         {/* Logo - shows on non-homepage pages OR on homepage when scrolled */}
         <div className="hidden md:flex items-center" style={{ minWidth: '250px' }}>
           {(location.pathname !== '/' || scrolled) && (
-            <Link to="/" className="flex items-baseline text-4xl font-semibold tracking-tight transition-opacity duration-500" style={{ opacity: scrolled || location.pathname !== '/' ? 1 : 0 }}>
-              <span style={{ color: isLegalPage ? '#1a1a1a' : undefined, background: isLegalPage ? undefined : 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)', WebkitBackgroundClip: isLegalPage ? undefined : 'text', WebkitTextFillColor: isLegalPage ? undefined : 'transparent', backgroundClip: isLegalPage ? undefined : 'text' }}>
-                AntiGrav
-              </span>
-              <span className="inline-flex items-baseline" style={{ margin: '0 0.02em' }}>
-                <span className="inline-block" style={{ color: isLegalPage ? '#1a1a1a' : undefined, background: isLegalPage ? undefined : 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)', WebkitBackgroundClip: isLegalPage ? undefined : 'text', WebkitTextFillColor: isLegalPage ? undefined : 'transparent', backgroundClip: isLegalPage ? undefined : 'text', transform: 'rotate(180deg) translateY(-0.08em)', animation: 'levitate1 3s ease-in-out infinite' }}>
-                  i
-                </span>
-                <span className="inline-block" style={{ color: isLegalPage ? '#1a1a1a' : undefined, background: isLegalPage ? undefined : 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)', WebkitBackgroundClip: isLegalPage ? undefined : 'text', WebkitTextFillColor: isLegalPage ? undefined : 'transparent', backgroundClip: isLegalPage ? undefined : 'text', transform: 'rotate(180deg) translateY(-0.12em)', animation: 'levitate2 3s ease-in-out infinite 0.15s' }}>
-                  i
-                </span>
-              </span>
-              <span style={{ color: isLegalPage ? '#1a1a1a' : undefined, background: isLegalPage ? undefined : 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)', WebkitBackgroundClip: isLegalPage ? undefined : 'text', WebkitTextFillColor: isLegalPage ? undefined : 'transparent', backgroundClip: isLegalPage ? undefined : 'text' }}>
-                ty
-              </span>
+            <Link to="/" className="flex items-center transition-opacity duration-500" style={{ opacity: scrolled || location.pathname !== '/' ? 1 : 0 }}>
+              <img
+                src="/antigraviity-logo.webp"
+                alt="AntiGraviity"
+                className="h-[40px] w-auto object-contain"
+                style={{
+                  filter: isLegalPage ? 'invert(1) brightness(0.2)' : 'none'
+                }}
+              />
             </Link>
           )}
         </div>
@@ -305,49 +300,17 @@ const Navigation = () => {
           {(location.pathname !== '/' || scrolled) && (
             <Link
               to="/"
-              className="flex items-baseline text-2xl font-semibold tracking-tight transition-opacity duration-500"
+              className="flex items-center transition-opacity duration-500"
               style={{ opacity: scrolled || location.pathname !== '/' ? 1 : 0 }}
             >
-              <span
+              <img
+                src="/antigraviity-logo.webp"
+                alt="AntiGraviity"
+                className="h-[32px] w-auto object-contain"
                 style={{
-                  background: 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
+                  filter: isLegalPage ? 'invert(1) brightness(0.2)' : 'none'
                 }}
-              >AntiGrav</span>
-              <span className="inline-flex items-baseline" style={{ margin: '0 0.02em' }}>
-                <span
-                  className="inline-block"
-                  style={{
-                    background: 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    transform: 'rotate(180deg) translateY(-0.08em)',
-                    animation: 'levitate1 3s ease-in-out infinite'
-                  }}
-                >i</span>
-                <span
-                  className="inline-block"
-                  style={{
-                    background: 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    transform: 'rotate(180deg) translateY(-0.12em)',
-                    animation: 'levitate2 3s ease-in-out infinite 0.15s'
-                  }}
-                >i</span>
-              </span>
-              <span
-                style={{
-                  background: 'linear-gradient(180deg, #ffffff 0%, #ffffff 25%, #a8a8a8 50%, #6b6b6b 75%, #4a4a4a 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
-              >ty</span>
+              />
             </Link>
           )}
         </div>
@@ -1585,7 +1548,7 @@ const Footer = () => {
               </div>
             )}
 
-            <span className={isLegalPage ? 'text-gray-900' : 'text-white'}>AntiGrav</span>
+            <span className={isLegalPage ? 'text-gray-900' : 'text-white'}>antigrav</span>
             <span className="inline-flex items-baseline" style={{ margin: '0 0.02em' }}>
               <span
                 className={`inline-block ${isLegalPage ? 'text-gray-900' : 'text-white'}`}

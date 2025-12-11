@@ -16,11 +16,11 @@ const LogoAnimation = ({ onComplete, size = "large" }) => {
 
     // Letter data with staggered delays
     const letters = [
-        { char: 'A', position: 0, delay: 0 },
+        { char: 'a', position: 0, delay: 0 },
         { char: 'n', position: 1, delay: 0.06 },
         { char: 't', position: 2, delay: 0.12 },
         { char: 'i', position: 3, delay: 0.18 },
-        { char: 'G', position: 4, delay: 0.24 },
+        { char: 'g', position: 4, delay: 0.24 },
         { char: 'r', position: 5, delay: 0.30 },
         { char: 'a', position: 6, delay: 0.36 },
         { char: 'v', position: 7, delay: 0.42 },
@@ -192,7 +192,7 @@ const LogoAnimation = ({ onComplete, size = "large" }) => {
                 </div>
             )}
 
-            <div className={`flex items-baseline justify-center ${sizes[size]} tracking-tight font-semibold select-none relative z-10`} style={{ paddingBottom: '0.3em', lineHeight: '1.3' }}>
+            <div className={`flex items-baseline justify-center ${sizes[size]} tracking-tight select-none relative z-10`} style={{ paddingBottom: '0.3em', lineHeight: '1.3', fontFamily: '"Outfit", sans-serif', fontWeight: 'normal' }}>
 
                 {/* AntiGrav */}
                 {letters.slice(0, 8).map((letter, idx) => (
