@@ -9,9 +9,14 @@ require('dotenv').config(); // Try current directory
 
 const config = require('./config');
 
+// Clean password (remove spaces)
+if (config.email.pass) {
+    config.email.pass = config.email.pass.replace(/\s/g, '');
+}
+
 console.log('--- Server Auth Status ---');
 console.log('User:', config.email.user ? `${config.email.user.substring(0, 3)}...` : 'MISSING');
-console.log('Pass Length:', config.email.pass ? config.email.pass.length : 'MISSING');
+console.log('Pass Length (Cleaned):', config.email.pass ? config.email.pass.length : 'MISSING');
 console.log('-------------------------');
 const app = express();
 const PORT = process.env.PORT || config.port;
