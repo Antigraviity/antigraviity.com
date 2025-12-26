@@ -1,9 +1,18 @@
-require('dotenv').config();
 const express = require('express');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
+const path = require('path');
+
+// Load environment variables
+require('dotenv').config({ path: path.join(__dirname, '../.env') }); // Try root
+require('dotenv').config(); // Try current directory
+
 const config = require('./config');
 
+console.log('--- Server Auth Status ---');
+console.log('User:', config.email.user ? `${config.email.user.substring(0, 3)}...` : 'MISSING');
+console.log('Pass Length:', config.email.pass ? config.email.pass.length : 'MISSING');
+console.log('-------------------------');
 const app = express();
 const PORT = process.env.PORT || config.port;
 
