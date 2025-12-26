@@ -25,19 +25,27 @@ const PORT = process.env.PORT || config.port;
 app.use(cors());
 app.use(express.json());
 
-// Email Transporter
+// Email Transporter (Explicit Configuration for Gmail)
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // Use TLS
     auth: {
         user: config.email.user,
         pass: config.email.pass
-    }
+    },
+    debug: true, // Enable debug output
+    logger: true // Log information to console
 });
 
 // Verify Transporter
 transporter.verify((error, success) => {
     if (error) {
-        console.error('Email server connection error:', error);
+        console.error('--- Email Verification Error ---');
+        console.error('Error Code:', error.code);
+        console.error('Error Message:', error.message);
+        if (error.response) console.error('SMTP Response:', error.response);
+        console.error('--------------------------------');
     } else {
         console.log('Email server ready to send messages');
     }
