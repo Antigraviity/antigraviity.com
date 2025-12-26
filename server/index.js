@@ -30,6 +30,7 @@ const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
     secure: true, // Use TLS
+    name: 'gmail.com', // Explicit EHLO name
     auth: {
         user: config.email.user,
         pass: config.email.pass
