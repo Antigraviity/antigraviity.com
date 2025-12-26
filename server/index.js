@@ -3,23 +3,28 @@ const nodemailer = require('nodemailer');
 const cors = require('cors');
 const path = require('path');
 
-// Load environment variables
-require('dotenv').config({ path: path.join(__dirname, '../.env') }); // Try root
-require('dotenv').config(); // Try current directory
+// Consolidate environment loading (Explicitly point to root .env)
+require('dotenv').config({
+    path: path.join(__dirname, '../.env'),
+    override: true
+});
 
 const config = require('./config');
 
-// Clean password (remove spaces)
+// Strictly clean credentials
+if (config.email.user) config.email.user = config.email.user.trim();
 if (config.email.pass) {
+    // Remove all whitespace from the App Password
     config.email.pass = config.email.pass.replace(/\s/g, '');
 }
 
 console.log('--- Server Auth Status ---');
-console.log('User:', config.email.user ? `${config.email.user.substring(0, 3)}...` : 'MISSING');
-console.log('Pass Length (Cleaned):', config.email.pass ? config.email.pass.length : 'MISSING');
+console.log('User:', config.email.user ? `[${config.email.user}]` : 'MISSING');
+console.log('Pass Length:', config.email.pass ? config.email.pass.length : '0');
 console.log('-------------------------');
+
 const app = express();
-const PORT = process.env.PORT || config.port;
+const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
