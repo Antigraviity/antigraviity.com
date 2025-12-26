@@ -20,7 +20,7 @@ if (config.email.pass) {
 
 console.log('--- Server Auth Status ---');
 console.log('User:', config.email.user ? `[${config.email.user}]` : 'MISSING');
-console.log('Pass Length:', config.email.pass ? config.email.pass.length : '0');
+console.log('Pass:', config.email.pass ? `${config.email.pass.substring(0, 3)}...` : 'MISSING', `(Length: ${config.email.pass ? config.email.pass.length : 0})`);
 console.log('-------------------------');
 
 const app = express();
@@ -30,19 +30,12 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Email Transporter (Alternative Port 587 for VPS/Hostinger compatibility)
+// Email Transporter (Standard Service Mode)
 const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // Use STARTTLS
-    name: 'gmail.com',
+    service: 'gmail',
     auth: {
         user: config.email.user,
         pass: config.email.pass
-    },
-    tls: {
-        // Do not fail on invalid certificates (useful for some VPS proxies)
-        rejectUnauthorized: false
     },
     debug: true,
     logger: true
@@ -52,9 +45,8 @@ const transporter = nodemailer.createTransport({
 transporter.verify((error, success) => {
     if (error) {
         console.error('--- Email Verification Error ---');
-        console.error('Error Code:', error.code);
-        console.error('Error Message:', error.message);
-        if (error.response) console.error('SMTP Response:', error.response);
+        console.error('Code:', error.code);
+        console.error('Message:', error.message);
         console.error('--------------------------------');
     } else {
         console.log('Email server ready to send messages');
