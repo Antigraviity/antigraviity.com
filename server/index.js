@@ -25,18 +25,22 @@ const PORT = process.env.PORT || config.port;
 app.use(cors());
 app.use(express.json());
 
-// Email Transporter (Explicit Configuration for Gmail)
+// Email Transporter (Alternative Port 587 for VPS/Hostinger compatibility)
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // Use TLS
-    name: 'gmail.com', // Explicit EHLO name
+    port: 587,
+    secure: false, // Use STARTTLS
+    name: 'gmail.com',
     auth: {
         user: config.email.user,
         pass: config.email.pass
     },
-    debug: true, // Enable debug output
-    logger: true // Log information to console
+    tls: {
+        // Do not fail on invalid certificates (useful for some VPS proxies)
+        rejectUnauthorized: false
+    },
+    debug: true,
+    logger: true
 });
 
 // Verify Transporter
