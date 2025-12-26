@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
@@ -19,7 +20,7 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// Verify Transporterr
+// Verify Transporter
 transporter.verify((error, success) => {
     if (error) {
         console.error('Email server connection error:', error);

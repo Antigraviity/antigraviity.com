@@ -126,7 +126,7 @@ const WhatsAppButton = () => {
                 />
             </div>
 
-            <style jsx>{`
+            <style>{`
         @keyframes pulse {
           0%, 100% {
             opacity: 1;

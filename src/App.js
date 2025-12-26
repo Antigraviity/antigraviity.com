@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import './fonts/Croogla.css';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 
+
 // Import Service Pages
 import WebDevelopment from './pages/WebDevelopment';
 import AppDevelopment from './pages/AppDevelopment';
@@ -43,6 +44,12 @@ import { technologies } from './data/technologyStack';
 import LogoAnimation from './components/LogoAnimation';
 import Preloader from './components/Preloader';
 import InteractiveParticles from './components/InteractiveParticles';
+
+// Note: To silence React Router v7 future flag warnings, we configure the router future flags.
+const routerFutureConfig = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true,
+};
 
 // ==========================================
 // BRAND NAME COMPONENT (Reusable with levitating ii)
@@ -176,7 +183,7 @@ const Navigation = () => {
               <img
                 src="/antigraviity-logo.webp"
                 alt="AntiGraviity"
-                className="h-[40px] w-auto object-contain"
+                className="h-[68px] w-auto object-contain"
                 style={{
                   filter: isLegalPage ? 'invert(1) brightness(0.2)' : 'none'
                 }}
@@ -306,7 +313,7 @@ const Navigation = () => {
               <img
                 src="/antigraviity-logo.webp"
                 alt="AntiGraviity"
-                className="h-[32px] w-auto object-contain"
+                className="h-[54px] w-auto object-contain"
                 style={{
                   filter: isLegalPage ? 'invert(1) brightness(0.2)' : 'none'
                 }}
@@ -2028,7 +2035,7 @@ const MainLayout = () => {
 // ==========================================
 function App() {
   return (
-    <Router>
+    <Router future={routerFutureConfig}>
       <ScrollToTop />
       <CustomCursor />
       <WhatsAppButton />
