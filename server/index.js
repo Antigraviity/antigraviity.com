@@ -6,7 +6,7 @@ const path = require('path');
 // Consolidate environment loading (Explicitly point to root .env)
 require('dotenv').config({
     path: path.join(__dirname, '../.env'),
-    override: true
+    override: false
 });
 
 const config = require('./config');
