@@ -49,7 +49,7 @@ const PricingLayout = ({ children, title, subtitle }) => {
         }
     ];
 
-    const menuItems = showBundled ? bundledPackageItems : singlePackageItems;
+
 
     return (
         <div className="min-h-screen pt-24 pb-12 bg-black text-white relative overflow-hidden perspective-1000">

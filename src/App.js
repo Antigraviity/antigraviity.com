@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './fonts/Croogla.css';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 
@@ -1016,7 +1016,6 @@ const ServicesSection = () => {
 // PROCESS/METHODOLOGY SECTION
 // ==========================================
 const ProcessSection = () => {
-  const [activeStep, setActiveStep] = useState(null);
 
   const steps = [
     {
@@ -1081,8 +1080,6 @@ const ProcessSection = () => {
             <div
               key={index}
               className="group p-8 rounded-2xl border border-white/[0.06] bg-black/30 relative overflow-hidden hover:border-white/[0.12] transition-all duration-500 cursor-pointer"
-              onMouseEnter={() => setActiveStep(index)}
-              onMouseLeave={() => setActiveStep(null)}
             >
               <div className={`absolute inset-0 bg-gradient-to-br ${step.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
 
@@ -1220,79 +1217,7 @@ const CTASection = () => {
 // ==========================================
 // NEWS SECTION
 // ==========================================
-const NewsSection = () => {
-  const news = [
-    {
-      date: "November 25, 2024",
-      title: "AntiGraviity Platform 2.0 Launch",
-      description: "Introducing our next-generation development platform.",
-      gradient: "from-blue-900/40 to-indigo-900/20"
-    },
-    {
-      date: "November 20, 2024",
-      title: "Global Partnership Announcement",
-      description: "Strategic partnership with leading technology providers.",
-      gradient: "from-emerald-900/40 to-teal-900/20"
-    },
-    {
-      date: "November 15, 2024",
-      title: "AI Solutions Suite Preview",
-      description: "New AI-powered tools launching Q1 2025.",
-      gradient: "from-orange-900/40 to-red-900/20"
-    }
-  ];
 
-  return (
-    <section id="news" className="relative py-32 px-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-16">
-          <div>
-            <p className="text-white/30 text-sm mb-4 tracking-wide">— NEWS —</p>
-            <h2 className="text-3xl md:text-4xl text-white font-normal">Latest updates</h2>
-          </div>
-          <a href="#" className="hidden md:flex items-center gap-2 text-white/40 hover:text-white text-sm transition-colors">
-            View all
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-          </a>
-        </div>
-
-        <div className="space-y-0 divide-y divide-white/[0.05]">
-          {news.map((item) => (
-            <article
-              key={item.title}
-              className="group py-10 grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-12 items-center"
-            >
-              <div className="md:col-span-2">
-                <p className="text-white/25 text-sm">{item.date}</p>
-              </div>
-
-              <div className="md:col-span-6">
-                <h3 className="text-xl md:text-2xl text-white mb-2 group-hover:text-white/80 transition-colors">
-                  {item.title}
-                </h3>
-                <p className="text-white/35 text-sm">{item.description}</p>
-                <a href="#" className="inline-flex items-center gap-2 text-white/40 hover:text-white text-sm mt-4 transition-colors">
-                  Read
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </a>
-              </div>
-
-              <div className="md:col-span-4">
-                <div className={`aspect-video rounded-lg overflow-hidden bg-gradient-to-br ${item.gradient}`}>
-                  <div className="w-full h-full bg-black/30" />
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-};
 
 // ==========================================
 // FOOTER

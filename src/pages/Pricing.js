@@ -1,6 +1,6 @@
 
-import React, { useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useRef, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import PricingLayout from '../components/PricingLayout';
 import { pricingData } from '../data/pricingData';
 import usePageTitle from '../hooks/usePageTitle';
@@ -10,7 +10,6 @@ import usePageTitle from '../hooks/usePageTitle';
 // ==========================================
 const TiltCard = ({ plan, index, isHorizontal = false }) => {
     const cardRef = useRef(null);
-    const [style, setStyle] = useState({});
     const [glowStyle, setGlowStyle] = useState({});
 
     const handleMouseMove = (e) => {
@@ -189,7 +188,7 @@ const TiltCard = ({ plan, index, isHorizontal = false }) => {
 // ==========================================
 const Pricing = () => {
     const { category } = useParams();
-    const navigate = useNavigate();
+
     usePageTitle('Pricing | AntiGraviity');
 
 

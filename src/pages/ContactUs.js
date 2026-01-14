@@ -147,7 +147,7 @@ const ContactUs = () => {
       value: "Chennai, India",
       subtext: "Schedule a meeting",
       gradient: "from-purple-500/20 to-violet-500/10",
-      href: "#"
+      href: "mailto:info@antigraviity.com" // Defaulting to email for visit us for now
     }
   ];
 
@@ -513,8 +513,8 @@ const ContactUs = () => {
               <p className="text-white/50 mb-8 max-w-md">
                 Not sure where to start? Book a 30-minute call with our team to explore how we can help bring your vision to life.
               </p>
-              <a
-                href="#"
+              <button
+                onClick={() => { }}
                 className="inline-flex items-center gap-3 px-8 py-4 bg-white text-black text-sm font-medium rounded-full hover:bg-white/90 transition-colors group"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -524,7 +524,7 @@ const ContactUs = () => {
                 <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
-              </a>
+              </button>
             </div>
           </div>
         </div>

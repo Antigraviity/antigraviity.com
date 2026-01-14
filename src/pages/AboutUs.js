@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import ThreeGlobe from '../components/ThreeGlobe';
 import usePageTitle from '../hooks/usePageTitle';
@@ -8,6 +8,30 @@ const AnimatedCounter = ({ target, duration = 4000, suffix = '' }) => {
   const [count, setCount] = useState(0);
   const [hasAnimated, setHasAnimated] = useState(false);
   const counterRef = useRef(null);
+
+  const animateCount = useCallback(() => {
+    const startTime = Date.now();
+    const startValue = 0;
+    const endValue = target;
+
+    const updateCount = () => {
+      const now = Date.now();
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Easing function for smooth animation
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      const currentValue = Math.floor(startValue + (endValue - startValue) * easeOutQuart);
+
+      setCount(currentValue);
+
+      if (progress < 1) {
+        requestAnimationFrame(updateCount);
+      }
+    };
+
+    requestAnimationFrame(updateCount);
+  }, [target, duration]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -32,31 +56,7 @@ const AnimatedCounter = ({ target, duration = 4000, suffix = '' }) => {
         observer.unobserve(currentRef);
       }
     };
-  }, [hasAnimated]);
-
-  const animateCount = () => {
-    const startTime = Date.now();
-    const startValue = 0;
-    const endValue = target;
-
-    const updateCount = () => {
-      const now = Date.now();
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-
-      // Easing function for smooth animation
-      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-      const currentValue = Math.floor(startValue + (endValue - startValue) * easeOutQuart);
-
-      setCount(currentValue);
-
-      if (progress < 1) {
-        requestAnimationFrame(updateCount);
-      }
-    };
-
-    requestAnimationFrame(updateCount);
-  };
+  }, [hasAnimated, animateCount]);
 
   return (
     <span ref={counterRef}>
