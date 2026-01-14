@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import './fonts/Croogla.css';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 
@@ -42,7 +42,7 @@ import Pricing from './pages/Pricing';
 
 import { technologies } from './data/technologyStack';
 import LogoAnimation from './components/LogoAnimation';
-import Preloader from './components/Preloader';
+
 import InteractiveParticles from './components/InteractiveParticles';
 
 // Note: To silence React Router v7 future flag warnings, we configure the router future flags.
@@ -1809,7 +1809,7 @@ const Footer = () => {
 
         <div className="max-w-7xl mx-auto px-6 py-1 flex flex-col items-center gap-4 relative z-10">
           <p className={`text-xs mt-4 ${isLegalPage ? 'text-gray-900' : 'text-white/100'}`}>
-            © 2025 AntiGraviity Technologies Pvt. Ltd. All rights reserved.
+            © {new Date().getFullYear()} AntiGraviity Technologies Pvt Ltd All rights reserved.
           </p>
         </div>
 
@@ -1863,7 +1863,6 @@ const ScrollToTop = () => {
 // ==========================================
 const MainLayout = () => {
   const location = useLocation();
-  const [isLoading, setIsLoading] = useState(false);
 
   const isLegalPage = location.pathname.startsWith('/privacy') ||
     location.pathname.startsWith('/terms') ||
@@ -1871,31 +1870,7 @@ const MainLayout = () => {
     location.pathname.startsWith('/sla') ||
     location.pathname.startsWith('/aup');
 
-  // Handle Page Navigation with Preloader
-  const prevPathRef = useRef(location.pathname);
 
-  useEffect(() => {
-    // Check if navigating to pricing pages (skip preloader to avoid stuck issue with redirects)
-    const isPricingNav = location.pathname.startsWith('/pricing');
-
-    if (!isPricingNav) {
-      // Start preloader on location change
-      setIsLoading(true);
-
-      // Smooth scroll to top
-      window.scrollTo(0, 0);
-
-      // Stop preloader after minimal delay
-      const timer = setTimeout(() => {
-        setIsLoading(false);
-      }, 1200); // 1.2s for smooth transition
-
-      prevPathRef.current = location.pathname;
-      return () => clearTimeout(timer);
-    }
-
-    prevPathRef.current = location.pathname;
-  }, [location.pathname]);
 
   // Dynamically set body background color to handle overscroll/panning
   useEffect(() => {
@@ -1917,7 +1892,6 @@ const MainLayout = () => {
 
   return (
     <div className={`min-h-screen relative w-full overflow-x-hidden ${isLegalPage ? 'bg-white text-gray-900' : 'bg-black text-white'}`}>
-      <Preloader isLoading={isLoading} />
       {!isLegalPage && <InteractiveParticles />}
       <Navigation />
 
