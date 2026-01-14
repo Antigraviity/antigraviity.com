@@ -6,28 +6,67 @@ on:
       - main
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Deploy via SSH
-      uses: appleboy/ssh-action@v1.0.0
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: ${{ secrets.PORT }}
-        script: |
-          cd /home/antigraviity.com/public_html
-          
-          # Pull latest changes
-          git pull origin main
-          
-          # Install dependencies
-          npm install
-          
-          # Build React App
-          npm run build
-          
-          # Restart Backend (Ensuring Port 5001)
-          PORT=5001 pm2 restart antigravity-backend --update-env
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build React App
+        run: npm run build
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-files
+          path: build/
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-files
+          path: build/
+
+      - name: Transfer Build to Server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.PORT }}
+          source: "build/"
+          target: "/home/antigraviity.com/public_html/"
+
+      - name: Deploy via SSH (Restart Backend)
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            cd /home/antigraviity.com/public_html
+            
+            # Pull latest backend/config changes
+            git pull origin main
+            
+            # Install backend dependencies (usually fast)
+            npm install --production
+            
+            # Restart Backend (Ensuring Port 5001)
+            PORT=5001 pm2 restart antigravity-backend --update-env
+
