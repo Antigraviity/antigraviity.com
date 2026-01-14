@@ -11,7 +11,7 @@ const LogoAnimation = ({ onComplete, size = "large" }) => {
     const sizes = {
         small: "text-xl md:text-2xl",
         medium: "text-3xl md:text-4xl",
-        large: "text-5xl md:text-7xl lg:text-8xl"
+        large: "text-5xl md:text-7xl lg:text-7xl"
     };
 
     // Letter data with staggered delays

@@ -177,13 +177,13 @@ const Navigation = () => {
       )}
       <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between relative">
         {/* Logo - shows on non-homepage pages OR on homepage when scrolled */}
-        <div className="hidden md:flex items-center" style={{ minWidth: '250px' }}>
+        <div className="hidden md:flex items-center" style={{ minWidth: '200px' }}>
           {(location.pathname !== '/' || scrolled) && (
             <Link to="/" className="flex items-center transition-opacity duration-500" style={{ opacity: scrolled || location.pathname !== '/' ? 1 : 0 }}>
               <img
                 src="/antigraviity-logo.webp"
                 alt="AntiGraviity"
-                className="h-[68px] w-auto object-contain"
+                className="h-[56px] w-auto object-contain"
                 style={{
                   filter: isLegalPage ? 'invert(1) brightness(0.2)' : 'none'
                 }}
@@ -1450,7 +1450,7 @@ const Footer = () => {
 
       <div className="relative py-4 md:py-0" style={{ overflow: 'visible' }}>
         <div className="w-full px-2 md:px-4" style={{ overflow: 'visible' }}>
-          <div className="flex items-baseline justify-center tracking-tighter leading-[0.85] select-none relative" style={{ fontFamily: "'Outfit', 'Inter', sans-serif", fontWeight: 700, fontSize: 'clamp(60px, 12vw, 200px)', overflow: 'visible', paddingBottom: '0.25em', letterSpacing: '0.01em' }}>
+          <div className="flex items-baseline justify-center tracking-tighter leading-[0.85] select-none relative" style={{ fontFamily: "'Outfit', 'Inter', sans-serif", fontWeight: 700, fontSize: 'clamp(60px, 10vw, 180px)', overflow: 'visible', paddingBottom: '0.25em', letterSpacing: '0.01em' }}>
             {/* Particles for legal pages */}
             {isLegalPage && (
               <div className="absolute inset-0 pointer-events-none" style={{ transform: 'scale(1.5)' }}>
