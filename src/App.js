@@ -1809,7 +1809,7 @@ const Footer = () => {
 
         <div className="max-w-7xl mx-auto px-6 py-1 flex flex-col items-center gap-4 relative z-10">
           <p className={`text-xs mt-4 ${isLegalPage ? 'text-gray-900' : 'text-white/100'}`}>
-            © {new Date().getFullYear()} AntiGraviity Technologies Pvt Ltd All rights reserved.
+            © {new Date().getFullYear()} AntiGraviity Technologies Pvt Ltd. All rights reserved.
           </p>
         </div>
 
