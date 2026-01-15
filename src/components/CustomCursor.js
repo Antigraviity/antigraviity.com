@@ -39,6 +39,10 @@ const CustomCursor = () => {
             '/products/antisec': { color: 'rgba(239, 68, 68, 0.5)', glow: 'rgba(239, 68, 68, 0.2)' }, // Red
             '/products/antiai': { color: 'rgba(16, 185, 129, 0.5)', glow: 'rgba(16, 185, 129, 0.2)' }, // Emerald
             '/products/antichat': { color: 'rgba(99, 102, 241, 0.5)', glow: 'rgba(99, 102, 241, 0.2)' } // Indigo
+        },
+        careers: {
+            color: 'rgba(236, 72, 153, 0.5)', // Pink
+            glow: 'rgba(236, 72, 153, 0.2)'
         }
     };
 
@@ -49,6 +53,7 @@ const CustomCursor = () => {
         if (path === '/about-us') return gradients.about;
         if (path === '/contact') return gradients.contact;
         if (path === '/services') return gradients.mainServices;
+        if (path === '/careers') return gradients.careers;
         if (path.startsWith('/services/')) return gradients.services[path] || gradients.default;
         if (path.startsWith('/products/')) return gradients.products[path] || gradients.default;
         if (path.startsWith('/pricing/')) return { color: 'rgba(194, 120, 60, 0.5)', glow: 'rgba(180, 100, 40, 0.3)' }; // Brownish-Orange to match footer gradient
@@ -76,6 +81,11 @@ const CustomCursor = () => {
         window.addEventListener('mousemove', updatePosition);
         return () => window.removeEventListener('mousemove', updatePosition);
     }, []);
+
+    // Disable custom cursor for candidate portal/dashboard
+    if (location.pathname.startsWith('/candidate')) {
+        return null;
+    }
 
     return (
         <>

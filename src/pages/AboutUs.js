@@ -202,7 +202,7 @@ const AboutUs = () => {
               <span className="block">elevate businesses.</span>
             </h1>
             <p className="text-white/50 text-lg md:text-xl leading-relaxed max-w-2xl">
-              AntiGraviity Technologies is a full-service digital agency that transforms ideas into
+              AntiGraviity Technologies Pvt Ltd is a full-service digital agency that transforms ideas into
               powerful digital solutions. We combine creativity with technology to help businesses
               defy limitations and reach new heights.
             </p>

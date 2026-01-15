@@ -9,7 +9,7 @@ const SLA = () => {
             <section>
                 <h2 className="text-2xl text-gray-900 font-semibold mb-4">1. Service Commitment</h2>
                 <p>
-                    AntiGraviity Technologies is committed to providing a reliable, high-quality service. We guarantee a Monthly Uptime Percentage of at least 99.9% for our SaaS products.
+                    AntiGraviity Technologies Pvt Ltd is committed to providing a reliable, high-quality service. We guarantee a Monthly Uptime Percentage of at least 99.9% for our SaaS products.
                 </p>
             </section>
 

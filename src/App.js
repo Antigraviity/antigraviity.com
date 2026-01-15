@@ -36,6 +36,13 @@ import ThreeGlobe from './components/ThreeGlobe';
 import Pricing from './pages/Pricing';
 import FlashMessage from './components/FlashMessage';
 
+// Import Portal Pages
+import Login from './pages/Portal/Login';
+import OnboardingDashboard from './pages/Portal/OnboardingDashboard';
+import HRDashboard from './pages/Portal/HRDashboard';
+import HRLogin from './pages/Portal/HRLogin';
+import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3';
+
 // ANTIGRAVIITY TECHNOLOGIES - COMPLETE WEBSITE
 // With Integrated Logo Animation
 // x.ai / Grok Style - Clean, Minimal, Premium
@@ -412,7 +419,7 @@ const HeroSection = () => {
       path: '/services/web-development',
       type: 'service',
       icon: '◈',
-      keywords: ['web', 'website', 'web development', 'react', 'nextjs', 'next.js', 'vue', 'angular', 'frontend', 'backend', 'fullstack', 'full stack', 'responsive', 'landing page', 'ecommerce', 'e-commerce', 'online store', 'portal', 'webapp', 'web app', 'pwa', 'progressive web app', 'cms', 'wordpress', 'node', 'javascript', 'typescript', 'html', 'css'],
+      keywords: ['web', 'website', 'web development', 'react', 'nextjs', 'next.js', 'vue', 'angular', 'frontend', 'backend', 'fullstack', 'full stack', 'responsive', 'landing page', 'ecommerce', 'e-commerce', 'online store', 'candidate', 'webapp', 'web app', 'pwa', 'progressive web app', 'cms', 'wordpress', 'node', 'javascript', 'typescript', 'html', 'css'],
       description: 'Modern websites & web apps'
     },
     {
@@ -1237,6 +1244,18 @@ const Footer = () => {
     location.pathname.startsWith('/sla') ||
     location.pathname.startsWith('/aup');
   const isPricingPage = location.pathname.startsWith('/pricing/');
+  const isCareersPage = location.pathname === '/careers';
+
+  // Careers page gradient colors - Pink (Matching WhatsApp Pulse)
+  const careersGradient = {
+    primary: 'rgba(236, 72, 153, 0.18)',
+    primaryLight: 'rgba(236, 72, 153, 0.08)',
+    secondary: 'rgba(236, 72, 153, 0.04)',
+    secondaryLight: 'rgba(236, 72, 153, 0.15)',
+    glow: 'rgba(236, 72, 153, 0.25)',
+    glowLight: 'rgba(236, 72, 153, 0.12)',
+    line: 'rgba(236, 72, 153, 0.4)'
+  };
 
   // About Us page gradient colors
   const aboutGradient = {
@@ -1519,7 +1538,7 @@ const Footer = () => {
 
       <div className={`relative ${isLegalPage ? 'border-t border-gray-200' : 'border-t border-white/[0.05]'}`} style={{ overflow: 'visible' }}>
         {/* Ice blue reflection on homepage */}
-        {!isServicePage && !isProductPage && !isAboutPage && !isContactPage && !isServicesListing && !isProductsListing && !isLegalPage && (
+        {!isServicePage && !isProductPage && !isAboutPage && !isContactPage && !isServicesListing && !isProductsListing && !isLegalPage && !isCareersPage && (
           <>
             <div
               className="absolute bottom-0 left-0 right-0 h-[500px] pointer-events-none"
@@ -1753,6 +1772,36 @@ const Footer = () => {
           </>
         )}
 
+        {/* Careers page gradient reflection - WhatsApp Green */}
+        {isCareersPage && (
+          <>
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[500px] pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse 150% 100% at 50% 100%, ${careersGradient.primary} 0%, ${careersGradient.primaryLight} 25%, ${careersGradient.secondary} 45%, transparent 70%)`,
+              }}
+            />
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[350px] pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse 120% 100% at 50% 100%, ${careersGradient.secondaryLight} 0%, ${careersGradient.secondary} 35%, transparent 65%)`,
+              }}
+            />
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[200px] pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse 100% 100% at 50% 100%, ${careersGradient.glow} 0%, ${careersGradient.glowLight} 40%, transparent 70%)`,
+              }}
+            />
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[1px]"
+              style={{
+                background: `linear-gradient(to right, transparent, ${careersGradient.line}, transparent)`,
+              }}
+            />
+          </>
+        )}
+
         <div className="max-w-7xl mx-auto px-6 py-1 flex flex-col items-center gap-4 relative z-10 mt-8">
           <div className="flex gap-4 mb-2">
             {[
@@ -1772,7 +1821,7 @@ const Footer = () => {
                     <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
                   </svg>
                 ),
-                href: 'https://www.instagram.com/antigraviity_technologies/'
+                href: 'https://www.instagram.com/antigraviity_official/'
               }
             ].map((social) => (
               <a
@@ -1859,11 +1908,14 @@ const MainLayout = () => {
     location.pathname.startsWith('/sla') ||
     location.pathname.startsWith('/aup');
 
+  const isCandidatePage = location.pathname.startsWith('/candidate');
+  const isHRPage = location.pathname.startsWith('/hr');
+
 
 
   // Dynamically set body background color to handle overscroll/panning
   useEffect(() => {
-    if (isLegalPage) {
+    if (isLegalPage || isCandidatePage || isHRPage) {
       document.body.style.backgroundColor = '#ffffff';
       document.body.classList.add('bg-white');
       document.body.classList.remove('bg-black');
@@ -1877,46 +1929,54 @@ const MainLayout = () => {
       document.body.style.backgroundColor = '';
       document.body.classList.remove('bg-white', 'bg-black');
     };
-  }, [isLegalPage]);
+  }, [isLegalPage, isCandidatePage, isHRPage]);
 
   return (
-    <div className={`min-h-screen relative w-full overflow-x-hidden ${isLegalPage ? 'bg-white text-gray-900' : 'bg-black text-white'}`}>
-      {!isLegalPage && <InteractiveParticles />}
-      <FlashMessage />
-      <Navigation />
+    <div className={`min-h-screen relative w-full overflow-x-hidden ${(isLegalPage || isCandidatePage || isHRPage) ? 'bg-white text-gray-900' : 'bg-black text-white'}`}>
+      {!isLegalPage && !isCandidatePage && !isHRPage && <InteractiveParticles />}
+      {!isCandidatePage && !isHRPage && <FlashMessage />}
+      {!isCandidatePage && !isHRPage && <Navigation />}
+      {!isCandidatePage && !isHRPage && <WhatsAppButton />}
 
-      <main className="relative z-10 transition-opacity duration-300 ease-in-out key={location.pathname}">
+      <main className="relative z-40 transition-opacity duration-300 ease-in-out" key={location.pathname}>
         <div key={location.pathname} className="animate-fade-in">
           <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/about-us" element={<AboutUs />} />
-            <Route path="/careers" element={<Careers />} />
-            <Route path="/contact" element={<ContactUs />} />
+            <Route path="/" element={<LogoAnimation />} />
             <Route path="/services" element={<Services />} />
-            <Route path="/products" element={<Products />} />
             <Route path="/services/web-development" element={<WebDevelopment />} />
             <Route path="/services/app-development" element={<AppDevelopment />} />
             <Route path="/services/digital-marketing" element={<DigitalMarketing />} />
             <Route path="/services/graphic-designing" element={<GraphicDesigning />} />
             <Route path="/services/3d-services" element={<ThreeDServices />} />
+
+            <Route path="/products" element={<Products />} />
             <Route path="/products/antimage-crm" element={<AntimageCRM />} />
-            <Route path="/products/antihrms" element={<AntiHRMS />} />
+            <Route path="/products/anti-hrms" element={<AntiHRMS />} />
             <Route path="/products/antisec" element={<AntiSec />} />
             <Route path="/products/antiai" element={<AntiAI />} />
             <Route path="/products/antichat" element={<AntiChat />} />
-            <Route path="/not-found" element={<NotFound />} />
+
+            <Route path="/about-us" element={<AboutUs />} />
+            <Route path="/contact" element={<ContactUs />} />
+            <Route path="/careers" element={<Careers />} />
+            <Route path="/pricing" element={<Pricing />} />
+
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/saas-agreement" element={<SaaSAgreement />} />
             <Route path="/sla" element={<SLA />} />
             <Route path="/aup" element={<AcceptableUsePolicy />} />
-            <Route path="/pricing" element={<Navigate to="/pricing/web-development" replace />} />
-            <Route path="/pricing/:category" element={<Pricing />} />
+
+            <Route path="/candidate/login" element={<Login />} />
+            <Route path="/candidate/dashboard" element={<OnboardingDashboard />} />
+            <Route path="/hr/login" element={<HRLogin />} />
+            <Route path="/hr/dashboard" element={<HRDashboard />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
       </main>
 
-      <Footer />
+      {!isCandidatePage && !isHRPage && <Footer />}
     </div>
   );
 };
@@ -1926,12 +1986,13 @@ const MainLayout = () => {
 // ==========================================
 function App() {
   return (
-    <Router future={routerFutureConfig}>
-      <ScrollToTop />
-      <CustomCursor />
-      <WhatsAppButton />
-      <MainLayout />
-    </Router>
+    <GoogleReCaptchaProvider reCaptchaKey={process.env.REACT_APP_RECAPTCHA_SITE_KEY}>
+      <Router future={routerFutureConfig}>
+        <ScrollToTop />
+        <CustomCursor />
+        <MainLayout />
+      </Router>
+    </GoogleReCaptchaProvider>
   );
 }
 

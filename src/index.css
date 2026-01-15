@@ -44,8 +44,8 @@ body {
 
 /* Selection */
 ::selection {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+  background: #000;
+  color: #fff;
 }
 
 /* Custom Select Dropdown Styling */

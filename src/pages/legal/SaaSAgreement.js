@@ -9,7 +9,10 @@ const SaaSAgreement = () => {
             <section>
                 <h2 className="text-2xl text-gray-900 font-semibold mb-4">1. Subscription Grant</h2>
                 <p>
-                    Subject to the terms of this Agreement, AntiGraviity Technologies grants you a non-exclusive, non-transferable, non-sublicensable right to access and use our SaaS products
+                    This SaaS Agreement ("Agreement") is between AntiGraviity Technologies Pvt Ltd and the entity or person agreeing to these terms ("Customer").
+                </p>
+                <p>
+                    Subject to the terms of this Agreement, AntiGraviity Technologies Pvt Ltd grants you a non-exclusive, non-transferable, non-sublicensable right to access and use our SaaS products
                     (including AntiMage CRM, AntiHRMS, AntiSec, AntiAI, and AntiChat) during the Subscription Term for your internal business purposes.
                 </p>
             </section>

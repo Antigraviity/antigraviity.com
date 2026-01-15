@@ -1,10 +1,221 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import usePageTitle from '../hooks/usePageTitle';
+
+const ApplicationModal = ({ isOpen, onClose, position, onSubmitSuccess }) => {
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        linkedin: '',
+        resume: null,
+        message: ''
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { executeRecaptcha } = useGoogleReCaptcha();
+
+    // Reset form data when modal closes
+    React.useEffect(() => {
+        if (!isOpen) {
+            setFormData({
+                name: '',
+                email: '',
+                phone: '',
+                linkedin: '',
+                resume: null,
+                message: ''
+            });
+        }
+    }, [isOpen]);
+
+    // Prevent scrolling when modal is open
+    React.useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+
+        if (!executeRecaptcha) {
+            alert('ReCAPTCHA not ready. Please try again.');
+            setIsSubmitting(false);
+            return;
+        }
+
+        try {
+            const token = await executeRecaptcha('career_application');
+
+            const dataToSend = new FormData();
+            dataToSend.append('name', formData.name);
+            dataToSend.append('email', formData.email);
+            dataToSend.append('phone', formData.phone);
+            dataToSend.append('linkedin', formData.linkedin);
+            dataToSend.append('resume', formData.resume);
+            dataToSend.append('message', formData.message);
+            dataToSend.append('position', position);
+            dataToSend.append('recaptchaToken', token);
+
+            const response = await fetch('/api/career', {
+                method: 'POST',
+                body: dataToSend
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                onSubmitSuccess();
+                onClose();
+            } else {
+                alert(data.message || 'Submission failed. Please try again.');
+            }
+        } catch (error) {
+            console.error('Submission error:', error);
+            alert('An error occurred. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center px-6">
+            <div className="absolute inset-0 bg-[#050505] backdrop-blur-xl" onClick={onClose} />
+
+            {/* Background Glow Effect */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none flex items-center justify-center">
+                <div
+                    className="absolute w-[800px] h-[800px] rounded-full blur-[150px] opacity-20 animate-pulse"
+                    style={{
+                        background: 'radial-gradient(circle, rgba(236, 72, 153, 0.4) 0%, rgba(255, 255, 255, 0.1) 30%, transparent 70%)',
+                    }}
+                />
+                <div
+                    className="absolute w-[400px] h-[400px] bg-white/10 rounded-full blur-[100px] opacity-30"
+                />
+            </div>
+
+            <div
+                className="relative w-full max-w-2xl border border-white/10 rounded-2xl p-8 md:p-10 shadow-[0_0_80px_rgba(236,72,153,0.1)] animate-in fade-in zoom-in duration-300 bg-[#0a0a0a]"
+                style={{
+                    background: `
+                        radial-gradient(ellipse 100% 100% at 50% 100%, rgba(236, 72, 153, 0.15) 0%, rgba(236, 72, 153, 0.05) 50%, #0a0a0a 100%),
+                        radial-gradient(ellipse 120% 100% at 50% 100%, rgba(236, 72, 153, 0.1) 0%, rgba(236, 72, 153, 0.02) 45%, #0a0a0a 100%),
+                        #0a0a0a
+                    `,
+                }}
+            >
+                <button
+                    onClick={onClose}
+                    className="absolute top-6 right-6 text-white/40 hover:text-white transition-colors"
+                >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+
+                <h3 className="text-2xl text-white mb-2">Apply for {position}</h3>
+                <p className="text-white/40 text-sm mb-8">Share your details with us and we'll get back to you soon.</p>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input
+                            type="text"
+                            placeholder="Full Name *"
+                            required
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 text-sm focus:outline-none focus:border-[#EC4899]/60 hover:border-[#EC4899]/30 transition-colors"
+                        />
+                        <input
+                            type="email"
+                            placeholder="Email Address *"
+                            required
+                            value={formData.email}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 text-sm focus:outline-none focus:border-[#EC4899]/60 hover:border-[#EC4899]/30 transition-colors"
+                        />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input
+                            type="tel"
+                            placeholder="Phone Number *"
+                            required
+                            maxLength={12}
+                            onInput={(e) => e.target.value = e.target.value.replace(/[^0-9]/g, '')}
+                            value={formData.phone}
+                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 text-sm focus:outline-none focus:border-[#EC4899]/60 hover:border-[#EC4899]/30 transition-colors"
+                        />
+                        <input
+                            type="url"
+                            placeholder="Portfolio / LinkedIn URL"
+                            value={formData.linkedin}
+                            onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
+                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 text-sm focus:outline-none focus:border-[#EC4899]/60 hover:border-[#EC4899]/30 transition-colors"
+                        />
+                    </div>
+
+                    {/* Resume File Upload */}
+                    <div className="relative group">
+                        <label className="block w-full cursor-pointer">
+                            <input
+                                type="file"
+                                required
+                                accept=".pdf,.doc,.docx"
+                                onChange={(e) => setFormData({ ...formData, resume: e.target.files[0] })}
+                                className="hidden"
+                            />
+                            <div className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm flex items-center justify-between hover:border-[#EC4899]/30 transition-colors">
+                                <span className={formData.resume ? 'text-white' : 'text-white/30'}>
+                                    {formData.resume ? formData.resume.name : 'Upload Resume (PDF, DOC) *'}
+                                </span>
+                                <svg className="w-5 h-5 text-white/40 group-hover:text-white/60 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M16 8l-4-4m0 0l-4 4m4-4v12" />
+                                </svg>
+                            </div>
+                        </label>
+                    </div>
+
+                    <textarea
+                        placeholder="Why do you want to join AntiGraviity? *"
+                        rows={4}
+                        required
+                        value={formData.message}
+                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 text-sm focus:outline-none focus:border-[#EC4899]/60 hover:border-[#EC4899]/30 transition-colors resize-none"
+                    />
+
+                    <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="w-full py-4 bg-white text-black text-sm font-medium rounded-xl hover:bg-white/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                        {isSubmitting ? (
+                            <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                        ) : (
+                            'Submit Application'
+                        )}
+                    </button>
+                </form>
+            </div>
+        </div>
+    );
+};
 
 const Careers = () => {
     usePageTitle('Careers | AntiGraviity');
     const [activeCategory, setActiveCategory] = useState('All');
+    const [selectedPosition, setSelectedPosition] = useState(null);
+    const [isSubmitted, setIsSubmitted] = useState(false);
 
     const benefits = [
         {
@@ -201,12 +412,12 @@ const Careers = () => {
                                             </span>
                                         ))}
                                     </div>
-                                    <a
-                                        href="mailto:careers@antigraviity.com"
+                                    <button
+                                        onClick={() => setSelectedPosition(position.title)}
                                         className="px-6 py-3 bg-white text-black text-sm font-medium rounded-full hover:bg-white/90 transition-colors whitespace-nowrap"
                                     >
                                         Apply Now
-                                    </a>
+                                    </button>
                                 </div>
                             </div>
                         ))}
@@ -229,14 +440,46 @@ const Careers = () => {
                     <p className="text-white/40 mb-10 max-w-xl mx-auto">
                         We're always looking for talented individuals. Send us your resume and we'll keep you in mind for future openings.
                     </p>
-                    <a
-                        href="mailto:careers@antigraviity.com"
+                    <button
+                        onClick={() => setSelectedPosition('General Application')}
                         className="px-8 py-3 border border-white/20 text-white/70 hover:text-white hover:border-white/40 text-sm rounded-full transition-colors inline-block"
                     >
-                        Email Us Your Resume
-                    </a>
+                        Apply with Resume
+                    </button>
                 </div>
             </section>
+
+            {/* Application Modal */}
+            <ApplicationModal
+                isOpen={!!selectedPosition}
+                onClose={() => setSelectedPosition(null)}
+                position={selectedPosition}
+                onSubmitSuccess={() => setIsSubmitted(true)}
+            />
+
+            {/* Success Message */}
+            {isSubmitted && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center px-6">
+                    <div className="absolute inset-0 bg-black/90 backdrop-blur-md" />
+                    <div className="relative max-w-lg text-center p-8 md:p-12 bg-black border border-white/10 rounded-2xl shadow-2xl animate-in fade-in zoom-in duration-300">
+                        <div className="w-20 h-20 mx-auto mb-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
+                            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <h2 className="text-3xl text-white font-normal mb-4">Application Sent!</h2>
+                        <p className="text-white/50 mb-8">
+                            Thank you for your interest in joining AntiGraviity. We've received your application and will review it shortly.
+                        </p>
+                        <button
+                            onClick={() => setIsSubmitted(false)}
+                            className="px-8 py-3 bg-white text-black text-sm font-medium rounded-full hover:bg-white/90 transition-colors"
+                        >
+                            Got it
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

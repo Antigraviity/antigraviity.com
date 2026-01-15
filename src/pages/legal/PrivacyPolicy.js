@@ -9,7 +9,7 @@ const PrivacyPolicy = () => {
             <section>
                 <h2 className="text-2xl text-gray-900 font-semibold mb-4">1. Introduction</h2>
                 <p>
-                    AntiGraviity Technologies ("we," "our," or "us") respects your privacy and is committed to protecting your personal data.
+                    AntiGraviity Technologies Pvt Ltd ("we," "our," or "us") respects your privacy and is committed to protecting your personal data.
                     This privacy policy will inform you as to how we look after your personal data when you visit our website (regardless of where you visit it from)
                     and tell you about your privacy rights and how the law protects you.
                 </p>

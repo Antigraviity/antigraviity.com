@@ -9,7 +9,7 @@ const TermsOfService = () => {
             <section>
                 <h2 className="text-2xl text-gray-900 font-semibold mb-4">1. Acceptance of Terms</h2>
                 <p>
-                    By accessing and using the website and services of AntiGraviity Technologies ("Company", "we", "us", or "our"), you agree to comply with and be bound by these Terms of Service.
+                    These Terms of Service ("Terms") govern your access to and use of AntiGraviity Technologies Pvt Ltd's website and services.
                     If you do not agree to these terms, please do not use our services.
                 </p>
             </section>

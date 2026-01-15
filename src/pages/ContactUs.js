@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import { Link } from 'react-router-dom';
 import usePageTitle from '../hooks/usePageTitle';
 import CustomSelect from '../components/CustomSelect';
@@ -34,17 +35,27 @@ const ContactUs = () => {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
+  const { executeRecaptcha } = useGoogleReCaptcha();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
+    if (!executeRecaptcha) {
+      console.log('Execute recaptcha not yet available');
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
+      const token = await executeRecaptcha('contact_form');
+
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, recaptchaToken: token }),
       });
 
       const data = await response.json();

@@ -1,0 +1,99 @@
+[
+  {
+    "id": "1768477478924",
+    "email": "gokuls.sridharan@gmail.com",
+    "password": "$2b$10$qiK3m81bjQ44YdChZ5LNquOV9w.siFVYxHklqi8Qr1kaGgVGmo7mK",
+    "onboardingStatus": "Approved",
+    "stage": 2,
+    "progressPercentage": 50,
+    "personalInfo": {
+      "fullName": "gdfgdfg",
+      "mobileNumber": "1212122222",
+      "personalEmail": "g@gmail.com",
+      "currentCity": "fsafsfs",
+      "dob": "2026-01-18",
+      "currentAddress": ""
+    },
+    "legalFinancial": {
+      "panNumber": "AAAAAAAAAA",
+      "aadhaarNumber": "111111111111",
+      "bankAccount": "",
+      "ifscCode": "",
+      "bankAccountName": "dasdasd",
+      "bankName": "dsadsada",
+      "taxRegime": "Old",
+      "ifscSwiftCode": "sdsdsd",
+      "accountNumber": "1212121"
+    },
+    "emergencyContact": {
+      "name": "dsadasdsad",
+      "phone": "1222222222",
+      "relationship": "dsdsadds"
+    },
+    "documents": [
+      {
+        "type": "signedOfferLetter",
+        "path": "uploads\\docs\\1768495103948-NOC - AntiGraviity Technologies.pdf"
+      },
+      {
+        "type": "aadhaarCopy",
+        "path": "uploads\\docs\\1768495104290-NOC - AntiGraviity Technologies.pdf"
+      },
+      {
+        "type": "addressProof",
+        "path": "uploads\\docs\\1768495104546-NOC - AntiGraviity Technologies.pdf"
+      },
+      {
+        "type": "panCopy",
+        "path": "uploads\\docs\\1768495104620-NOC - AntiGraviity Technologies.pdf"
+      },
+      {
+        "type": "passportPhoto",
+        "path": "uploads\\docs\\1768495104871-NOC - AntiGraviity Technologies.pdf"
+      },
+      {
+        "type": "degreeCert",
+        "path": "uploads\\docs\\1768495105026-NOC - AntiGraviity Technologies.pdf"
+      },
+      {
+        "type": "markSheets",
+        "path": "uploads\\docs\\1768495105197-NOC - AntiGraviity Technologies.pdf"
+      },
+      {
+        "type": "proCerts",
+        "path": "uploads\\docs\\1768495105353-Rental Agreement - AntiGraviity Technologies.pdf"
+      },
+      {
+        "type": "passbookCopy",
+        "path": "uploads\\docs\\1768495105610-NOC - AntiGraviity Technologies.pdf"
+      }
+    ],
+    "createdAt": "2026-01-15T11:44:38.924Z"
+  },
+  {
+    "id": "1768486046333",
+    "email": "hr@antigraviity.com",
+    "password": "$2b$10$b6uDhEZCNBso7x4v6pG8VO8obfm3b8bTicZLyHpJI94U.Z4Oh/fsi",
+    "onboardingStatus": "Draft",
+    "stage": 1,
+    "progressPercentage": 0,
+    "personalInfo": {},
+    "legalFinancial": {},
+    "emergencyContact": {},
+    "documents": [],
+    "createdAt": "2026-01-15T14:07:26.333Z"
+  },
+  {
+    "id": "1768494181973",
+    "email": "gokuls34492@gmail.com",
+    "password": "$2b$10$lkNohczN8uL0bH1EUcCDdOAhn4ulrauZKaALMFRgfS/POWgN4tzCK",
+    "onboardingStatus": "Draft",
+    "stage": 1,
+    "progressPercentage": 0,
+    "personalInfo": {},
+    "legalFinancial": {},
+    "emergencyContact": {},
+    "documents": [],
+    "createdAt": "2026-01-15T16:23:01.973Z"
+  }
+]

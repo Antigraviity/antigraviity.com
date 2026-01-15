@@ -9,7 +9,7 @@ const AcceptableUsePolicy = () => {
             <section>
                 <h2 className="text-2xl text-gray-900 font-semibold mb-4">1. Purpose</h2>
                 <p>
-                    This Acceptable Use Policy ("AUP") outlines the acceptable use of AntiGraviity Technologies' services and products.
+                    This Acceptable Use Policy ("AUP") outlines the acceptable use of AntiGraviity Technologies Pvt Ltd's services and products.
                     This policy is designed to protect our services, our customers, and the internet community from irresponsible or illegal activity.
                 </p>
             </section>
