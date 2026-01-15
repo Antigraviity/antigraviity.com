@@ -22,6 +22,7 @@ const HRDashboard = () => {
 
     const [activeMenu, setActiveMenu] = useState('Dashboard'); // 'Dashboard' | 'Jobs' | 'Employees' | 'Settings'
     const [activeDetailTab, setActiveDetailTab] = useState('Pre-Offer'); // 'Pre-Offer' | 'Post-Offer'
+    const [activeCandidateTab, setActiveCandidateTab] = useState('Active'); // 'Active' | 'Pending' | 'Onboarded'
 
     useEffect(() => {
         fetchCandidates();
@@ -211,7 +212,7 @@ const HRDashboard = () => {
                 {/* Header */}
                 <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100 shadow-sm px-8 py-4 flex justify-between items-center">
                     <div className="flex items-center gap-3">
-                        <h1 className="text-xl font-bold tracking-tight text-gray-900 capitalize">{activeMenu}</h1>
+                        <h1 className="text-xl font-bold tracking-tight text-gray-900 capitalize">HRMS Dashboard</h1>
                         <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded tracking-wider">Portal</span>
                     </div>
                     <div className="flex items-center gap-4">
@@ -226,10 +227,231 @@ const HRDashboard = () => {
                 </header>
 
                 <main className="p-8 flex-1">
-                    {activeMenu === 'Dashboard' && (
-                        <div className="space-y-8 animate-in fade-in duration-500">
-                            {!selectedCandidate ? (
-                                <>
+                    {selectedCandidate ? (
+                        // Detailed View (Inline) - Shared
+                        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            {/* Detail Header */}
+                            <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                                <div className="flex items-center gap-4">
+                                    <button
+                                        onClick={() => setSelectedCandidate(null)}
+                                        className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:text-black hover:border-black transition-all bg-white"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                        </svg>
+                                    </button>
+                                    <div>
+                                        <h3 className="text-xl font-bold text-gray-900">{selectedCandidate.personalInfo?.fullName || 'Candidate Details'}</h3>
+                                        <p className="text-[10px] text-gray-400 font-bold tracking-wider">{selectedCandidate.email} • {selectedCandidate.personalInfo?.mobileNumber || 'N/A'}</p>
+                                    </div>
+                                </div>
+                                <StatusBadge status={selectedCandidate.onboardingStatus} stage={selectedCandidate.stage} />
+                            </div>
+
+                            {/* Detail Tabs */}
+                            <div className="px-8 border-b border-gray-100 flex gap-8">
+                                {['Pre-Offer', 'Post-Offer'].map((tab) => (
+                                    <button
+                                        key={tab}
+                                        onClick={() => setActiveDetailTab(tab)}
+                                        className={`py-4 text-xs font-bold tracking-wider transition-all border-b-2 ${activeDetailTab === tab
+                                            ? 'border-black text-black'
+                                            : 'border-transparent text-gray-400 hover:text-gray-600'
+                                            }`}
+                                    >
+                                        {tab}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Detail Content */}
+                            <div className="p-8 min-h-[500px]">
+                                {activeDetailTab === 'Pre-Offer' && (
+                                    <div className="space-y-12 animate-in fade-in slide-in-from-left-4 duration-500">
+                                        {selectedCandidate.stage >= 2 && (
+                                            <div className="flex justify-end -mb-8">
+                                                <span className="bg-green-50 text-green-600 border border-green-100 px-4 py-1.5 rounded-full text-[11px] font-bold tracking-wide">
+                                                    Stage 1 Selected (Pre-Offer Approved)
+                                                </span>
+                                            </div>
+                                        )}
+                                        {/* Section A: Basic Info */}
+                                        <div className="space-y-4">
+                                            <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3">Basic Information</h4>
+                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
+                                                <DetailItem label="Full Name" value={selectedCandidate.personalInfo?.fullName} />
+                                                <DetailItem label="Email" value={selectedCandidate.personalInfo?.personalEmail} />
+                                                <DetailItem label="Mobile" value={selectedCandidate.personalInfo?.mobileNumber} />
+                                                <DetailItem label="DOB" value={selectedCandidate.personalInfo?.dob} />
+                                                <DetailItem label="Current City" value={selectedCandidate.personalInfo?.currentCity} />
+                                            </div>
+                                        </div>
+
+                                        {/* Section B: Employment */}
+                                        <div className="space-y-4">
+                                            <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3">Employment Details</h4>
+                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
+                                                <DetailItem label="Position" value={selectedCandidate.employmentDetails?.position} />
+                                                <DetailItem label="Work Mode" value={selectedCandidate.employmentDetails?.workMode} />
+                                                <DetailItem label="Joining Date" value={selectedCandidate.employmentDetails?.joiningDate} />
+                                                <DetailItem label="Current CTC" value={selectedCandidate.employmentDetails?.currentCtc} />
+                                                <DetailItem label="Expected CTC" value={selectedCandidate.employmentDetails?.expectedCtc} />
+                                                <DetailItem label="Notice Period" value={selectedCandidate.employmentDetails?.noticePeriod} />
+                                            </div>
+                                        </div>
+
+                                        {/* Section C: Experience */}
+                                        <div className="space-y-4">
+                                            <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3">Experience & Education</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
+                                                <DetailItem label="Qualification" value={selectedCandidate.experienceSummary?.highestQualification} />
+                                                <DetailItem label="Total Experience" value={selectedCandidate.experienceSummary?.totalExperience} />
+                                                {selectedCandidate.experienceSummary?.totalExperience !== 'Fresher' && (
+                                                    <>
+                                                        <DetailItem label="Relevant Exp" value={selectedCandidate.experienceSummary?.relevantExperience} />
+                                                        <DetailItem label="Current Company" value={selectedCandidate.experienceSummary?.currentEmployer} />
+                                                        <DetailItem label="Designation" value={selectedCandidate.experienceSummary?.currentDesignation} />
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeDetailTab === 'Post-Offer' && (
+                                    <div className="space-y-12 animate-in fade-in slide-in-from-right-4 duration-500">
+                                        {(selectedCandidate.stage >= 3 || selectedCandidate.onboardingStatus === 'Completed') && (
+                                            <div className="flex justify-end -mb-8">
+                                                <span className="bg-green-50 text-green-600 border border-green-100 px-4 py-1.5 rounded-full text-[11px] font-bold tracking-wide">
+                                                    Stage 3 Verified (Onboarding Complete)
+                                                </span>
+                                            </div>
+                                        )}
+                                        {/* Section D: Legal & Bank Info */}
+                                        <div className="space-y-4">
+                                            <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3">Legal & Bank Details</h4>
+                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
+                                                <DetailItem label="PAN Number" value={selectedCandidate.legalFinancial?.panNumber} />
+                                                <DetailItem label="Aadhaar Number" value={selectedCandidate.legalFinancial?.aadhaarNumber} />
+                                                <DetailItem label="Bank Name" value={selectedCandidate.legalFinancial?.bankName} />
+                                                <DetailItem label="Account Holder" value={selectedCandidate.legalFinancial?.bankAccountName} />
+                                                <DetailItem label="Account Number" value={selectedCandidate.legalFinancial?.accountNumber || selectedCandidate.legalFinancial?.bankAccount} />
+                                                <DetailItem label="IFSC / SWIFT" value={selectedCandidate.legalFinancial?.ifscSwiftCode || selectedCandidate.legalFinancial?.ifscCode} />
+                                                <DetailItem label="Tax Regime" value={selectedCandidate.legalFinancial?.taxRegime} />
+                                                <DetailItem label="Permanent Address" value={selectedCandidate.personalInfo?.currentAddress} mdSpan={2} />
+                                            </div>
+                                        </div>
+
+                                        {/* Section E: Emergency Contact */}
+                                        <div className="space-y-4">
+                                            <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3">Emergency Contact</h4>
+                                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
+                                                <DetailItem label="Contact Name" value={selectedCandidate.emergencyContact?.name} />
+                                                <DetailItem label="Phone" value={selectedCandidate.emergencyContact?.phone} />
+                                                <DetailItem label="Relationship" value={selectedCandidate.emergencyContact?.relationship} />
+                                            </div>
+                                        </div>
+
+                                        {/* Section F: Uploaded Documents */}
+                                        <div className="space-y-4">
+                                            <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3">Documents Repository</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {selectedCandidate.documents && selectedCandidate.documents.length > 0 ? (
+                                                    selectedCandidate.documents.map((doc, idx) => (
+                                                        <div key={idx} className="bg-white border border-gray-100 p-5 rounded-xl flex items-center justify-between group hover:border-black hover:shadow-sm transition-all">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center group-hover:bg-black group-hover:border-black transition-colors">
+                                                                    <svg className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                                    </svg>
+                                                                </div>
+                                                                <div className="min-w-0 flex-1">
+                                                                    <p className="text-[10px] font-black text-gray-400 tracking-wider leading-none mb-1.5 uppercase">{doc.type}</p>
+                                                                    <p className="text-xs font-bold text-gray-900 truncate max-w-[150px]">{doc.path?.split(/[\/\\]/).pop() || 'Document'}</p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-4 transition-opacity">
+                                                                <a
+                                                                    href={getFileUrl(doc.path)}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="p-2 rounded-lg text-gray-400 hover:text-black hover:bg-gray-100 transition-all"
+                                                                    title="View Document"
+                                                                >
+                                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                                    </svg>
+                                                                </a>
+                                                                <a
+                                                                    href={getFileUrl(doc.path)}
+                                                                    download
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="p-2 rounded-lg text-gray-400 hover:text-black hover:bg-gray-100 transition-all"
+                                                                    title="Download Document"
+                                                                >
+                                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                                    </svg>
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                ) : (
+                                                    <div className="col-span-2 py-10 text-center bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
+                                                        <p className="text-xs text-gray-400 font-bold italic tracking-wide">No documents uploaded yet.</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Section G: Actions */}
+                                        {selectedCandidate.onboardingStatus === 'Pending Verification' && (
+                                            <div className="flex items-center justify-end gap-3 pt-12 border-t border-gray-100 mt-8">
+                                                <button
+                                                    onClick={() => initiateReject(selectedCandidate.id)}
+                                                    className="px-8 py-3 bg-white text-red-600 text-[10px] font-black rounded-lg hover:bg-red-50 transition-all border border-red-100 tracking-widest"
+                                                >
+                                                    REJECT
+                                                </button>
+                                                <button
+                                                    onClick={() => initiateApprove(selectedCandidate.id)}
+                                                    className="px-8 py-3 bg-green-600 text-white text-[10px] font-black rounded-lg hover:bg-green-700 transition-all border border-green-500 tracking-widest"
+                                                >
+                                                    APPROVE POST-OFFER
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Global Action Buttons - Only show on Pre-Offer tab for Stage 1 candidates */}
+                                {selectedCandidate.onboardingStatus === 'Pending Verification' &&
+                                    selectedCandidate.stage === 1 &&
+                                    activeDetailTab === 'Pre-Offer' && (
+                                        <div className="flex items-center justify-end gap-4 pt-10 border-t border-gray-100 mt-12">
+                                            <button
+                                                onClick={() => initiateReject(selectedCandidate.id)}
+                                                className="px-10 py-3.5 bg-white text-red-600 text-[10px] font-black rounded-lg hover:bg-red-50 transition-all border border-red-100 tracking-wider"
+                                            >
+                                                Reject Application
+                                            </button>
+                                            <button
+                                                onClick={() => initiateApprove(selectedCandidate.id)}
+                                                className="px-10 py-3.5 bg-black text-white text-[10px] font-black rounded-lg transition-all tracking-wider"
+                                            >
+                                                Approve Pre-Offer (Move to Stage 2)
+                                            </button>
+                                        </div>
+                                    )}
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            {activeMenu === 'Dashboard' && (
+                                <div className="space-y-8 animate-in fade-in duration-500">
                                     {/* Stats Overview */}
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         <StatCard title="Total Candidates" value={stats.total} icon={<UsersIcon />} color="bg-blue-50 text-blue-600" />
@@ -239,9 +461,32 @@ const HRDashboard = () => {
 
                                     {/* Candidates List */}
                                     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                                        <div className="px-8 py-6 border-b border-gray-50 flex justify-between items-center">
-                                            <h2 className="text-lg font-bold tracking-tight">Active Applications</h2>
-                                            <span className="text-[10px] font-bold text-gray-400 tracking-wider bg-gray-50 px-3 py-1 rounded-full border border-gray-100">{candidates.length} Records</span>
+                                        <div className="px-8 py-6 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                            <div className="flex items-center gap-6">
+                                                {['Active', 'Pending', 'Onboarded'].map((tab) => {
+                                                    const count = tab === 'Active'
+                                                        ? candidates.filter(c => c.onboardingStatus !== 'Completed').length
+                                                        : tab === 'Pending'
+                                                            ? candidates.filter(c => c.onboardingStatus === 'Pending Verification').length
+                                                            : candidates.filter(c => c.onboardingStatus === 'Completed').length;
+
+                                                    const isActive = activeCandidateTab === tab;
+                                                    return (
+                                                        <button
+                                                            key={tab}
+                                                            onClick={() => setActiveCandidateTab(tab)}
+                                                            className={`relative py-1 text-sm font-bold tracking-tight transition-all ${isActive ? 'text-black' : 'text-gray-400 hover:text-gray-600'
+                                                                }`}
+                                                        >
+                                                            {tab} Applications
+                                                            {isActive && (
+                                                                <div className="absolute -bottom-[25px] left-0 right-0 h-0.5 bg-black rounded-full" />
+                                                            )}
+                                                            <span className="ml-2 text-[10px] bg-gray-100 px-2 py-0.5 rounded-full text-gray-500">{count}</span>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
                                         <div className="overflow-x-auto">
                                             <table className="w-full text-left border-collapse">
@@ -255,35 +500,41 @@ const HRDashboard = () => {
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {candidates.map((candidate) => (
-                                                        <tr key={candidate.id} className="group hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0">
-                                                            <td className="px-8 py-5">
-                                                                <div>
-                                                                    <p className="font-bold text-gray-900 text-sm">{candidate.personalInfo.fullName || 'N/A'}</p>
-                                                                    <p className="text-[10px] font-bold text-gray-400 tracking-tight">{candidate.email}</p>
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-8 py-5">
-                                                                <p className="text-xs font-bold text-gray-600 bg-gray-100/50 px-2 py-1 rounded inline-block">{candidate.employmentDetails?.position || 'Not Assigned'}</p>
-                                                            </td>
-                                                            <td className="px-8 py-5">
-                                                                <StatusBadge status={candidate.onboardingStatus} stage={candidate.stage} />
-                                                            </td>
-                                                            <td className="px-8 py-5">
-                                                                <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-gray-100 text-[10px] font-bold text-gray-600 border border-gray-200">
-                                                                    {candidate.stage}
-                                                                </span>
-                                                            </td>
-                                                            <td className="px-8 py-5 text-right">
-                                                                <button
-                                                                    onClick={() => setSelectedCandidate(candidate)}
-                                                                    className="text-[10px] font-bold text-black border border-black/10 px-4 py-2 rounded-lg hover:bg-black hover:text-white transition-all tracking-wider"
-                                                                >
-                                                                    View
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                    ))}
+                                                    {candidates
+                                                        .filter(candidate => {
+                                                            if (activeCandidateTab === 'Pending') return candidate.onboardingStatus === 'Pending Verification';
+                                                            if (activeCandidateTab === 'Onboarded') return candidate.onboardingStatus === 'Completed';
+                                                            return candidate.onboardingStatus !== 'Completed'; // Active tab
+                                                        })
+                                                        .map((candidate) => (
+                                                            <tr key={candidate.id} className="group hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0">
+                                                                <td className="px-8 py-5">
+                                                                    <div>
+                                                                        <p className="font-bold text-gray-900 text-sm">{candidate.personalInfo?.fullName || 'N/A'}</p>
+                                                                        <p className="text-[10px] font-bold text-gray-400 tracking-tight">{candidate.email}</p>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-8 py-5">
+                                                                    <p className="text-xs font-bold text-gray-600 bg-gray-100/50 px-2 py-1 rounded inline-block">{candidate.employmentDetails?.position || 'Not Assigned'}</p>
+                                                                </td>
+                                                                <td className="px-8 py-5">
+                                                                    <StatusBadge status={candidate.onboardingStatus} stage={candidate.stage} />
+                                                                </td>
+                                                                <td className="px-8 py-5">
+                                                                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-gray-100 text-[10px] font-bold text-gray-600 border border-gray-200">
+                                                                        {candidate.onboardingStatus === 'Completed' ? 3 : candidate.stage}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-8 py-5 text-right">
+                                                                    <button
+                                                                        onClick={() => setSelectedCandidate(candidate)}
+                                                                        className="text-[10px] font-bold text-black border border-black/10 px-4 py-2 rounded-lg hover:border-black/30 hover:bg-gray-50 transition-all tracking-wider"
+                                                                    >
+                                                                        View
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
                                                     {candidates.length === 0 && (
                                                         <tr>
                                                             <td colSpan="5" className="px-8 py-12 text-center text-gray-400 text-xs italic">
@@ -295,260 +546,94 @@ const HRDashboard = () => {
                                             </table>
                                         </div>
                                     </div>
-                                </>
-                            ) : (
-                                // Detailed View (Inline)
-                                <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                    {/* Detail Header */}
-                                    <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                                        <div className="flex items-center gap-4">
-                                            <button
-                                                onClick={() => setSelectedCandidate(null)}
-                                                className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:text-black hover:border-black transition-all bg-white"
-                                            >
-                                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                                                </svg>
-                                            </button>
-                                            <div>
-                                                <h3 className="text-xl font-bold text-gray-900">{selectedCandidate.personalInfo.fullName}</h3>
-                                                <p className="text-[10px] text-gray-400 font-bold tracking-wider">{selectedCandidate.email} • {selectedCandidate.personalInfo.mobileNumber}</p>
-                                            </div>
+                                </div>
+                            )}
+
+                            {activeMenu === 'Jobs' && (
+                                <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4 animate-in fade-in duration-500">
+                                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                        <BriefcaseIcon />
+                                    </div>
+                                    <h2 className="text-xl font-bold text-gray-900 tracking-wider">Job Management</h2>
+                                    <p className="text-sm text-gray-400 font-bold max-w-xs text-center leading-relaxed">System is currently in read-only mode for active job listings.</p>
+                                </div>
+                            )}
+
+                            {activeMenu === 'Employees' && (
+                                <div className="space-y-8 animate-in fade-in duration-500">
+                                    {/* Employee Records Table */}
+                                    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                                        <div className="px-8 py-6 border-b border-gray-50 flex justify-between items-center">
+                                            <h2 className="text-lg font-bold tracking-tight">Onboarded Employees</h2>
+                                            <span className="text-[10px] font-bold text-gray-400 tracking-wider bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+                                                {candidates.filter(c => c.onboardingStatus === 'Completed').length} Records
+                                            </span>
                                         </div>
-                                        <StatusBadge status={selectedCandidate.onboardingStatus} stage={selectedCandidate.stage} />
-                                    </div>
-
-                                    {/* Detail Tabs */}
-                                    <div className="px-8 border-b border-gray-100 flex gap-8">
-                                        {['Pre-Offer', 'Post-Offer'].map((tab) => (
-                                            <button
-                                                key={tab}
-                                                onClick={() => setActiveDetailTab(tab)}
-                                                className={`py-4 text-xs font-bold tracking-wider transition-all border-b-2 ${activeDetailTab === tab
-                                                    ? 'border-black text-black'
-                                                    : 'border-transparent text-gray-400 hover:text-gray-600'
-                                                    }`}
-                                            >
-                                                {tab}
-                                            </button>
-                                        ))}
-                                    </div>
-
-                                    {/* Detail Content */}
-                                    <div className="p-8 min-h-[500px]">
-                                        {activeDetailTab === 'Pre-Offer' && (
-                                            <div className="space-y-12 animate-in fade-in slide-in-from-left-4 duration-500">
-                                                {selectedCandidate.stage >= 2 && (
-                                                    <div className="flex justify-end -mb-8">
-                                                        <span className="bg-green-50 text-green-600 border border-green-100 px-4 py-1.5 rounded-full text-[11px] font-bold tracking-wide">
-                                                            Selected
-                                                        </span>
-                                                    </div>
-                                                )}
-                                                {/* Section A: Basic Info */}
-                                                <div className="space-y-4">
-                                                    <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3">Basic Information</h4>
-                                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
-                                                        <DetailItem label="Full Name" value={selectedCandidate.personalInfo.fullName} />
-                                                        <DetailItem label="Email" value={selectedCandidate.personalInfo.personalEmail} />
-                                                        <DetailItem label="Mobile" value={selectedCandidate.personalInfo.mobileNumber} />
-                                                        <DetailItem label="DOB" value={selectedCandidate.personalInfo.dob} />
-                                                        <DetailItem label="Current City" value={selectedCandidate.personalInfo.currentCity} />
-                                                    </div>
-                                                </div>
-
-                                                {/* Section B: Employment */}
-                                                <div className="space-y-4">
-                                                    <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3">Employment Details</h4>
-                                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
-                                                        <DetailItem label="Position" value={selectedCandidate.employmentDetails?.position} />
-                                                        <DetailItem label="Work Mode" value={selectedCandidate.employmentDetails?.workMode} />
-                                                        <DetailItem label="Joining Date" value={selectedCandidate.employmentDetails?.joiningDate} />
-                                                        <DetailItem label="Current CTC" value={selectedCandidate.employmentDetails?.currentCtc} />
-                                                        <DetailItem label="Expected CTC" value={selectedCandidate.employmentDetails?.expectedCtc} />
-                                                        <DetailItem label="Notice Period" value={selectedCandidate.employmentDetails?.noticePeriod} />
-                                                    </div>
-                                                </div>
-
-                                                {/* Section C: Experience */}
-                                                <div className="space-y-4">
-                                                    <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3">Experience & Education</h4>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
-                                                        <DetailItem label="Qualification" value={selectedCandidate.experienceSummary?.highestQualification} />
-                                                        <DetailItem label="Total Experience" value={selectedCandidate.experienceSummary?.totalExperience} />
-                                                        {selectedCandidate.experienceSummary?.totalExperience !== 'Fresher' && (
-                                                            <>
-                                                                <DetailItem label="Relevant Exp" value={selectedCandidate.experienceSummary?.relevantExperience} />
-                                                                <DetailItem label="Current Company" value={selectedCandidate.experienceSummary?.currentEmployer} />
-                                                                <DetailItem label="Designation" value={selectedCandidate.experienceSummary?.currentDesignation} />
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {activeDetailTab === 'Post-Offer' && (
-                                            <div className="space-y-12 animate-in fade-in slide-in-from-right-4 duration-500">
-                                                {selectedCandidate.stage >= 3 && (
-                                                    <div className="flex justify-end -mb-8">
-                                                        <span className="bg-green-50 text-green-600 border border-green-100 px-4 py-1.5 rounded-full text-[11px] font-bold tracking-wide">
-                                                            Verified
-                                                        </span>
-                                                    </div>
-                                                )}
-                                                {/* Section D: Legal & Bank Info */}
-                                                <div className="space-y-4">
-                                                    <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3">Legal & Bank Details</h4>
-                                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
-                                                        <DetailItem label="PAN Number" value={selectedCandidate.legalFinancial?.panNumber} />
-                                                        <DetailItem label="Aadhaar Number" value={selectedCandidate.legalFinancial?.aadhaarNumber} />
-                                                        <DetailItem label="Bank Name" value={selectedCandidate.legalFinancial?.bankName} />
-                                                        <DetailItem label="Account Holder" value={selectedCandidate.legalFinancial?.bankAccountName} />
-                                                        <DetailItem label="Account Number" value={selectedCandidate.legalFinancial?.accountNumber || selectedCandidate.legalFinancial?.bankAccount} />
-                                                        <DetailItem label="IFSC / SWIFT" value={selectedCandidate.legalFinancial?.ifscSwiftCode || selectedCandidate.legalFinancial?.ifscCode} />
-                                                        <DetailItem label="Tax Regime" value={selectedCandidate.legalFinancial?.taxRegime} />
-                                                        <DetailItem label="Permanent Address" value={selectedCandidate.personalInfo?.currentAddress} mdSpan={2} />
-                                                    </div>
-                                                </div>
-
-                                                {/* Section E: Emergency Contact */}
-                                                <div className="space-y-4">
-                                                    <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3">Emergency Contact</h4>
-                                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
-                                                        <DetailItem label="Contact Name" value={selectedCandidate.emergencyContact?.name} />
-                                                        <DetailItem label="Phone" value={selectedCandidate.emergencyContact?.phone} />
-                                                        <DetailItem label="Relationship" value={selectedCandidate.emergencyContact?.relationship} />
-                                                    </div>
-                                                </div>
-
-                                                {/* Section F: Uploaded Documents */}
-                                                <div className="space-y-4">
-                                                    <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3">Documents Repository</h4>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                        {selectedCandidate.documents && selectedCandidate.documents.length > 0 ? (
-                                                            selectedCandidate.documents.map((doc, idx) => (
-                                                                <div key={idx} className="bg-white border border-gray-100 p-5 rounded-xl flex items-center justify-between group hover:border-black hover:shadow-sm transition-all">
-                                                                    <div className="flex items-center gap-4">
-                                                                        <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center group-hover:bg-black group-hover:border-black transition-colors">
-                                                                            <svg className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                                            </svg>
-                                                                        </div>
-                                                                        <div className="min-w-0 flex-1">
-                                                                            <p className="text-[10px] font-black text-gray-400 tracking-wider leading-none mb-1.5 uppercase">{doc.type}</p>
-                                                                            <p className="text-xs font-bold text-gray-900 truncate max-w-[150px]">{doc.path?.split(/[\/\\]/).pop() || 'Document'}</p>
-                                                                        </div>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left border-collapse">
+                                                <thead>
+                                                    <tr className="border-b border-gray-50 bg-gray-50/30">
+                                                        <th className="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Employee</th>
+                                                        <th className="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Position</th>
+                                                        <th className="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Work Mode</th>
+                                                        <th className="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Joining Date</th>
+                                                        <th className="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {candidates
+                                                        .filter(c => c.onboardingStatus === 'Completed')
+                                                        .map((candidate) => (
+                                                            <tr key={candidate.id} className="group hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0">
+                                                                <td className="px-8 py-5">
+                                                                    <div>
+                                                                        <p className="font-bold text-gray-900 text-sm">{candidate.personalInfo?.fullName || 'N/A'}</p>
+                                                                        <p className="text-[10px] font-bold text-gray-400 tracking-tight">{candidate.email}</p>
                                                                     </div>
-                                                                    <div className="flex items-center gap-4 transition-opacity">
-                                                                        <a
-                                                                            href={getFileUrl(doc.path)}
-                                                                            target="_blank"
-                                                                            rel="noopener noreferrer"
-                                                                            className="p-2 rounded-lg text-gray-400 hover:text-black hover:bg-gray-100 transition-all"
-                                                                            title="View Document"
-                                                                        >
-                                                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                                            </svg>
-                                                                        </a>
-                                                                        <a
-                                                                            href={getFileUrl(doc.path)}
-                                                                            download
-                                                                            target="_blank"
-                                                                            rel="noopener noreferrer"
-                                                                            className="p-2 rounded-lg text-gray-400 hover:text-black hover:bg-gray-100 transition-all"
-                                                                            title="Download Document"
-                                                                        >
-                                                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                                                            </svg>
-                                                                        </a>
-                                                                    </div>
-                                                                </div>
-                                                            ))
-                                                        ) : (
-                                                            <div className="col-span-2 py-10 text-center bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
-                                                                <p className="text-xs text-gray-400 font-bold italic tracking-wide">No documents uploaded yet.</p>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                {/* Section G: Actions */}
-                                                {selectedCandidate.onboardingStatus === 'Pending Verification' && (
-                                                    <div className="flex items-center justify-end gap-3 pt-12 border-t border-gray-100 mt-8">
-                                                        <button
-                                                            onClick={() => initiateReject(selectedCandidate.id)}
-                                                            className="px-8 py-3 bg-white text-red-600 text-[10px] font-black rounded-lg hover:bg-red-50 transition-all border border-red-100 tracking-widest"
-                                                        >
-                                                            REJECT
-                                                        </button>
-                                                        <button
-                                                            onClick={() => initiateApprove(selectedCandidate.id)}
-                                                            className="px-8 py-3 bg-green-600 text-white text-[10px] font-black rounded-lg hover:bg-green-700 transition-all border border-green-500 tracking-widest"
-                                                        >
-                                                            APPROVE
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {/* Global Action Buttons - Only show on Pre-Offer tab for Stage 1 candidates */}
-                                        {selectedCandidate.onboardingStatus === 'Pending Verification' &&
-                                            selectedCandidate.stage === 1 &&
-                                            activeDetailTab === 'Pre-Offer' && (
-                                                <div className="flex items-center justify-end gap-4 pt-10 border-t border-gray-100 mt-12">
-                                                    <button
-                                                        onClick={() => initiateReject(selectedCandidate.id)}
-                                                        className="px-10 py-3.5 bg-white text-red-600 text-[10px] font-black rounded-lg hover:bg-red-50 transition-all border border-red-100 tracking-wider"
-                                                    >
-                                                        Reject Application
-                                                    </button>
-                                                    <button
-                                                        onClick={() => initiateApprove(selectedCandidate.id)}
-                                                        className="px-10 py-3.5 bg-black text-white text-[10px] font-black rounded-lg transition-all tracking-wider"
-                                                    >
-                                                        Approve Candidate
-                                                    </button>
-                                                </div>
-                                            )}
+                                                                </td>
+                                                                <td className="px-8 py-5">
+                                                                    <p className="text-xs font-bold text-gray-600 bg-gray-100/50 px-2 py-1 rounded inline-block">{candidate.employmentDetails?.position || 'Not Assigned'}</p>
+                                                                </td>
+                                                                <td className="px-8 py-5">
+                                                                    <p className="text-xs font-bold text-gray-600">{candidate.employmentDetails?.workMode || 'N/A'}</p>
+                                                                </td>
+                                                                <td className="px-8 py-5">
+                                                                    <p className="text-xs font-bold text-gray-600">{candidate.employmentDetails?.joiningDate || 'N/A'}</p>
+                                                                </td>
+                                                                <td className="px-8 py-5 text-right">
+                                                                    <button
+                                                                        onClick={() => setSelectedCandidate(candidate)}
+                                                                        className="text-[10px] font-bold text-black border border-black/10 px-4 py-2 rounded-lg hover:border-black/30 hover:bg-gray-50 transition-all tracking-wider"
+                                                                    >
+                                                                        View
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    {candidates.filter(c => c.onboardingStatus === 'Completed').length === 0 && (
+                                                        <tr>
+                                                            <td colSpan="5" className="px-8 py-12 text-center text-gray-400 text-xs italic">
+                                                                No onboarded employees found.
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 </div>
                             )}
-                        </div>
-                    )}
 
-                    {activeMenu === 'Jobs' && (
-                        <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4 animate-in fade-in duration-500">
-                            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                                <BriefcaseIcon />
-                            </div>
-                            <h2 className="text-xl font-bold text-gray-900 tracking-wider">Job Management</h2>
-                            <p className="text-sm text-gray-400 font-bold max-w-xs text-center leading-relaxed">System is currently in read-only mode for active job listings.</p>
-                        </div>
-                    )}
-
-                    {activeMenu === 'Employees' && (
-                        <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4 animate-in fade-in duration-500">
-                            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                                <UserGroupIcon />
-                            </div>
-                            <h2 className="text-xl font-bold text-gray-900 tracking-wider">Employee Records</h2>
-                            <p className="text-sm text-gray-400 font-bold max-w-xs text-center leading-relaxed">Centralized employee records are being migrated to the new schema.</p>
-                        </div>
-                    )}
-
-                    {activeMenu === 'Settings' && (
-                        <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4 animate-in fade-in duration-500">
-                            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                                <SettingsIcon />
-                            </div>
-                            <h2 className="text-xl font-bold text-gray-900 tracking-wider">Portal Settings</h2>
-                            <p className="text-sm text-gray-400 font-bold max-w-xs text-center leading-relaxed">Access control and global configuration modules are currently locked.</p>
-                        </div>
+                            {activeMenu === 'Settings' && (
+                                <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4 animate-in fade-in duration-500">
+                                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                        <SettingsIcon />
+                                    </div>
+                                    <h2 className="text-xl font-bold text-gray-900 tracking-wider">Portal Settings</h2>
+                                    <p className="text-sm text-gray-400 font-bold max-w-xs text-center leading-relaxed">Access control and global configuration modules are currently locked.</p>
+                                </div>
+                            )}
+                        </>
                     )}
                 </main>
             </div>
@@ -590,9 +675,10 @@ const HRDashboard = () => {
                         </div>
                     </div>
                 </div>
-            )}
+            )
+            }
 
-        </div>
+        </div >
     );
 };
 
@@ -621,12 +707,14 @@ const StatusBadge = ({ status, stage }) => {
     let displayText = status;
     if (status === 'Pending Verification') {
         displayText = stage === 2 ? 'Post-Offer Pending' : 'Pre-Offer Pending';
+    } else if (status === 'Approved') {
+        displayText = 'Pre-Offer Verified';
     } else if (status === 'Completed') {
-        displayText = 'Selected';
+        displayText = 'ONBOARDED';
     }
 
     return (
-        <span className={`px-4 py-1.5 rounded-full text-[11px] font-bold tracking-wide border ${styles[status] || styles['Draft']}`}>
+        <span className={`px-4 py-1.5 rounded-full text-[11px] font-bold tracking-wide border uppercase ${styles[status] || styles['Draft']}`}>
             {displayText}
         </span>
     );

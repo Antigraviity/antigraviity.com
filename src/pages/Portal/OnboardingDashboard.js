@@ -16,6 +16,95 @@ const UploadIcon = ({ className = "w-4 h-4" }) => (
     </svg>
 );
 
+const UserIcon = ({ className = "w-3.5 h-3.5" }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+);
+
+const LogoutIcon = ({ className = "w-3.5 h-3.5" }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+    </svg>
+);
+
+const Confetti = () => {
+    const particles = Array.from({ length: 50 });
+    return (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+            <style>{`
+                @keyframes fall {
+                    0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+                    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+                }
+                .confetti-piece {
+                    position: absolute;
+                    width: 8px;
+                    height: 16px;
+                    background: #000;
+                    top: -20px;
+                    animation: fall var(--duration) linear infinite;
+                    left: var(--left);
+                    animation-delay: var(--delay);
+                    background-color: var(--color);
+                }
+            `}</style>
+            {particles.map((_, i) => {
+                const left = Math.random() * 100 + '%';
+                const delay = Math.random() * 5 + 's';
+                const duration = Math.random() * 3 + 2 + 's';
+                const colors = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                return (
+                    <div
+                        key={i}
+                        className="confetti-piece"
+                        style={{
+                            '--left': left,
+                            '--delay': delay,
+                            '--duration': duration,
+                            '--color': color
+                        }}
+                    />
+                );
+            })}
+        </div>
+    );
+};
+
+const VerifiedDocItem = ({ label, type, getDocPath, getFileUrl }) => {
+    const path = getDocPath(type);
+    return (
+        <div className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-lg shadow-sm">
+            <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center border border-gray-100">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{label}</p>
+                    <p className="text-[11px] font-bold text-gray-900 truncate max-w-[150px]">{path ? path.split(/\\|\//).pop() : 'Not Uploaded'}</p>
+                </div>
+            </div>
+            {path && (
+                <a
+                    href={getFileUrl(path)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 hover:bg-black hover:text-white rounded-lg transition-all text-black border border-black/10"
+                    title="View Document"
+                >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                </a>
+            )}
+        </div>
+    );
+};
+
 const SectionHeader = ({ number, title }) => (
     <div className="flex items-center gap-3 mb-6 mt-2">
         <span className="w-7 h-7 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center font-bold text-gray-900 text-[10px]">{number}</span>
@@ -59,9 +148,11 @@ const InputField = ({ label, name, value, onChange, placeholder, type = "text", 
 );
 
 const OnboardingDashboard = () => {
+    const [showVerifiedInfo, setShowVerifiedInfo] = useState(false);
+    const [showPostOfferVerified, setShowPostOfferVerified] = useState(false);
+    const [showAllDetails, setShowAllDetails] = useState(false);
     const [employee, setEmployee] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [showVerifiedInfo, setShowVerifiedInfo] = useState(false);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -121,16 +212,45 @@ const OnboardingDashboard = () => {
     const navigate = useNavigate();
 
     // Derived State (Move up for scope)
-    const currentStage = employee ? (Number(employee.stage) || 1) : 1;
     const currentStatus = employee ? (employee.onboardingStatus || 'Draft') : 'Draft';
+    const currentStage = (currentStatus === 'Completed') ? 3 : (employee ? (Number(employee.stage) || 1) : 1);
     const isFresher = formData.totalExperience === 'Fresher';
     const isReadOnly = currentStatus === 'Pending Verification' || currentStatus === 'Completed';
 
     const stages = [
         { id: 1, title: 'Pre-Offer', desc: 'Basic info' },
         { id: 2, title: 'Post-Offer', desc: 'Legal docs' },
-        { id: 3, title: 'Completed', desc: 'Ready' }
+        { id: 3, title: 'Completed', desc: 'Onboarded' }
     ];
+
+    const hasDocument = (type) => {
+        return employee?.documents?.some(doc => doc.type === type);
+    };
+
+    const getDocPath = (type) => {
+        return employee?.documents?.find(doc => doc.type === type)?.path;
+    };
+
+    const getFileUrl = (path) => {
+        if (!path) return '#';
+        const API_BASE_URL = 'http://localhost:5000';
+        const normalizedPath = path.replace(/\\/g, '/');
+        const cleanPath = normalizedPath.startsWith('uploads/') ? normalizedPath.slice(8) : normalizedPath;
+        const encodedPath = cleanPath.split('/').map(segment => encodeURIComponent(segment)).join('/');
+        return `${API_BASE_URL}/candidate-docs/${encodedPath}`;
+    };
+
+    const UploadIndicator = ({ type }) => {
+        if (!hasDocument(type)) return null;
+        return (
+            <div className="flex items-center gap-2 mt-2 ml-4 animate-in fade-in slide-in-from-left-2 duration-500">
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-green-50 rounded-md border border-green-100">
+                    <CheckIcon className="w-3 h-3 text-green-600" />
+                    <span className="text-[10px] font-black text-green-700 uppercase tracking-wider">File Uploaded</span>
+                </div>
+            </div>
+        );
+    };
 
     const fetchMe = async () => {
         try {
@@ -345,12 +465,16 @@ const OnboardingDashboard = () => {
                             <h1 className="text-lg font-semibold tracking-tight text-gray-900 leading-tight">Candidate Dashboard</h1>
                         </div>
                     </div>
-                    <div className="flex flex-col items-end gap-1">
-                        <p className="text-xs font-semibold text-gray-900">{employee.email}</p>
+                    <div className="flex flex-col items-end gap-1.5">
+                        <div className="flex items-center gap-2 px-3 py-1 bg-gray-100/50 rounded-full border border-gray-100">
+                            <UserIcon className="w-3.5 h-3.5 text-gray-400" />
+                            <p className="text-[11px] font-bold text-gray-900 lowercase">{employee.email}</p>
+                        </div>
                         <button
                             onClick={() => { localStorage.removeItem('token'); navigate('/candidate/login'); }}
-                            className="text-gray-400 hover:text-red-500 text-xs font-bold tracking-wide capitalize transition-all duration-200"
+                            className="group flex items-center gap-1.5 text-gray-400 hover:text-red-500 text-[10px] font-black tracking-widest uppercase transition-all duration-200 pr-2"
                         >
+                            <LogoutIcon className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
                             Sign Out
                         </button>
                     </div>
@@ -404,9 +528,148 @@ const OnboardingDashboard = () => {
 
                         {/* Content Area */}
                         <div className="max-w-3xl mx-auto">
-                            {/* COLLAPSIBLE VERIFIED INFO (Stage 1) - Only if in Stage 2 */}
+                            {/* SUCCESS VIEW (Top of Content if Stage 3) */}
+                            {currentStage === 3 && (
+                                <div className="space-y-8 animate-in fade-in zoom-in duration-700 relative mb-12">
+                                    <Confetti />
+                                    <div className="text-center py-6 space-y-8 relative z-10">
+                                        <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-green-100 shadow-sm relative">
+                                            <CheckIcon className="w-10 h-10 text-green-600" />
+                                            <div className="absolute -inset-1 border-2 border-green-500 rounded-full animate-ping opacity-20" />
+                                        </div>
+                                        <div className="space-y-3">
+                                            <h2 className="text-3xl font-bold tracking-tight text-gray-900">Onboarding Completed!</h2>
+                                            <p className="text-gray-500 text-sm max-w-md mx-auto leading-relaxed font-medium">
+                                                Congratulations! Your official onboarding process is now complete. Our team will reach out to you shortly regarding your next steps and induction schedule.
+                                            </p>
+                                        </div>
+                                        <div className="pt-2 flex flex-col items-center gap-4">
+                                            <span className="px-6 py-2 bg-green-50 text-green-600 rounded-full text-xs font-black uppercase tracking-widest border border-green-100">
+                                                Status: Post-Offer Verified
+                                            </span>
+                                            <p className="text-[10px] text-gray-400 font-bold tracking-widest uppercase">Welcome to the AntiGraviity Family</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* COMBINED VERIFIED DETAILS (Stage 3 Only) */}
+                            {currentStage === 3 && (
+                                <div className="mb-8 border-b border-gray-100 pb-8 last:border-0 last:pb-0">
+                                    <button
+                                        onClick={() => setShowAllDetails(!showAllDetails)}
+                                        className="w-full flex items-center justify-between p-4 bg-gray-50/50 rounded-2xl hover:bg-gray-100 transition-all group border border-gray-100 shadow-sm"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                                                <CheckIcon className="w-4 h-4 text-green-600" />
+                                            </div>
+                                            <div className="text-left">
+                                                <p className="text-sm font-bold text-gray-900">Your Verified Details</p>
+                                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Review all your pre-offer and post-offer submissions</p>
+                                            </div>
+                                        </div>
+                                        <div className={`transition-transform duration-300 ${showAllDetails ? 'rotate-180' : ''}`}>
+                                            <svg className="w-5 h-5 text-gray-400 group-hover:text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </div>
+                                    </button>
+
+                                    {showAllDetails && (
+                                        <div className="mt-10 space-y-12 animate-in fade-in slide-in-from-top-4 duration-500">
+                                            {/* Pre-Offer Section */}
+                                            <div className="space-y-6">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="px-3 py-1 bg-green-50 text-green-700 text-[10px] font-black uppercase tracking-widest rounded border border-green-100">Phase 1</span>
+                                                    <h4 className="text-sm font-bold text-gray-900">Pre-Offer Information</h4>
+                                                    <div className="flex-grow h-px bg-gray-100" />
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 grayscale-[0.5] pointer-events-none">
+                                                    <InputField label="Full Legal Name" value={formData.fullName} disabled />
+                                                    <InputField label="Personal Email ID" value={formData.personalEmail} disabled />
+                                                    <InputField label="Mobile Number" value={formData.mobileNumber} disabled />
+                                                    <InputField label="Date of Birth" value={formData.dob} disabled />
+                                                    <InputField label="Position" value={formData.position} disabled />
+                                                    <InputField label="Joining Date" value={formData.joiningDate} disabled />
+                                                </div>
+                                            </div>
+
+                                            {/* Post-Offer Section */}
+                                            <div className="space-y-6">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="px-3 py-1 bg-green-50 text-green-700 text-[10px] font-black uppercase tracking-widest rounded border border-green-100">Phase 2</span>
+                                                    <h4 className="text-sm font-bold text-gray-900">Post-Offer Documentation</h4>
+                                                    <div className="flex-grow h-px bg-gray-100" />
+                                                </div>
+
+                                                <div className="space-y-12 grayscale-[0.5] pointer-events-none">
+                                                    {/* A. Offer Acceptance */}
+                                                    <div className="space-y-4">
+                                                        <SectionHeader number="A" title="Offer Acceptance" />
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                            <VerifiedDocItem label="Signed Offer Letter" type="signedOfferLetter" getDocPath={getDocPath} getFileUrl={getFileUrl} />
+                                                        </div>
+                                                    </div>
+
+                                                    {/* B. Identity & Address Proof */}
+                                                    <div className="space-y-4">
+                                                        <SectionHeader number="B" title="Identity & Address Proof" />
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                            <InputField label="Aadhaar Card Number" value={formData.aadhaarNumber} disabled />
+                                                            <InputField label="PAN Card Number" value={formData.panNumber} disabled />
+                                                            <InputField label="Permanent Address" value={formData.currentAddress} mdSpan={2} isTextArea disabled />
+                                                            <VerifiedDocItem label="Aadhaar ID Copy" type="aadhaarCopy" getDocPath={getDocPath} getFileUrl={getFileUrl} />
+                                                            <VerifiedDocItem label="Address Proof" type="addressProof" getDocPath={getDocPath} getFileUrl={getFileUrl} />
+                                                            <VerifiedDocItem label="PAN ID Copy" type="panCopy" getDocPath={getDocPath} getFileUrl={getFileUrl} />
+                                                            <VerifiedDocItem label="Passport-size Photo" type="passportPhoto" getDocPath={getDocPath} getFileUrl={getFileUrl} />
+                                                        </div>
+                                                    </div>
+
+                                                    {/* C. Education Documents */}
+                                                    <div className="space-y-4">
+                                                        <SectionHeader number="C" title="Education Documents" />
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                            <VerifiedDocItem label="Degree Certificates" type="degreeCert" getDocPath={getDocPath} getFileUrl={getFileUrl} />
+                                                            <VerifiedDocItem label="Mark Sheets" type="markSheets" getDocPath={getDocPath} getFileUrl={getFileUrl} />
+                                                            <VerifiedDocItem label="Professional Certifications" type="proCerts" getDocPath={getDocPath} getFileUrl={getFileUrl} />
+                                                        </div>
+                                                    </div>
+
+                                                    {/* D. Bank & Payroll Details */}
+                                                    <div className="space-y-4">
+                                                        <SectionHeader number="D" title="Bank & Payroll Details" />
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                            <InputField label="Bank Name" value={formData.bankName} disabled />
+                                                            <InputField label="Account Holder" value={formData.bankAccountName} disabled />
+                                                            <InputField label="Account Number" value={formData.accountNumber} disabled />
+                                                            <InputField label="IFSC / SWIFT" value={formData.ifscSwiftCode} disabled />
+                                                            <InputField label="Tax Regime" value={formData.taxRegime} disabled />
+                                                            <VerifiedDocItem label="Passbook Frontpage Copy" type="passbookCopy" getDocPath={getDocPath} getFileUrl={getFileUrl} />
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Emergency Contact */}
+                                                    <div className="space-y-4">
+                                                        <SectionHeader number="E" title="Emergency Contact" />
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                            <InputField label="Contact Name" value={formData.emergencyName} disabled />
+                                                            <InputField label="Phone" value={formData.emergencyPhone} disabled />
+                                                            <InputField label="Relationship" value={formData.emergencyRelationship} mdSpan={2} disabled />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <p className="text-[10px] text-center text-gray-400 font-bold italic">This information is locked and verified by the HR team.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* INDIVIDUAL COLLAPSIBLE VERIFIED INFO (Only if NOT in Stage 3) */}
                             {currentStage === 2 && (
-                                <div className="mb-12 border-b border-gray-100 pb-8">
+                                <div className="mb-8 border-b border-gray-100 pb-8 last:border-0 last:pb-0">
                                     <button
                                         onClick={() => setShowVerifiedInfo(!showVerifiedInfo)}
                                         className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group"
@@ -591,12 +854,13 @@ const OnboardingDashboard = () => {
                                                         Upload Signed Offer Letter <span className="text-red-500">*</span>
                                                     </label>
                                                     <div className="relative group overflow-hidden rounded-xl">
-                                                        <input type="file" name="signedOfferLetter" onChange={handleFileChange} accept=".pdf,.png,.jpg,.jpeg" className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required />
+                                                        <input type="file" name="signedOfferLetter" onChange={handleFileChange} accept=".pdf,.png,.jpg,.jpeg" className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required={!hasDocument('signedOfferLetter')} />
                                                         <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-black transition-colors">
                                                             <UploadIcon />
                                                         </div>
                                                         {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                     </div>
+                                                    <UploadIndicator type="signedOfferLetter" />
                                                 </div>
                                             </div>
                                         </div>
@@ -611,42 +875,46 @@ const OnboardingDashboard = () => {
                                                 <div className="space-y-1.5">
                                                     <label className="text-[11px] font-bold capitalize tracking-wide text-gray-900 ml-4">Aadhaar ID Copy <span className="text-red-500">*</span></label>
                                                     <div className="relative group overflow-hidden rounded-xl">
-                                                        <input type="file" name="aadhaarCopy" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required />
+                                                        <input type="file" name="aadhaarCopy" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required={!hasDocument('aadhaarCopy')} />
                                                         <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-black transition-colors">
                                                             <UploadIcon />
                                                         </div>
                                                         {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                     </div>
+                                                    <UploadIndicator type="aadhaarCopy" />
                                                 </div>
                                                 <div className="space-y-1.5">
                                                     <label className="text-[11px] font-bold capitalize tracking-wide text-gray-900 ml-4">Address Proof <span className="text-red-500">*</span></label>
                                                     <div className="relative group overflow-hidden rounded-xl">
-                                                        <input type="file" name="addressProof" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required />
+                                                        <input type="file" name="addressProof" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required={!hasDocument('addressProof')} />
                                                         <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-black transition-colors">
                                                             <UploadIcon />
                                                         </div>
                                                         {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                     </div>
+                                                    <UploadIndicator type="addressProof" />
                                                 </div>
                                                 <div className="space-y-1.5">
                                                     <label className="text-[11px] font-bold capitalize tracking-wide text-gray-900 ml-4">PAN ID Copy <span className="text-red-500">*</span></label>
                                                     <div className="relative group overflow-hidden rounded-xl">
-                                                        <input type="file" name="panCopy" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required />
+                                                        <input type="file" name="panCopy" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required={!hasDocument('panCopy')} />
                                                         <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-black transition-colors">
                                                             <UploadIcon />
                                                         </div>
                                                         {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                     </div>
+                                                    <UploadIndicator type="panCopy" />
                                                 </div>
                                                 <div className="space-y-1.5">
                                                     <label className="text-[11px] font-bold capitalize tracking-wide text-gray-900 ml-4">Passport-size Photo <span className="text-red-500">*</span></label>
                                                     <div className="relative group overflow-hidden rounded-xl">
-                                                        <input type="file" name="passportPhoto" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required />
+                                                        <input type="file" name="passportPhoto" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required={!hasDocument('passportPhoto')} />
                                                         <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-black transition-colors">
                                                             <UploadIcon />
                                                         </div>
                                                         {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                     </div>
+                                                    <UploadIndicator type="passportPhoto" />
                                                 </div>
                                                 <InputField label="Permanent Address" name="currentAddress" value={formData.currentAddress} onChange={handleChange} placeholder="Full residential address" mdSpan={2} isTextArea disabled={isReadOnly} required />
                                             </div>
@@ -659,22 +927,24 @@ const OnboardingDashboard = () => {
                                                 <div className="space-y-1.5">
                                                     <label className="text-[11px] font-bold capitalize tracking-wide text-gray-900 ml-4">Degree Certificates <span className="text-red-500">*</span></label>
                                                     <div className="relative group overflow-hidden rounded-xl">
-                                                        <input type="file" name="degreeCert" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required />
+                                                        <input type="file" name="degreeCert" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required={!hasDocument('degreeCert')} />
                                                         <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-black transition-colors">
                                                             <UploadIcon />
                                                         </div>
                                                         {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                     </div>
+                                                    <UploadIndicator type="degreeCert" />
                                                 </div>
                                                 <div className="space-y-1.5">
                                                     <label className="text-[11px] font-bold capitalize tracking-wide text-gray-900 ml-4">Mark Sheets <span className="text-red-500">*</span></label>
                                                     <div className="relative group overflow-hidden rounded-xl">
-                                                        <input type="file" name="markSheets" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required />
+                                                        <input type="file" name="markSheets" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required={!hasDocument('markSheets')} />
                                                         <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-black transition-colors">
                                                             <UploadIcon />
                                                         </div>
                                                         {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                     </div>
+                                                    <UploadIndicator type="markSheets" />
                                                 </div>
                                                 <div className="md:col-span-2 space-y-1.5">
                                                     <label className="text-[11px] font-bold capitalize tracking-wide text-gray-900 ml-4">Professional Certifications</label>
@@ -685,6 +955,7 @@ const OnboardingDashboard = () => {
                                                         </div>
                                                         {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                     </div>
+                                                    <UploadIndicator type="proCerts" />
                                                 </div>
                                             </div>
                                         </div>
@@ -704,12 +975,13 @@ const OnboardingDashboard = () => {
                                                 <div className="space-y-1.5">
                                                     <label className="text-[11px] font-bold capitalize tracking-wide text-gray-900 ml-4">Passbook Frontpage Copy <span className="text-red-500">*</span></label>
                                                     <div className="relative group overflow-hidden rounded-xl">
-                                                        <input type="file" name="passbookCopy" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required />
+                                                        <input type="file" name="passbookCopy" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required={!hasDocument('passbookCopy')} />
                                                         <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-black transition-colors">
                                                             <UploadIcon />
                                                         </div>
                                                         {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                     </div>
+                                                    <UploadIndicator type="passbookCopy" />
                                                 </div>
                                             </div>
                                         </div>
@@ -724,7 +996,7 @@ const OnboardingDashboard = () => {
                                             </div>
                                         </div>
 
-                                        {currentStatus !== 'Pending Verification' && (
+                                        {currentStatus !== 'Pending Verification' && currentStatus !== 'Completed' && (
                                             <div className="pt-8 border-t border-gray-50 flex justify-center">
                                                 <button
                                                     onClick={(e) => handleSubmit(e, true)}
@@ -738,13 +1010,14 @@ const OnboardingDashboard = () => {
                                     </form>
                                 </div>
                             )}
+
                         </div>
                     </div>
 
 
-                </main>
-            </div>
-        </div>
+                </main >
+            </div >
+        </div >
     );
 };
 

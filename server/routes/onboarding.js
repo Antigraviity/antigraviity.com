@@ -101,6 +101,7 @@ router.get('/me', auth, async (req, res) => {
     if (!employee) return res.status(404).json({ message: 'User not found' });
 
     // Migration/Normalization: ensure stage exists and is consistent with status
+    let changed = false;
     if (!employee.stage) {
         if (employee.onboardingStatus === 'Pending Verification' || employee.onboardingStatus === 'Approved') {
             employee.stage = 2;
@@ -109,11 +110,22 @@ router.get('/me', auth, async (req, res) => {
         } else {
             employee.stage = 1;
         }
+        changed = true;
     }
 
     // Sanity Check: If status is Completed but stage is not 3, they need verification for Stage 2
     if (employee.onboardingStatus === 'Completed' && employee.stage === 2) {
-        employee.onboardingStatus = 'Pending Verification';
+        employee.stage = 3; // Correct it to 3 if they are completed
+        changed = true;
+    }
+
+    if (changed) {
+        const employees = getEmployees();
+        const idx = employees.findIndex(e => e.id === employee.id);
+        if (idx !== -1) {
+            employees[idx] = { ...employees[idx], stage: employee.stage };
+            saveEmployees(employees);
+        }
     }
 
     const { password, ...rest } = employee;
@@ -190,8 +202,8 @@ router.get('/candidates', auth, (req, res) => {
             .map(e => {
                 const { password, ...rest } = e;
                 // Sanity check for status consistency
-                if (rest.onboardingStatus === 'Completed' && rest.stage === 2) {
-                    rest.onboardingStatus = 'Pending Verification';
+                if (rest.onboardingStatus === 'Completed') {
+                    rest.stage = 3;
                 }
                 return rest;
             });
