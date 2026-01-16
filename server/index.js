@@ -49,10 +49,16 @@ try {
 // 3. MongoDB Connection with better error handling
 let MONGODB_URI = (process.env.MONGODB_URI || '').trim();
 
+// Remove literal quotes if the user literally typed them into the Vercel box
+if (MONGODB_URI.startsWith('"') && MONGODB_URI.endsWith('"')) {
+    console.log('[Startup] Stripping literal quotes from MONGODB_URI...');
+    MONGODB_URI = MONGODB_URI.slice(1, -1).trim();
+}
+
 if (!MONGODB_URI) {
     console.warn('--- WARNING: MONGODB_URI is missing! Defaulting to localhost (Local Dev Only) ---');
 } else if (MONGODB_URI.startsWith('mongodb+srv://')) {
-    console.log('[Startup] Cleaning mongodb+srv URI (Length:', MONGODB_URI.length, ')...');
+    console.log('[Startup] Cleaning mongodb-srv URI (Length:', MONGODB_URI.length, ')...');
 
     // 1. Remove any port (Atlas doesn't support them)
     // Robustly remove :port if present, even without trailing slash
