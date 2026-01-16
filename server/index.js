@@ -61,6 +61,12 @@ if (!MONGODB_URI) {
         console.log('[Startup] Encoding # in MongoDB password...');
         MONGODB_URI = MONGODB_URI.replace(/#/g, '%23');
     }
+
+    // 3. Truncation Check: Atlas URIs MUST have an '@' symbol
+    if (!MONGODB_URI.includes('@')) {
+        console.error('[Startup] CRITICAL ERROR: MONGODB_URI appears to be TRUNCATED.');
+        console.error('[Startup] This usually happens if your password contains a "#" and you didn\'t wrap the variable in QUOTES in the Vercel Dashboard.');
+    }
 }
 
 // Masked URI for log verification
