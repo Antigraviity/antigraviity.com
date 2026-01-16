@@ -13,14 +13,26 @@ console.log('Loading onboarding.js route file...');
 
 // Check email existence
 router.post('/check-email', async (req, res) => {
-    console.log('Received /check-email request:', req.body);
+    console.log('[API] /check-email received data:', req.body);
     const { email } = req.body;
-    if (!email) return res.json({ exists: false });
+
+    if (!email) {
+        console.warn('[API] /check-email: Missing email in request');
+        return res.json({ exists: false });
+    }
+
     try {
+        console.log('[API] Searching for employee:', email);
         const employee = await Employee.findOne({ email: email.toLowerCase().trim() });
+        console.log('[API] Search complete. Found:', !!employee);
         res.json({ exists: !!employee });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        console.error('[API] /check-email error:', err);
+        res.status(500).json({
+            message: 'Internal server error during email check',
+            error: err.message,
+            stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+        });
     }
 });
 
