@@ -6,10 +6,15 @@ const multer = require('multer');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
 
-const Employee = require('../models/Employee');
 const { uploadDocs } = require('../utils/cloudinary');
 
-console.log('Loading onboarding.js route file...');
+console.log('[Onboarding] Initializing routes...');
+const Employee = require('../models/Employee');
+console.log('[Onboarding] Employee model loaded successfully.');
+const { uploadDocs } = require('../utils/cloudinary');
+console.log('[Onboarding] Cloudinary utilities uploaded successfully.');
+
+console.log('[Onboarding] Registering check-email route...');
 
 // Check email existence
 router.post('/check-email', async (req, res) => {

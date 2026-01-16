@@ -40,16 +40,18 @@ mongoose.connect(MONGODB_URI || 'mongodb://localhost:27017/antigraviity')
     });
 
 // 4. Strictly clean credentials
+console.log('[Startup] Phase 3: Cleaning credentials...');
 if (config.email.user) config.email.user = config.email.user.trim();
 if (config.email.pass) {
     // Remove all whitespace from the App Password
     config.email.pass = config.email.pass.replace(/\s/g, '');
 }
 
-console.log('--- Server Status ---');
-console.log('MongoDB URI:', MONGODB_URI ? 'LOADED' : 'MISSING');
+console.log('--- Server Startup Status ---');
+console.log('MongoDB URI:', MONGODB_URI ? 'Present (First 20 chars: ' + MONGODB_URI.substring(0, 20) + '...)' : 'MISSING');
 console.log('Email User:', config.email.user ? 'LOADED' : 'MISSING');
-console.log('---------------------');
+console.log('Email Pass:', config.email.pass ? 'LOADED (Length: ' + config.email.pass.length + ')' : 'MISSING');
+console.log('---------------------------');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -137,8 +139,10 @@ app.post('/api/contact', async (req, res) => {
 });
 
 // Onboarding Routes
+console.log('[Startup] Phase 4: Registering Onboarding routes...');
 const onboardingRoutes = require('./routes/onboarding');
 app.use('/api/onboarding', onboardingRoutes);
+console.log('[Startup] Onboarding routes registered successfully.');
 
 // Health Check
 app.get('/api/health', (req, res) => {
