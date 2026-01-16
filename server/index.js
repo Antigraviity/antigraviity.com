@@ -52,26 +52,33 @@ let MONGODB_URI = (process.env.MONGODB_URI || '').trim();
 if (!MONGODB_URI) {
     console.warn('--- WARNING: MONGODB_URI is missing! Defaulting to localhost (Local Dev Only) ---');
 } else if (MONGODB_URI.startsWith('mongodb+srv://')) {
-    console.log('[Startup] Cleaning mongodb+srv URI...');
-    // 1. Remove any port (Atlas doesn't support them)
-    MONGODB_URI = MONGODB_URI.replace(/:(\d+)([/?]|$)/, '$2');
+    console.log('[Startup] Cleaning mongodb+srv URI (Length:', MONGODB_URI.length, ')...');
 
-    // 2. Encode '#' as '%23' in the password part (very common cause of Atlas failures)
+    // 1. Remove any port (Atlas doesn't support them)
+    // Robustly remove :port if present, even without trailing slash
+    MONGODB_URI = MONGODB_URI.replace(/:(\d+)(?=[/?]|$)/g, '');
+
+    // 2. Encode '#' as '%23' in any part of the string (usually password)
     if (MONGODB_URI.includes('#')) {
-        console.log('[Startup] Encoding # in MongoDB password...');
+        console.log('[Startup] Encoding # in MONGODB_URI...');
         MONGODB_URI = MONGODB_URI.replace(/#/g, '%23');
     }
 
-    // 3. Truncation Check: Atlas URIs MUST have an '@' symbol
+    // 3. Crucial Truncation Check: Atlas URIs MUST have an '@' followed by a cluster host
     if (!MONGODB_URI.includes('@')) {
-        console.error('[Startup] CRITICAL ERROR: MONGODB_URI appears to be TRUNCATED.');
-        console.error('[Startup] This usually happens if your password contains a "#" and you didn\'t wrap the variable in QUOTES in the Vercel Dashboard.');
+        console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+        console.error('CRITICAL ERROR: MONGODB_URI is TRUNCATED / BROKEN.');
+        console.error('Expected format: mongodb+srv://user:pass@cluster.mongodb.net/db');
+        console.error('Current value (masked):', MONGODB_URI.replace(/:\/\/.*@/, '://****:****@'));
+        console.error('The "#" in your password has likely cut off the rest of the URI.');
+        console.error('PLEASE WRAP YOUR MONGODB_URI IN DOUBLE QUOTES IN THE VERCEL DASHBOARD.');
+        console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
     }
 }
 
 // Masked URI for log verification
 const maskedURI = MONGODB_URI.replace(/:\/\/.*@/, '://****:****@');
-console.log('[Startup] Connecting to:', maskedURI);
+console.log('[Startup] Final URI (masked):', maskedURI);
 
 mongoose.connect(MONGODB_URI || 'mongodb://localhost:27017/antigraviity')
     .then(() => console.log('Connected to MongoDB Successfully'))
