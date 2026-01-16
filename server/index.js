@@ -18,9 +18,14 @@ const mongoose = require('mongoose');
 const config = require('./config');
 const { uploadResumes } = require('./utils/cloudinary');
 
-// Ensure uploads directory exists (Keep for now, but not needed for careers/onboarding)
-if (!fs.existsSync('uploads/')) {
-    fs.mkdirSync('uploads/');
+// Ensure uploads directory exists (Only in local dev or writable environments)
+try {
+    if (!fs.existsSync('uploads/')) {
+        console.log('[Startup] Creating uploads directory...');
+        fs.mkdirSync('uploads/');
+    }
+} catch (err) {
+    console.warn('[Startup] Warning: Could not create uploads directory (expected on Vercel):', err.message);
 }
 
 // 3. MongoDB Connection with better error handling
