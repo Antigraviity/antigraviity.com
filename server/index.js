@@ -47,10 +47,14 @@ try {
 }
 
 // 3. MongoDB Connection with better error handling
-const MONGODB_URI = process.env.MONGODB_URI;
+let MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
     console.warn('--- WARNING: MONGODB_URI is missing! Defaulting to localhost (Local Dev Only) ---');
+} else if (MONGODB_URI.includes('mongodb+srv://') && MONGODB_URI.includes(':27017')) {
+    // Strip the default port from +srv URIs as it causes errors
+    console.log('[Startup] Cleaning mongodb+srv URI (removing port)...');
+    MONGODB_URI = MONGODB_URI.replace(':27017', '');
 }
 
 mongoose.connect(MONGODB_URI || 'mongodb://localhost:27017/antigraviity')

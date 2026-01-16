@@ -11,8 +11,8 @@ const { uploadDocs } = require('../utils/cloudinary');
 console.log('[Onboarding] Initializing routes...');
 const Employee = require('../models/Employee');
 console.log('[Onboarding] Employee model loaded successfully.');
-const { uploadDocs } = require('../utils/cloudinary');
-console.log('[Onboarding] Cloudinary utilities uploaded successfully.');
+// uploadDocs already required at the top
+console.log('[Onboarding] Cloudinary utilities verified successfully.');
 
 console.log('[Onboarding] Registering check-email route...');
 
