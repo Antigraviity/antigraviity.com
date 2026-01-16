@@ -45,8 +45,7 @@ import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3';
 // x.ai / Grok Style - Clean, Minimal, Premium
 // ============================================
 
-import LogoAnimation from './components/LogoAnimation';
-
+import Home from './pages/Home';
 import InteractiveParticles from './components/InteractiveParticles';
 
 // Note: To silence React Router v7 future flag warnings, we configure the router future flags.
@@ -1079,7 +1078,7 @@ const MainLayout = () => {
       <main className="relative z-40 transition-opacity duration-300 ease-in-out" key={location.pathname}>
         <div key={location.pathname} className="animate-fade-in">
           <Routes>
-            <Route path="/" element={<LogoAnimation />} />
+            <Route path="/" element={<Home />} />
             <Route path="/services" element={<Services />} />
             <Route path="/services/web-development" element={<WebDevelopment />} />
             <Route path="/services/app-development" element={<AppDevelopment />} />
