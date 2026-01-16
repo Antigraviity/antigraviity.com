@@ -24,7 +24,16 @@ const mongoose = require('mongoose');
 console.log('[Startup] Phase 1.7: Core dependencies loaded.');
 
 // 2. Import internal modules AFTER environment is loaded
-const config = require('./config');
+console.log('[Startup] Phase 2: Loading inline configuration...');
+const config = {
+    email: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    },
+    port: process.env.PORT || 5000
+};
+
+console.log('[Startup] Phase 2.1: Loading cloudinary utils...');
 const { uploadResumes } = require('./utils/cloudinary');
 
 // Ensure uploads directory exists (Only in local dev or writable environments)
