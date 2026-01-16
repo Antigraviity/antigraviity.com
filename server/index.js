@@ -1,5 +1,7 @@
+console.log('[Startup] Phase 0: Script loaded.');
 const path = require('path');
 const fs = require('fs');
+console.log('[Startup] Phase 1: Core modules loaded.');
 
 // 1. Initialize environment variables ASAP
 require('dotenv').config({
@@ -58,6 +60,7 @@ console.log('Email User:', config.email.user ? 'LOADED' : 'MISSING');
 console.log('Email Pass:', config.email.pass ? 'LOADED (Length: ' + config.email.pass.length + ')' : 'MISSING');
 console.log('---------------------------');
 
+console.log('[Startup] Phase 4: Initializing Express app...');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -65,6 +68,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+console.log('[Startup] Phase 5: Setting up Nodemailer...');
 // Email Transporter (Standard Service Mode)
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -75,6 +79,7 @@ const transporter = nodemailer.createTransport({
     debug: true,
     logger: true
 });
+console.log('[Startup] Phase 6: Core services ready.');
 
 // Verify Transporter
 // Verify Transporter (Skipped to prevent startup crash on invalid creds)
