@@ -5,14 +5,12 @@ const path = require('path');
 const axios = require('axios');
 const multer = require('multer');
 const fs = require('fs');
+const mongoose = require('mongoose');
 
 // Configure multer for file uploads
-const upload = multer({
-    dest: 'uploads/',
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
-});
+const { uploadResumes } = require('./utils/cloudinary');
 
-// Ensure uploads directory exists
+// Ensure uploads directory exists (Keep for now, but not needed for careers/onboarding)
 if (!fs.existsSync('uploads/')) {
     fs.mkdirSync('uploads/');
 }
@@ -22,6 +20,16 @@ require('dotenv').config({
     path: path.join(__dirname, '../.env'),
     override: false
 });
+
+// MongoDB Connection
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/antigraviity';
+mongoose.connect(MONGODB_URI)
+    .then(() => console.log('Connected to MongoDB Successfully'))
+    .catch(err => {
+        console.error('--- MongoDB Connection Error ---');
+        console.error(err);
+        console.error('--------------------------------');
+    });
 
 const config = require('./config');
 
@@ -132,10 +140,10 @@ app.get('/api/health', (req, res) => {
 });
 
 // Career Route
-app.post('/api/career', upload.single('resume'), async (req, res) => {
+app.post('/api/career', uploadResumes.single('resume'), async (req, res) => {
     const { name, email, phone, linkedin, message, position, recaptchaToken } = req.body;
     const resumeFile = req.file;
-    // ... (rest of the file remains unchanged, just matching the context) ...
+
     // Verify reCAPTCHA
     try {
         const response = await axios.post(
@@ -145,9 +153,6 @@ app.post('/api/career', upload.single('resume'), async (req, res) => {
         const { success, score } = response.data;
 
         if (!success || score < 0.5) {
-            // Clean up uploaded file if reCAPTCHA fails
-            if (resumeFile) fs.unlinkSync(resumeFile.path);
-
             return res.status(400).json({
                 success: false,
                 message: 'ReCAPTCHA verification failed. Please try again.'
@@ -155,7 +160,6 @@ app.post('/api/career', upload.single('resume'), async (req, res) => {
         }
     } catch (error) {
         console.error('reCAPTCHA verification error:', error);
-        if (resumeFile) fs.unlinkSync(resumeFile.path);
         return res.status(500).json({
             success: false,
             message: 'Error verifying reCAPTCHA'
@@ -181,21 +185,16 @@ app.post('/api/career', upload.single('resume'), async (req, res) => {
         attachments: resumeFile ? [
             {
                 filename: resumeFile.originalname,
-                path: resumeFile.path
+                path: resumeFile.path // For Cloudinary, this is the URL
             }
         ] : []
     };
 
     try {
         await transporter.sendMail(mailOptions);
-
-        // Clean up file after sending
-        if (resumeFile) fs.unlinkSync(resumeFile.path);
-
         res.status(200).json({ success: true, message: 'Application sent successfully' });
     } catch (error) {
         console.error('Error sending application email:', error);
-        if (resumeFile) fs.unlinkSync(resumeFile.path);
         res.status(500).json({ success: false, message: 'Failed to send application' });
     }
 });

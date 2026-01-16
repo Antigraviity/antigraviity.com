@@ -6,74 +6,50 @@ const multer = require('multer');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
 
-const DB_PATH = path.join(__dirname, '../data/employees.json');
-
-// Ensure database file exists
-if (!fs.existsSync(path.join(__dirname, '../data'))) {
-    fs.mkdirSync(path.join(__dirname, '../data'));
-}
-if (!fs.existsSync(DB_PATH)) {
-    fs.writeFileSync(DB_PATH, JSON.stringify([]));
-}
-
-const getEmployees = () => JSON.parse(fs.readFileSync(DB_PATH));
-const saveEmployees = (employees) => fs.writeFileSync(DB_PATH, JSON.stringify(employees, null, 2));
-
-// Configure multer for doc uploads
-const storage = multer.diskStorage({
-    destination: 'uploads/docs/',
-    filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${file.originalname}`);
-    }
-});
-const upload = multer({ storage });
+const Employee = require('../models/Employee');
+const { uploadDocs } = require('../utils/cloudinary');
 
 console.log('Loading onboarding.js route file...');
 
 // Check email existence
-router.post('/check-email', (req, res) => {
+router.post('/check-email', async (req, res) => {
     console.log('Received /check-email request:', req.body);
     const { email } = req.body;
     if (!email) return res.json({ exists: false });
-    const employees = getEmployees();
-    const exists = employees.some(e => e.email.toLowerCase().trim() === email.toLowerCase().trim());
-    res.json({ exists });
+    try {
+        const employee = await Employee.findOne({ email: email.toLowerCase().trim() });
+        res.json({ exists: !!employee });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
 });
 
 // Register/Login
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     try {
-        let employees = getEmployees();
         let normalizedEmail = email.toLowerCase().trim();
-        let employee = employees.find(e => e.email.toLowerCase().trim() === normalizedEmail);
+        let employee = await Employee.findOne({ email: normalizedEmail });
 
         if (!employee) {
             // Auto-register
-            const hashedPassword = await bcrypt.hash(password, 10);
-            employee = {
-                id: Date.now().toString(),
+            employee = new Employee({
                 email: normalizedEmail,
-                password: hashedPassword,
+                password: password, // Hashing happens in the model pre-save hook
                 onboardingStatus: 'Draft',
                 stage: 1,
-                progressPercentage: 0,
-                personalInfo: {},
-                legalFinancial: {},
-                emergencyContact: {},
-                documents: [],
-                createdAt: new Date()
-            };
-            employees.push(employee);
-            saveEmployees(employees);
+                progressPercentage: 0
+            });
+            await employee.save();
         } else {
-            const isMatch = await bcrypt.compare(password, employee.password);
+            const isMatch = await employee.comparePassword(password);
             if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
         }
 
-        const token = jwt.sign({ id: employee.id }, process.env.JWT_SECRET || 'secret', { expiresIn: '24h' });
+        const token = jwt.sign({ id: employee._id }, process.env.JWT_SECRET || 'secret', { expiresIn: '24h' });
         res.json({ token, employee });
     } catch (err) {
+        console.error('Login error:', err);
         res.status(500).json({ message: err.message });
     }
 });
@@ -97,51 +73,45 @@ const auth = (req, res, next) => {
 };
 
 router.get('/me', auth, async (req, res) => {
-    const employee = getEmployees().find(e => e.id === req.user.id);
-    if (!employee) return res.status(404).json({ message: 'User not found' });
+    try {
+        const employee = await Employee.findById(req.user.id).select('-password');
+        if (!employee) return res.status(404).json({ message: 'User not found' });
 
-    // Migration/Normalization: ensure stage exists and is consistent with status
-    let changed = false;
-    if (!employee.stage) {
-        if (employee.onboardingStatus === 'Pending Verification' || employee.onboardingStatus === 'Approved') {
-            employee.stage = 2;
-        } else if (employee.onboardingStatus === 'Completed') {
+        // Migration/Normalization: ensure stage exists and is consistent with status
+        let changed = false;
+        if (!employee.stage) {
+            if (employee.onboardingStatus === 'Pending Verification' || employee.onboardingStatus === 'Approved') {
+                employee.stage = 2;
+            } else if (employee.onboardingStatus === 'Completed') {
+                employee.stage = 3;
+            } else {
+                employee.stage = 1;
+            }
+            changed = true;
+        }
+
+        if (employee.onboardingStatus === 'Completed' && employee.stage === 2) {
             employee.stage = 3;
-        } else {
-            employee.stage = 1;
+            changed = true;
         }
-        changed = true;
-    }
 
-    // Sanity Check: If status is Completed but stage is not 3, they need verification for Stage 2
-    if (employee.onboardingStatus === 'Completed' && employee.stage === 2) {
-        employee.stage = 3; // Correct it to 3 if they are completed
-        changed = true;
-    }
-
-    if (changed) {
-        const employees = getEmployees();
-        const idx = employees.findIndex(e => e.id === employee.id);
-        if (idx !== -1) {
-            employees[idx] = { ...employees[idx], stage: employee.stage };
-            saveEmployees(employees);
+        if (changed) {
+            await employee.save();
         }
-    }
 
-    const { password, ...rest } = employee;
-    res.json(rest);
+        res.json(employee);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
 });
 
 router.post('/update', auth, async (req, res) => {
     const { personalInfo, employmentDetails, experienceSummary, legalFinancial, emergencyContact, isFinalSubmission } = req.body;
     try {
-        let employees = getEmployees();
-        const index = employees.findIndex(e => e.id === req.user.id);
-        if (index === -1) return res.status(404).json({ message: 'User not found' });
+        const employee = await Employee.findById(req.user.id);
+        if (!employee) return res.status(404).json({ message: 'User not found' });
 
-        const employee = employees[index];
-
-        // Merge updates for allowed sections
+        // Merge updates
         if (personalInfo) employee.personalInfo = { ...employee.personalInfo, ...personalInfo };
         if (employmentDetails) employee.employmentDetails = { ...employee.employmentDetails, ...employmentDetails };
         if (experienceSummary) employee.experienceSummary = { ...employee.experienceSummary, ...experienceSummary };
@@ -157,7 +127,7 @@ router.post('/update', auth, async (req, res) => {
                 employee.progressPercentage = 100;
             }
         } else {
-            // Update progress based on filled sections (Rough estimate)
+            // Update progress based on filled sections
             let sectionsFilled = 0;
             if (employee.personalInfo && Object.keys(employee.personalInfo).length > 2) sectionsFilled++;
             if (employee.employmentDetails && Object.keys(employee.employmentDetails).length > 2) sectionsFilled++;
@@ -177,8 +147,7 @@ router.post('/update', auth, async (req, res) => {
             }
         }
 
-        employees[index] = employee;
-        saveEmployees(employees);
+        await employee.save();
         res.json(employee);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -186,86 +155,53 @@ router.post('/update', auth, async (req, res) => {
 });
 
 // Get all candidates (HR View)
-router.get('/candidates', auth, (req, res) => {
+router.get('/candidates', auth, async (req, res) => {
     try {
         console.log('[API] GET /candidates requested');
-        const employees = getEmployees();
-        console.log(`[API] Found ${employees.length} total employees`);
-
-        // Filtering out passwords and the HR account itself, and sanitizing statuses
-        const safeEmployees = employees
-            .filter(e => {
-                const isHR = e.email === 'hr@antigraviity.com';
-                if (isHR) console.log(`[API] Filtering out HR account: ${e.email}`);
-                return !isHR;
-            })
-            .map(e => {
-                const { password, ...rest } = e;
-                // Sanity check for status consistency
-                if (rest.onboardingStatus === 'Completed') {
-                    rest.stage = 3;
-                }
-                return rest;
-            });
-
-        console.log(`[API] Returning ${safeEmployees.length} candidates`);
-        res.json(safeEmployees);
+        const employees = await Employee.find({ email: { $ne: 'hr@antigraviity.com' } }).select('-password');
+        console.log(`[API] Found ${employees.length} candidates`);
+        res.json(employees);
     } catch (err) {
         console.error('[API] GET /candidates error:', err);
         res.status(500).json({ message: err.message });
     }
 });
 
-// Simulation endpoint for HR Approval (Directly moves to Stage 2)
+// Simulation endpoint for HR Approval
 router.post('/hr-approve/:id', auth, async (req, res) => {
     const { id } = req.params;
-    console.log(`[API] POST /hr-approve/${id} requested`);
     try {
-        let employees = getEmployees();
-        const index = employees.findIndex(e => e.id === id);
+        const employee = await Employee.findById(id);
+        if (!employee) return res.status(404).json({ message: 'User not found' });
 
-        if (index === -1) {
-            console.error(`[API] User with ID ${id} not found in database`);
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        console.log(`[API] Approving user: ${employees[index].email} (Current Stage: ${employees[index].stage || 1})`);
-
-        if (employees[index].stage === 2) {
-            // Stage 2 Approval -> Completion
-            employees[index].stage = 3;
-            employees[index].onboardingStatus = 'Completed';
-            employees[index].progressPercentage = 100;
+        if (employee.stage === 2) {
+            employee.stage = 3;
+            employee.onboardingStatus = 'Completed';
+            employee.progressPercentage = 100;
         } else {
-            // Stage 1 Approval -> Move to Stage 2 (Post-Offer)
-            employees[index].stage = 2;
-            employees[index].onboardingStatus = 'Approved';
-            employees[index].progressPercentage = 50;
+            employee.stage = 2;
+            employee.onboardingStatus = 'Approved';
+            employee.progressPercentage = 50;
         }
 
-        saveEmployees(employees);
-        console.log(`[API] Approval saved for ${employees[index].email}`);
-
-        res.json({ success: true, employee: employees[index] });
+        await employee.save();
+        res.json({ success: true, employee });
     } catch (err) {
-        console.error(`[API] POST /hr-approve/${id} error:`, err);
         res.status(500).json({ message: err.message });
     }
 });
 
-router.post('/upload', auth, upload.single('document'), async (req, res) => {
+router.post('/upload', auth, uploadDocs.single('document'), async (req, res) => {
     try {
-        let employees = getEmployees();
-        const index = employees.findIndex(e => e.id === req.user.id);
-        const employee = employees[index];
+        const employee = await Employee.findById(req.user.id);
+        if (!employee) return res.status(404).json({ message: 'User not found' });
 
         employee.documents.push({
             type: req.body.type,
-            path: req.file.path
+            path: req.file.path // For Cloudinary, path is the URL
         });
 
-        employees[index] = employee;
-        saveEmployees(employees);
+        await employee.save();
         res.json(employee);
     } catch (err) {
         res.status(500).json({ message: err.message });

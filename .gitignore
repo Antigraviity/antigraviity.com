@@ -37,3 +37,11 @@ Thumbs.db
 # Deployment Keys
 key
 key.pub
+
+# Local Data and Logs
+server/data/
+uploads/
+*.txt
+migration_error.txt
+migration_output.txt
+migration_output_final.txt
