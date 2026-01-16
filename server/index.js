@@ -1,13 +1,21 @@
+const path = require('path');
+const fs = require('fs');
+
+// 1. Initialize environment variables ASAP
+require('dotenv').config({
+    path: path.join(__dirname, '../.env'),
+    override: true // Final truth comes from .env or Vercel injects
+});
+
 const express = require('express');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
-const path = require('path');
 const axios = require('axios');
 const multer = require('multer');
-const fs = require('fs');
 const mongoose = require('mongoose');
 
-// Configure multer for file uploads
+// 2. Import internal modules AFTER environment is loaded
+const config = require('./config');
 const { uploadResumes } = require('./utils/cloudinary');
 
 // Ensure uploads directory exists (Keep for now, but not needed for careers/onboarding)
@@ -15,35 +23,33 @@ if (!fs.existsSync('uploads/')) {
     fs.mkdirSync('uploads/');
 }
 
-// Consolidate environment loading (Explicitly point to root .env)
-require('dotenv').config({
-    path: path.join(__dirname, '../.env'),
-    override: false
-});
+// 3. MongoDB Connection with better error handling
+const MONGODB_URI = process.env.MONGODB_URI;
 
-// MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/antigraviity';
-mongoose.connect(MONGODB_URI)
+if (!MONGODB_URI) {
+    console.warn('--- WARNING: MONGODB_URI is missing! Defaulting to localhost (Local Dev Only) ---');
+}
+
+mongoose.connect(MONGODB_URI || 'mongodb://localhost:27017/antigraviity')
     .then(() => console.log('Connected to MongoDB Successfully'))
     .catch(err => {
         console.error('--- MongoDB Connection Error ---');
-        console.error(err);
+        console.error('Message:', err.message);
+        console.error('URI Provided:', MONGODB_URI ? `${MONGODB_URI.substring(0, 20)}...` : 'NONE');
         console.error('--------------------------------');
     });
 
-const config = require('./config');
-
-// Strictly clean credentials
+// 4. Strictly clean credentials
 if (config.email.user) config.email.user = config.email.user.trim();
 if (config.email.pass) {
     // Remove all whitespace from the App Password
     config.email.pass = config.email.pass.replace(/\s/g, '');
 }
 
-console.log('--- Server Auth Status ---');
-console.log('User:', config.email.user ? `[${config.email.user}]` : 'MISSING');
-console.log('Pass:', config.email.pass ? `${config.email.pass.substring(0, 3)}...` : 'MISSING', `(Length: ${config.email.pass ? config.email.pass.length : 0})`);
-console.log('-------------------------');
+console.log('--- Server Status ---');
+console.log('MongoDB URI:', MONGODB_URI ? 'LOADED' : 'MISSING');
+console.log('Email User:', config.email.user ? 'LOADED' : 'MISSING');
+console.log('---------------------');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
