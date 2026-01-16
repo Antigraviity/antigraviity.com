@@ -9,12 +9,19 @@ require('dotenv').config({
     override: true // Final truth comes from .env or Vercel injects
 });
 
+console.log('[Startup] Phase 1.1: Loading express...');
 const express = require('express');
+console.log('[Startup] Phase 1.2: Loading nodemailer...');
 const nodemailer = require('nodemailer');
+console.log('[Startup] Phase 1.3: Loading cors...');
 const cors = require('cors');
+console.log('[Startup] Phase 1.4: Loading axios...');
 const axios = require('axios');
+console.log('[Startup] Phase 1.5: Loading multer...');
 const multer = require('multer');
+console.log('[Startup] Phase 1.6: Loading mongoose...');
 const mongoose = require('mongoose');
+console.log('[Startup] Phase 1.7: Core dependencies loaded.');
 
 // 2. Import internal modules AFTER environment is loaded
 const config = require('./config');
