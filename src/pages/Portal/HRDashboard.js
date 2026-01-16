@@ -135,15 +135,6 @@ const HRDashboard = () => {
         });
     };
 
-    const initiateVerify = (id) => {
-        setConfirmation({
-            isOpen: true,
-            type: 'verify',
-            candidateId: id,
-            title: 'Verify Documents',
-            message: 'Are you sure you want to mark all submitted documents as verified? This moves the candidate to the final approval stage.'
-        });
-    };
 
     const handleConfirmAction = async () => {
         const { type, candidateId } = confirmation;
@@ -368,7 +359,7 @@ const HRDashboard = () => {
                                                                 </div>
                                                                 <div className="min-w-0 flex-1">
                                                                     <p className="text-[10px] font-black text-gray-400 tracking-wider leading-none mb-1.5 uppercase">{doc.type}</p>
-                                                                    <p className="text-xs font-bold text-gray-900 truncate max-w-[150px]">{doc.path?.split(/[\/\\]/).pop() || 'Document'}</p>
+                                                                    <p className="text-xs font-bold text-gray-900 truncate max-w-[150px]">{doc.path?.split(/[/\\]/).pop() || 'Document'}</p>
                                                                 </div>
                                                             </div>
                                                             <div className="flex items-center gap-4 transition-opacity">

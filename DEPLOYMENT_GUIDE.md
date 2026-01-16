@@ -28,7 +28,22 @@ This guide documents the complete process for deploying a React frontend with a 
     ```
 2.  **Dependencies**: Do **not** upload `node_modules`.
 
-## 2. Server Setup (CyberPanel)
+## 2. Database Setup
+
+The project currently uses a dual database approach:
+
+### A. Current: Local JSON Storage
+By default, the app uses a JSON file at `server/data/employees.json` for storage.
+- **Persistence**: On your VPS, ensure the `server/data` directory has write permissions.
+- **Backup**: Regularly back up the `employees.json` file.
+
+### B. Future: MongoDB (Recommended for Production)
+The foundation for MongoDB is already in the codebase (see `server/models/Employee.js`).
+To switch to MongoDB:
+1.  Add `MONGODB_URI` to your server's `.env` file.
+2.  Update `server/routes/onboarding.js` to use the Mongoose model instead of the JSON file system.
+
+## 3. Server Setup (CyberPanel)
 
 1.  **Create Website**: in CyberPanel, create a website for your domain.
 2.  **File Structure**: Upload `build`, `server`, and `package.json` to `public_html`.

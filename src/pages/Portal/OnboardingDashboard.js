@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import CustomSelect from '../../components/CustomSelect';
@@ -149,7 +149,6 @@ const InputField = ({ label, name, value, onChange, placeholder, type = "text", 
 
 const OnboardingDashboard = () => {
     const [showVerifiedInfo, setShowVerifiedInfo] = useState(false);
-    const [showPostOfferVerified, setShowPostOfferVerified] = useState(false);
     const [showAllDetails, setShowAllDetails] = useState(false);
     const [employee, setEmployee] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -214,7 +213,6 @@ const OnboardingDashboard = () => {
     // Derived State (Move up for scope)
     const currentStatus = employee ? (employee.onboardingStatus || 'Draft') : 'Draft';
     const currentStage = (currentStatus === 'Completed') ? 3 : (employee ? (Number(employee.stage) || 1) : 1);
-    const isFresher = formData.totalExperience === 'Fresher';
     const isReadOnly = currentStatus === 'Pending Verification' || currentStatus === 'Completed';
 
     const stages = [
@@ -252,7 +250,7 @@ const OnboardingDashboard = () => {
         );
     };
 
-    const fetchMe = async () => {
+    const fetchMe = useCallback(async () => {
         try {
             const token = localStorage.getItem('token');
             const res = await axios.get('/api/onboarding/me', {
@@ -306,11 +304,11 @@ const OnboardingDashboard = () => {
         } catch (err) {
             navigate('/candidate/login');
         }
-    };
+    }, [navigate]);
 
     useEffect(() => {
         fetchMe();
-    }, [navigate]);
+    }, [fetchMe]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
