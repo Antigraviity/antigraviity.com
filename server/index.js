@@ -52,13 +52,21 @@ let MONGODB_URI = (process.env.MONGODB_URI || '').trim();
 if (!MONGODB_URI) {
     console.warn('--- WARNING: MONGODB_URI is missing! Defaulting to localhost (Local Dev Only) ---');
 } else if (MONGODB_URI.startsWith('mongodb+srv://')) {
-    // Standardize Atlas URI: remove any port or hidden characters
     console.log('[Startup] Cleaning mongodb+srv URI...');
-    // regex to remove :port if it exists in the host part
+    // 1. Remove any port (Atlas doesn't support them)
     MONGODB_URI = MONGODB_URI.replace(/:(\d+)([/?]|$)/, '$2');
+
+    // 2. Encode '#' as '%23' in the password part (very common cause of Atlas failures)
+    if (MONGODB_URI.includes('#')) {
+        console.log('[Startup] Encoding # in MongoDB password...');
+        MONGODB_URI = MONGODB_URI.replace(/#/g, '%23');
+    }
 }
 
-console.log('[Startup] Attempting to connect to MongoDB...');
+// Masked URI for log verification
+const maskedURI = MONGODB_URI.replace(/:\/\/.*@/, '://****:****@');
+console.log('[Startup] Connecting to:', maskedURI);
+
 mongoose.connect(MONGODB_URI || 'mongodb://localhost:27017/antigraviity')
     .then(() => console.log('Connected to MongoDB Successfully'))
     .catch(err => {
