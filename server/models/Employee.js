@@ -51,7 +51,9 @@ const employeeSchema = new mongoose.Schema({
         type: { type: String }, // e.g., 'aadhaar', 'pan', 'degree'
         path: String,
         uploadedAt: { type: Date, default: Date.now }
-    }]
+    }],
+    resetPasswordToken: String,
+    resetPasswordExpires: Date
 }, { timestamps: true });
 
 // Hash password before saving

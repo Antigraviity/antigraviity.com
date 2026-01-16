@@ -5,6 +5,8 @@ const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
 const { uploadDocs } = require('../utils/cloudinary');
 
@@ -45,6 +47,10 @@ router.post('/check-email', async (req, res) => {
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     try {
+        if (!email || !password) {
+            return res.status(400).json({ message: 'Email and password are required' });
+        }
+
         let normalizedEmail = email.toLowerCase().trim();
         let employee = await Employee.findOne({ email: normalizedEmail });
 
@@ -60,14 +66,19 @@ router.post('/login', async (req, res) => {
             await employee.save();
         } else {
             const isMatch = await employee.comparePassword(password);
-            if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+            if (!isMatch) {
+                return res.status(400).json({ message: 'Invalid credentials' });
+            }
         }
 
         const token = jwt.sign({ id: employee._id }, process.env.JWT_SECRET || 'secret', { expiresIn: '24h' });
         res.json({ token, employee });
     } catch (err) {
         console.error('Login error:', err);
-        res.status(500).json({ message: err.message });
+        res.status(500).json({
+            message: 'Internal server error during login',
+            error: err.message
+        });
     }
 });
 
@@ -222,6 +233,75 @@ router.post('/upload', auth, uploadDocs.single('document'), async (req, res) => 
         res.json(employee);
     } catch (err) {
         res.status(500).json({ message: err.message });
+    }
+});
+
+// Forgot Password
+router.post('/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    try {
+        const employee = await Employee.findOne({ email: email.toLowerCase().trim() });
+        if (!employee) {
+            // To prevent email harvesting, don't reveal if email exists
+            return res.json({ success: true, message: 'If an account with that email exists, a reset link has been sent.' });
+        }
+
+        const token = crypto.randomBytes(20).toString('hex');
+        employee.resetPasswordToken = token;
+        employee.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+        await employee.save();
+
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS?.replace(/\s/g, '')
+            }
+        });
+
+        const resetUrl = `${req.protocol}://${req.get('host')}/hr/reset-password?token=${token}`;
+        console.log(`[PASS_RESET] Reset link for ${email}: ${resetUrl}`);
+
+        const mailOptions = {
+            to: employee.email,
+            from: `"AntiGraviity HR Portal" <${process.env.EMAIL_USER}>`,
+            subject: 'HR Portal Password Reset',
+            text: `You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n` +
+                `Please click on the following link, or paste this into your browser to complete the process:\n\n` +
+                `${resetUrl}\n\n` +
+                `If you did not request this, please ignore this email and your password will remain unchanged.\n`
+        };
+
+        await transporter.sendMail(mailOptions);
+        res.json({ success: true, message: 'Reset link sent to your email.' });
+    } catch (err) {
+        console.error('Forgot password error:', err);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+// Reset Password
+router.post('/reset-password', async (req, res) => {
+    const { token, password } = req.body;
+    try {
+        const employee = await Employee.findOne({
+            resetPasswordToken: token,
+            resetPasswordExpires: { $gt: Date.now() }
+        });
+
+        if (!employee) {
+            return res.status(400).json({ message: 'Password reset token is invalid or has expired.' });
+        }
+
+        employee.password = password; // Hashing happens in pre-save hook
+        employee.resetPasswordToken = undefined;
+        employee.resetPasswordExpires = undefined;
+        await employee.save();
+
+        res.json({ success: true, message: 'Password has been reset successfully.' });
+    } catch (err) {
+        console.error('Reset password error:', err);
+        res.status(500).json({ message: 'Internal server error' });
     }
 });
 

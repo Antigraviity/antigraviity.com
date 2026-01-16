@@ -38,6 +38,8 @@ import Login from './pages/Portal/Login';
 import OnboardingDashboard from './pages/Portal/OnboardingDashboard';
 import HRDashboard from './pages/Portal/HRDashboard';
 import HRLogin from './pages/Portal/HRLogin';
+import ForgotPassword from './pages/Portal/ForgotPassword';
+import ResetPassword from './pages/Portal/ResetPassword';
 import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3';
 
 // ANTIGRAVIITY TECHNOLOGIES - COMPLETE WEBSITE
@@ -1107,6 +1109,8 @@ const MainLayout = () => {
             <Route path="/candidate/login" element={<Login />} />
             <Route path="/candidate/dashboard" element={<OnboardingDashboard />} />
             <Route path="/hr/login" element={<HRLogin />} />
+            <Route path="/hr/forgot-password" element={<ForgotPassword />} />
+            <Route path="/hr/reset-password" element={<ResetPassword />} />
             <Route path="/hr/dashboard" element={<HRDashboard />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

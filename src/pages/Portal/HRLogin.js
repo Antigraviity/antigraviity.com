@@ -53,7 +53,16 @@ const HRLogin = () => {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-4">Password</label>
+                        <div className="flex justify-between items-center ml-4">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Password</label>
+                            <button
+                                type="button"
+                                onClick={() => navigate('/hr/forgot-password')}
+                                className="text-[10px] font-bold uppercase tracking-widest text-black hover:underline"
+                            >
+                                Forgot?
+                            </button>
+                        </div>
                         <input
                             type="password"
                             placeholder="••••••••"
@@ -69,7 +78,7 @@ const HRLogin = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-black text-white font-bold py-3.5 rounded-2xl hover:bg-gray-900 transition-all text-xs uppercase tracking-[0.2em] shadow-sm disabled:opacity-50"
+                        className="w-full bg-black text-white font-bold py-3.5 rounded-2xl hover:bg-gray-900 transition-all text-[10px] uppercase tracking-[0.2em] shadow-sm disabled:opacity-50"
                     >
                         {loading ? 'Authenticating...' : 'Sign In'}
                     </button>

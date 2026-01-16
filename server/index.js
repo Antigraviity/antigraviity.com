@@ -268,28 +268,8 @@ app.post('/api/career', uploadResumes.single('resume'), async (req, res) => {
     }
 });
 
-// Robust manual file serving for candidate documents
-app.get('/candidate-docs/*', (req, res) => {
-    try {
-        // Decode the URL segment to handle spaces and special chars
-        const relativePath = decodeURIComponent(req.params[0]);
-        const absolutePath = path.join(process.cwd(), 'uploads', relativePath);
-
-        console.log(`[Docs] Request for: ${req.url}`);
-        console.log(`[Docs] Attempting to serve: ${absolutePath}`);
-
-        if (fs.existsSync(absolutePath)) {
-            // Use res.sendFile with absolute path for Windows compatibility
-            return res.sendFile(absolutePath);
-        } else {
-            console.error(`[Docs] 404 - File Not Found: ${absolutePath}`);
-            return res.status(404).json({ error: 'Document not found' });
-        }
-    } catch (err) {
-        console.error(`[Docs] Server Error:`, err);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
+// Serve candidate documents from the uploads directory
+app.use('/candidate-docs', express.static(path.join(process.cwd(), 'uploads')));
 
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, '../build')));
