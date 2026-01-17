@@ -1027,11 +1027,11 @@ const OnboardingDashboard = () => {
                                         <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin" />
                                     </div>
                                     <h2 className="text-2xl font-black tracking-tight text-gray-900">
-                                        {currentStage === 1 ? 'Credential Verification' : currentStage === 3 ? 'Documents Under Verification' : 'Assessment Shortlist'}
+                                        {currentStage === 1 ? 'Application Under Review' : currentStage === 3 ? 'Documents Under Verification' : 'Assessment Shortlist'}
                                     </h2>
                                     <div className="text-gray-500 text-[11px] max-w-md mx-auto font-medium tracking-wide leading-relaxed">
                                         {currentStage === 1 ? (
-                                            <p>Your application is currently undergoing professional verification. We appreciate your patience during this evaluation phase.</p>
+                                            <p>Your application has been submitted and is currently under review. We appreciate your patience during this evaluation phase.</p>
                                         ) : currentStage === 3 ? (
                                             <p>Your onboarding documents have been submitted successfully. Our HR team is currently reviewing and verifying your documentation. You will be notified once the verification process is complete.</p>
                                         ) : (
