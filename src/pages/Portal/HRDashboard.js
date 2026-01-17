@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import OfferLetter from '../../components/OfferLetter';
-import * as XLSX from 'xlsx';
 
 const HRDashboard = () => {
     const API_BASE_URL = 'http://localhost:5000';
