@@ -50,13 +50,37 @@ router.post('/check-email', async (req, res) => {
 
 // Register/Login
 router.post('/login', async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, isAdmin } = req.body;
     try {
         if (!email || !password) {
             return res.status(400).json({ message: 'Email and password are required' });
         }
 
         let normalizedEmail = email.toLowerCase().trim();
+
+        // HR Authentication Logic
+        if (isAdmin) {
+            const hrEmail = process.env.HR_EMAIL || 'hr@antigraviity.com';
+            const hrPassword = process.env.HR_PASSWORD;
+
+            if (normalizedEmail === hrEmail && password === hrPassword) {
+                let employee = await Employee.findOne({ email: normalizedEmail });
+                if (!employee) {
+                    // Create a system record for HR if it doesn't exist
+                    employee = new Employee({
+                        email: normalizedEmail,
+                        password: password, // This will be hashed but we won't use it for subsequent checks
+                        onboardingStatus: 'Approved',
+                        stage: 1
+                    });
+                    await employee.save();
+                }
+                const token = jwt.sign({ id: employee._id }, process.env.JWT_SECRET || 'secret', { expiresIn: '24h' });
+                return res.json({ token, employee });
+            } else {
+                return res.status(401).json({ message: 'Invalid HR credentials' });
+            }
+        }
 
         // Block HR user from candidate login
         if (normalizedEmail === 'hr@antigraviity.com' || normalizedEmail === 'hr@antigravity.com') {
@@ -167,8 +191,8 @@ router.post('/update', auth, async (req, res) => {
         if (isFinalSubmission) {
             if (employee.stage === 1) {
                 employee.onboardingStatus = 'Pending Verification';
-                employee.progressPercentage = 50;
-            } else if (employee.stage === 2) {
+                employee.progressPercentage = 33;
+            } else if (employee.stage === 3) {
                 employee.onboardingStatus = 'Pending Verification';
                 employee.progressPercentage = 100;
             }
@@ -180,18 +204,21 @@ router.post('/update', auth, async (req, res) => {
             if (employee.experienceSummary && Object.keys(employee.experienceSummary).length > 2) sectionsFilled++;
 
             if (employee.stage === 1) {
-                employee.progressPercentage = Math.min(45, sectionsFilled * 15);
-                employee.onboardingStatus = 'In-Process';
-            } else if (employee.stage === 2) {
+                employee.progressPercentage = Math.min(30, sectionsFilled * 10);
+                // Keep 'Draft' status for Stage 1 if not a final submission
+                employee.onboardingStatus = 'Draft';
+            } else if (employee.stage === 3) {
                 let legalFilled = 0;
                 if (employee.legalFinancial && Object.keys(employee.legalFinancial).length > 2) legalFilled = 1;
                 let emergencyFilled = 0;
                 if (employee.emergencyContact && Object.keys(employee.emergencyContact).length > 1) emergencyFilled = 1;
 
-                employee.progressPercentage = 50 + (legalFilled * 20) + (emergencyFilled * 20);
-                employee.onboardingStatus = 'In-Process';
+                employee.progressPercentage = 66 + (legalFilled * 15) + (emergencyFilled * 15);
+                // Keep 'Draft' status for Stage 3 if not a final submission
+                employee.onboardingStatus = 'Draft';
             }
         }
+
 
         await employee.save();
         res.json(employee);
@@ -227,14 +254,18 @@ router.post('/hr-approve/:id', auth, async (req, res) => {
         const employee = await Employee.findById(id);
         if (!employee) return res.status(404).json({ message: 'User not found' });
 
-        if (employee.stage === 2) {
-            employee.stage = 3;
+        if (employee.stage === 3) {
             employee.onboardingStatus = 'Completed';
             employee.progressPercentage = 100;
+        } else if (employee.stage === 2) {
+            employee.stage = 3;
+            employee.onboardingStatus = 'Approved'; // Moves to Stage 3 Selection state
+            employee.progressPercentage = 66;
         } else {
+            // Stage 1 -> 2
             employee.stage = 2;
-            employee.onboardingStatus = 'Approved';
-            employee.progressPercentage = 50;
+            employee.onboardingStatus = 'Approved'; // Assessment Stage
+            employee.progressPercentage = 33;
         }
 
         await employee.save();

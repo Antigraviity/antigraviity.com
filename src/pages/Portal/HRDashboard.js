@@ -22,7 +22,7 @@ const HRDashboard = () => {
     const navigate = useNavigate();
 
     const [activeMenu, setActiveMenu] = useState('Dashboard'); // 'Dashboard' | 'Jobs' | 'Employees' | 'Settings'
-    const [activeDetailTab, setActiveDetailTab] = useState('Pre-Offer'); // 'Pre-Offer' | 'Post-Offer'
+    const [activeDetailTab, setActiveDetailTab] = useState('Pre Offer'); // 'Pre Offer' | 'Interview Assessment' | 'Post Offer'
     const [activeCandidateTab, setActiveCandidateTab] = useState('Active'); // 'Active' | 'Pending' | 'Onboarded'
     const [showOfferPreview, setShowOfferPreview] = useState(false);
 
@@ -182,10 +182,27 @@ const HRDashboard = () => {
     };
 
     // Helper to construct correctly encoded file URLs
-    const getFileUrl = (path) => {
-        if (!path) return '#';
-        // If path is already a full URL (like Cloudinary), return it directly
-        if (path.startsWith('http')) return path;
+    const getFileUrl = (doc, isDownload = false) => {
+        if (!doc || !doc.path) return '#';
+        const path = doc.path;
+
+        // If path is already a full URL (like Cloudinary), handle it
+        if (path.startsWith('http')) {
+            if (path.includes('res.cloudinary.com')) {
+                let url = path;
+                // For PDFs, we want to force download/attachment to avoid layout issues in some browsers
+                const isPdf = path.toLowerCase().endsWith('.pdf') || doc.type?.toLowerCase().includes('pdf') || doc.originalName?.toLowerCase().endsWith('.pdf');
+
+                if (isPdf && url.includes('/upload/')) {
+                    // Inject fl_attachment and optionally the original filename for cleaner saving
+                    // format: /upload/fl_attachment:filename_here/v123/...
+                    const sanitizedName = (doc.originalName || 'document.pdf').replace(/[^a-z0-9.]/gi, '_');
+                    url = url.replace('/upload/', `/upload/fl_attachment:${sanitizedName}/`);
+                }
+                return url;
+            }
+            return path;
+        }
 
         // Convert Windows backslashes to forward slashes
         const normalizedPath = path.replace(/\\/g, '/');
@@ -194,7 +211,6 @@ const HRDashboard = () => {
             ? normalizedPath.slice(8)
             : normalizedPath;
 
-        // Encode each segment to handle spaces and special chars correctly
         const encodedPath = cleanPath.split('/')
             .map(segment => encodeURIComponent(segment))
             .join('/');
@@ -257,7 +273,7 @@ const HRDashboard = () => {
 
                             {/* Detail Tabs */}
                             <div className="px-8 border-b border-gray-100 flex gap-8">
-                                {['Pre-Offer', 'Post-Offer'].map((tab) => (
+                                {['Pre Offer', 'Interview Assessment', 'Post Offer'].map((tab) => (
                                     <button
                                         key={tab}
                                         onClick={() => setActiveDetailTab(tab)}
@@ -273,76 +289,166 @@ const HRDashboard = () => {
 
                             {/* Detail Content */}
                             <div className="p-8 min-h-[500px]">
-                                {activeDetailTab === 'Pre-Offer' && (
+                                {activeDetailTab === 'Pre Offer' && (
                                     <div className="space-y-12 animate-in fade-in slide-in-from-left-4 duration-500">
-                                        {selectedCandidate.stage >= 2 && (
-                                            <div className="flex justify-between items-center -mb-8">
-                                                <button
-                                                    onClick={() => setShowOfferPreview(true)}
-                                                    className="bg-black text-white px-6 py-2 rounded-lg text-[10px] font-black tracking-widest hover:bg-gray-800 transition-all shadow-lg uppercase"
-                                                >
-                                                    View / Export Offer Letter
-                                                </button>
-                                                <span className="bg-green-50 text-green-600 border border-green-100 px-4 py-1.5 rounded-full text-[11px] font-bold tracking-wide">
-                                                    Stage 1 Selected (Pre-Offer Approved)
-                                                </span>
+                                        {selectedCandidate.onboardingStatus === 'Draft' ? (
+                                            <div className="min-h-[400px] flex flex-col items-center justify-center space-y-4 bg-gray-50/30 rounded-2xl border border-dashed border-gray-200 p-12">
+                                                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                                                    <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                    </svg>
+                                                </div>
+                                                <h4 className="text-lg font-bold text-gray-900">Application in Draft</h4>
+                                                <p className="text-sm text-gray-500 font-medium text-center max-w-xs">
+                                                    The candidate has not submitted their application yet. Full details will be available once the application is submitted.
+                                                </p>
                                             </div>
-                                        )}
-                                        {/* Section A: Basic Info */}
-                                        <div className="space-y-4">
-                                            <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3">Basic Information</h4>
-                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
-                                                <DetailItem label="Full Name" value={selectedCandidate.personalInfo?.fullName} />
-                                                <DetailItem label="Email" value={selectedCandidate.personalInfo?.personalEmail} />
-                                                <DetailItem label="Mobile" value={selectedCandidate.personalInfo?.mobileNumber} />
-                                                <DetailItem label="DOB" value={selectedCandidate.personalInfo?.dob} />
-                                                <DetailItem label="Current City" value={selectedCandidate.personalInfo?.currentCity} />
-                                            </div>
-                                        </div>
-
-                                        {/* Section B: Employment */}
-                                        <div className="space-y-4">
-                                            <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3">Employment Details</h4>
-                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
-                                                <DetailItem label="Position" value={selectedCandidate.employmentDetails?.position} />
-                                                <DetailItem label="Work Mode" value={selectedCandidate.employmentDetails?.workMode} />
-                                                <DetailItem label="Joining Date" value={selectedCandidate.employmentDetails?.joiningDate} />
-                                                <DetailItem label="Current CTC" value={selectedCandidate.employmentDetails?.currentCtc} />
-                                                <DetailItem label="Expected CTC" value={selectedCandidate.employmentDetails?.expectedCtc} />
-                                                <DetailItem label="Notice Period" value={selectedCandidate.employmentDetails?.noticePeriod} />
-                                            </div>
-                                        </div>
-
-                                        {/* Section C: Experience */}
-                                        <div className="space-y-4">
-                                            <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3">Experience & Education</h4>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
-                                                <DetailItem label="Qualification" value={selectedCandidate.experienceSummary?.highestQualification} />
-                                                <DetailItem label="Total Experience" value={selectedCandidate.experienceSummary?.totalExperience} />
-                                                {selectedCandidate.experienceSummary?.totalExperience !== 'Fresher' && (
-                                                    <>
-                                                        <DetailItem label="Relevant Exp" value={selectedCandidate.experienceSummary?.relevantExperience} />
-                                                        <DetailItem label="Current Company" value={selectedCandidate.experienceSummary?.currentEmployer} />
-                                                        <DetailItem label="Designation" value={selectedCandidate.experienceSummary?.currentDesignation} />
-                                                    </>
+                                        ) : (
+                                            <>
+                                                {selectedCandidate.stage >= 2 && (
+                                                    <div className="flex justify-between items-center -mb-8">
+                                                        <button
+                                                            onClick={() => setShowOfferPreview(true)}
+                                                            className="bg-black text-white px-6 py-2 rounded-lg text-[10px] font-black tracking-widest hover:bg-gray-800 transition-all shadow-lg uppercase"
+                                                        >
+                                                            View / Export Offer Letter
+                                                        </button>
+                                                        <span className="bg-green-50 text-green-600 border border-green-100 px-4 py-1.5 rounded-full text-[11px] font-bold tracking-wide">
+                                                            Stage 1 Selected (Pre Offer Approved)
+                                                        </span>
+                                                    </div>
                                                 )}
-                                            </div>
-                                        </div>
+                                                {/* Section A: Basic Info */}
+                                                <div className="space-y-4">
+                                                    <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3 uppercase">1. Basic Information</h4>
+                                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
+                                                        <DetailItem label="Full Name" value={selectedCandidate.personalInfo?.fullName} />
+                                                        <DetailItem label="Personal Email" value={selectedCandidate.personalInfo?.personalEmail} />
+                                                        <DetailItem label="Mobile" value={selectedCandidate.personalInfo?.mobileNumber} />
+                                                        <DetailItem label="DOB" value={selectedCandidate.personalInfo?.dob} />
+                                                        <DetailItem label="Current City" value={selectedCandidate.personalInfo?.currentCity} />
+                                                        <DetailItem label="Higher Secondary School" value={selectedCandidate.personalInfo?.schoolName} mdSpan={2} />
+                                                    </div>
+                                                </div>
+
+                                                {/* Section B: Education */}
+                                                <div className="space-y-4">
+                                                    <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3 uppercase">2. Education</h4>
+                                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
+                                                        <DetailItem label="Highest Qualification" value={selectedCandidate.education?.highestQualification} />
+                                                        <DetailItem label="Institution Name" value={selectedCandidate.education?.institutionName} />
+                                                        <DetailItem label="Institution Location" value={selectedCandidate.education?.institutionLocation} />
+                                                    </div>
+                                                </div>
+
+                                                {/* Section C: Experience Summary */}
+                                                <div className="space-y-4">
+                                                    <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3 uppercase">3. Experience Summary</h4>
+                                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
+                                                        <DetailItem label="Total Experience" value={selectedCandidate.experienceSummary?.totalExperience} />
+                                                        {selectedCandidate.experienceSummary?.totalExperience !== 'Fresher' && (
+                                                            <>
+                                                                <DetailItem label="Current Employer" value={selectedCandidate.experienceSummary?.currentEmployer} />
+                                                                <DetailItem label="Current Designation" value={selectedCandidate.experienceSummary?.currentDesignation} />
+                                                                <DetailItem label="Relevant Experience" value={selectedCandidate.experienceSummary?.relevantExperience} />
+                                                                <DetailItem label="Current CTC" value={selectedCandidate.experienceSummary?.currentCtc} />
+                                                                <DetailItem label="Expected CTC" value={selectedCandidate.experienceSummary?.expectedCtc} />
+                                                            </>
+                                                        )}
+                                                        <div className="col-span-2 lg:col-span-4 mt-2">
+                                                            {selectedCandidate.documents?.find(d => d.type === 'resume') ? (
+                                                                <a
+                                                                    href={getFileUrl(selectedCandidate.documents.find(d => d.type === 'resume'))}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="inline-flex items-center gap-2 px-4 py-2 bg-black text-white text-[10px] font-black rounded-lg hover:bg-gray-800 transition-all tracking-widest uppercase shadow-sm"
+                                                                >
+                                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                                    </svg>
+                                                                    View Candidate Resume
+                                                                </a>
+                                                            ) : (
+                                                                <span className="text-[10px] font-bold text-gray-400 italic">Resume not uploaded</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Section D: Employment Details */}
+                                                <div className="space-y-4">
+                                                    <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3 uppercase">4. Employment Details</h4>
+                                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
+                                                        <DetailItem label="Position Applied For" value={selectedCandidate.employmentDetails?.position} />
+                                                        <DetailItem label="Work Mode" value={selectedCandidate.employmentDetails?.workMode} />
+                                                        <DetailItem label="Preferred Location" value={selectedCandidate.employmentDetails?.preferredLocation} />
+                                                        <DetailItem label="Proposed Joining Date" value={selectedCandidate.employmentDetails?.joiningDate} />
+                                                        <DetailItem label="Notice Period" value={selectedCandidate.employmentDetails?.noticePeriod} />
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 )}
 
-                                {activeDetailTab === 'Post-Offer' && (
+                                {activeDetailTab === 'Interview Assessment' && (
                                     <div className="space-y-12 animate-in fade-in slide-in-from-right-4 duration-500">
                                         {(selectedCandidate.stage >= 3 || selectedCandidate.onboardingStatus === 'Completed') && (
                                             <div className="flex justify-end -mb-8">
                                                 <span className="bg-green-50 text-green-600 border border-green-100 px-4 py-1.5 rounded-full text-[11px] font-bold tracking-wide">
-                                                    Stage 3 Verified (Onboarding Complete)
+                                                    Stage 2 Verified (Assessment Complete)
                                                 </span>
                                             </div>
                                         )}
-                                        {/* Section D: Legal & Bank Info */}
+
+                                        <div className="min-h-[300px] flex flex-col items-center justify-center space-y-4 bg-gray-50/30 rounded-2xl border border-dashed border-gray-200 p-12">
+                                            <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center">
+                                                <svg className="w-8 h-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                                                </svg>
+                                            </div>
+                                            <h4 className="text-lg font-bold text-gray-900">Interview Assessment</h4>
+                                            <p className="text-sm text-gray-500 font-medium text-center max-w-xs">
+                                                {selectedCandidate.stage === 2
+                                                    ? 'Candidate is currently in the interview assessment phase. Review their performance and select for onboarding.'
+                                                    : selectedCandidate.stage > 2
+                                                        ? 'Candidate has successfully cleared the assessment phase.'
+                                                        : 'This stage will be unlocked once the pre-offer information is approved.'}
+                                            </p>
+
+                                            {selectedCandidate.stage === 2 && (
+                                                <div className="flex items-center gap-3 mt-6">
+                                                    <button
+                                                        onClick={() => initiateReject(selectedCandidate._id)}
+                                                        className="px-8 py-3 bg-white text-red-600 text-[10px] font-black rounded-lg hover:bg-red-50 transition-all border border-red-100 tracking-widest uppercase"
+                                                    >
+                                                        REJECT
+                                                    </button>
+                                                    <button
+                                                        onClick={() => initiateApprove(selectedCandidate._id)}
+                                                        className="px-8 py-3 bg-green-600 text-white text-[10px] font-black rounded-lg hover:bg-green-700 transition-all tracking-widest uppercase"
+                                                    >
+                                                        SELECT
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeDetailTab === 'Post Offer' && (
+                                    <div className="space-y-12 animate-in fade-in slide-in-from-right-4 duration-500">
+                                        {selectedCandidate.onboardingStatus === 'Completed' && (
+                                            <div className="flex justify-end -mb-8">
+                                                <span className="bg-green-50 text-green-600 border border-green-100 px-4 py-1.5 rounded-full text-[11px] font-bold tracking-wide">
+                                                    Onboarding Verified (Post Offer Complete)
+                                                </span>
+                                            </div>
+                                        )}
+
+                                        {/* Section E: Legal & Bank Info */}
                                         <div className="space-y-4">
-                                            <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3">Legal & Bank Details</h4>
+                                            <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3 uppercase">Legal & Bank Details</h4>
                                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
                                                 <DetailItem label="PAN Number" value={selectedCandidate.legalFinancial?.panNumber} />
                                                 <DetailItem label="Aadhaar Number" value={selectedCandidate.legalFinancial?.aadhaarNumber} />
@@ -355,9 +461,9 @@ const HRDashboard = () => {
                                             </div>
                                         </div>
 
-                                        {/* Section E: Emergency Contact */}
+                                        {/* Section F: Emergency Contact */}
                                         <div className="space-y-4">
-                                            <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3">Emergency Contact</h4>
+                                            <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3 uppercase">Emergency Contact</h4>
                                             <div className="grid grid-cols-2 lg:grid-cols-3 gap-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
                                                 <DetailItem label="Contact Name" value={selectedCandidate.emergencyContact?.name} />
                                                 <DetailItem label="Phone" value={selectedCandidate.emergencyContact?.phone} />
@@ -365,9 +471,9 @@ const HRDashboard = () => {
                                             </div>
                                         </div>
 
-                                        {/* Section F: Uploaded Documents */}
+                                        {/* Section G: Uploaded Documents */}
                                         <div className="space-y-4">
-                                            <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3">Documents Repository</h4>
+                                            <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3 uppercase">Documents Repository</h4>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 {selectedCandidate.documents && selectedCandidate.documents.length > 0 ? (
                                                     selectedCandidate.documents.map((doc, idx) => (
@@ -380,12 +486,12 @@ const HRDashboard = () => {
                                                                 </div>
                                                                 <div className="min-w-0 flex-1">
                                                                     <p className="text-[10px] font-black text-gray-400 tracking-wider leading-none mb-1.5 uppercase">{doc.type}</p>
-                                                                    <p className="text-xs font-bold text-gray-900 truncate max-w-[150px]">{doc.path?.split(/[/\\]/).pop() || 'Document'}</p>
+                                                                    <p className="text-xs font-bold text-gray-900 truncate max-w-[150px]">{doc.originalName || doc.path?.split(/[/\\]/).pop() || 'Document'}</p>
                                                                 </div>
                                                             </div>
                                                             <div className="flex items-center gap-4 transition-opacity">
                                                                 <a
-                                                                    href={getFileUrl(doc.path)}
+                                                                    href={getFileUrl(doc, false)}
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
                                                                     className="p-2 rounded-lg text-gray-400 hover:text-black hover:bg-gray-100 transition-all"
@@ -397,7 +503,7 @@ const HRDashboard = () => {
                                                                     </svg>
                                                                 </a>
                                                                 <a
-                                                                    href={getFileUrl(doc.path)}
+                                                                    href={getFileUrl(doc, true)}
                                                                     download
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
@@ -419,20 +525,19 @@ const HRDashboard = () => {
                                             </div>
                                         </div>
 
-                                        {/* Section G: Actions */}
-                                        {selectedCandidate.onboardingStatus === 'Pending Verification' && (
-                                            <div className="flex items-center justify-end gap-3 pt-12 border-t border-gray-100 mt-8">
+                                        {(selectedCandidate.onboardingStatus === 'Pending Verification' || selectedCandidate.onboardingStatus === 'In-Process') && selectedCandidate.stage === 3 && (
+                                            <div className="flex justify-end items-end gap-3 mt-6">
                                                 <button
                                                     onClick={() => initiateReject(selectedCandidate._id)}
-                                                    className="px-8 py-3 bg-white text-red-600 text-[10px] font-black rounded-lg hover:bg-red-50 transition-all border border-red-100 tracking-widest"
+                                                    className="px-8 py-3 bg-white text-red-600 text-[10px] font-black rounded-lg hover:bg-red-50 transition-all border border-red-100 tracking-widest uppercase"
                                                 >
                                                     REJECT
                                                 </button>
                                                 <button
                                                     onClick={() => initiateApprove(selectedCandidate._id)}
-                                                    className="px-8 py-3 bg-green-600 text-white text-[10px] font-black rounded-lg hover:bg-green-700 transition-all border border-green-500 tracking-widest"
+                                                    className="px-8 py-3 bg-green-600 text-white text-[10px] font-black rounded-lg hover:bg-green-700 transition-all tracking-widest uppercase"
                                                 >
-                                                    APPROVE POST-OFFER
+                                                    VERIFY
                                                 </button>
                                             </div>
                                         )}
@@ -440,21 +545,23 @@ const HRDashboard = () => {
                                 )}
 
                                 {/* Global Action Buttons - Only show on Pre-Offer tab for Stage 1 candidates */}
-                                {selectedCandidate.onboardingStatus === 'Pending Verification' &&
+                                {(selectedCandidate.onboardingStatus === 'Pending Verification' ||
+                                    selectedCandidate.onboardingStatus === 'In-Process' ||
+                                    selectedCandidate.onboardingStatus === 'Approved') &&
                                     selectedCandidate.stage === 1 &&
-                                    activeDetailTab === 'Pre-Offer' && (
+                                    activeDetailTab === 'Pre Offer' && (
                                         <div className="flex items-center justify-end gap-4 pt-10 border-t border-gray-100 mt-12">
                                             <button
                                                 onClick={() => initiateReject(selectedCandidate._id)}
-                                                className="px-10 py-3.5 bg-white text-red-600 text-[10px] font-black rounded-lg hover:bg-red-50 transition-all border border-red-100 tracking-wider"
+                                                className="px-10 py-3.5 bg-white text-red-600 text-[10px] font-black rounded-lg hover:bg-red-50 transition-all border border-red-100 tracking-wider uppercase"
                                             >
-                                                Reject
+                                                REJECT
                                             </button>
                                             <button
                                                 onClick={() => initiateApprove(selectedCandidate._id)}
-                                                className="px-10 py-3.5 bg-black text-white text-[10px] font-black rounded-lg transition-all tracking-wider"
+                                                className="px-10 py-3.5 bg-green-600 text-white text-[10px] font-black rounded-lg hover:bg-green-700 transition-all tracking-wider uppercase"
                                             >
-                                                Approve
+                                                APPROVE & SHORTLIST
                                             </button>
                                         </div>
                                     )}
@@ -477,9 +584,9 @@ const HRDashboard = () => {
                                             <div className="flex items-center gap-6">
                                                 {['Active', 'Draft', 'Pending', 'Onboarded'].map((tab) => {
                                                     const count = tab === 'Active'
-                                                        ? candidates.filter(c => c.onboardingStatus !== 'Completed' && c.onboardingStatus !== 'Draft').length
+                                                        ? candidates.filter(c => c.onboardingStatus !== 'Completed' && !(c.onboardingStatus === 'Draft' && c.stage === 1)).length
                                                         : tab === 'Draft'
-                                                            ? candidates.filter(c => c.onboardingStatus === 'Draft').length
+                                                            ? candidates.filter(c => c.onboardingStatus === 'Draft' && c.stage === 1).length
                                                             : tab === 'Pending'
                                                                 ? candidates.filter(c => c.onboardingStatus === 'Pending Verification').length
                                                                 : candidates.filter(c => c.onboardingStatus === 'Completed').length;
@@ -516,11 +623,11 @@ const HRDashboard = () => {
                                                 <tbody>
                                                     {candidates
                                                         .filter(candidate => {
-                                                            if (activeCandidateTab === 'Draft') return candidate.onboardingStatus === 'Draft';
+                                                            if (activeCandidateTab === 'Draft') return candidate.onboardingStatus === 'Draft' && candidate.stage === 1;
                                                             if (activeCandidateTab === 'Pending') return candidate.onboardingStatus === 'Pending Verification';
                                                             if (activeCandidateTab === 'Onboarded') return candidate.onboardingStatus === 'Completed';
-                                                            // Active tab: Not Draft and Not Completed
-                                                            return candidate.onboardingStatus !== 'Completed' && candidate.onboardingStatus !== 'Draft';
+                                                            // Active tab: All except Stage 1 drafts and Completed
+                                                            return candidate.onboardingStatus !== 'Completed' && !(candidate.onboardingStatus === 'Draft' && candidate.stage === 1);
                                                         })
                                                         .map((candidate) => (
                                                             <tr key={candidate._id} className="group hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0">
@@ -730,9 +837,13 @@ const StatusBadge = ({ status, stage }) => {
 
     let displayText = status;
     if (status === 'Pending Verification') {
-        displayText = stage === 2 ? 'Post-Offer Pending' : 'Pre-Offer Pending';
+        if (stage === 1) displayText = 'Pre Review Pending';
+        else if (stage === 3) displayText = 'Post Offer Pending';
+        else displayText = 'Verification Pending';
     } else if (status === 'Approved') {
-        displayText = 'Pre-Offer Verified';
+        if (stage === 2) displayText = 'Shortlisted';
+        else if (stage === 3) displayText = 'Selected';
+        else displayText = 'Verified';
     } else if (status === 'Completed') {
         displayText = 'ONBOARDED';
     }
@@ -744,8 +855,8 @@ const StatusBadge = ({ status, stage }) => {
     );
 };
 
-const DetailItem = ({ label, value }) => (
-    <div>
+const DetailItem = ({ label, value, mdSpan = 1 }) => (
+    <div className={mdSpan > 1 ? `md:col-span-${mdSpan}` : ''}>
         <p className="text-[10px] font-bold text-gray-400 mb-1">{label}</p>
         <p className="text-sm font-bold text-gray-900">{value || '-'}</p>
     </div>

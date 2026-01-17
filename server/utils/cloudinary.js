@@ -14,10 +14,14 @@ const onboardingStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
         folder: 'antigraviity/onboarding',
-        allowed_formats: ['jpg', 'png', 'pdf'],
         resource_type: 'auto',
         access_mode: 'public',
-        type: 'upload'
+        public_id: (req, file) => {
+            // Remove extension and sanitize filename
+            const originalName = file.originalname.split('.')[0];
+            const sanitized = originalName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            return `${sanitized}_${Date.now()}`;
+        }
     }
 });
 

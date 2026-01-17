@@ -9,7 +9,7 @@ const employeeSchema = new mongoose.Schema({
         enum: ['Draft', 'Submitted', 'Offered', 'Accepted', 'In-Process', 'Pending Verification', 'Approved', 'Completed'],
         default: 'Draft'
     },
-    stage: { type: Number, default: 1 }, // 1: Pre-Offer, 2: Post-Offer
+    stage: { type: Number, default: 1 }, // 1: Pre Offer, 2: Interview Assessment, 3: Post offer
     progressPercentage: { type: Number, default: 0 },
 
     // Stage 1: Pre-Offer Details
@@ -56,7 +56,12 @@ const employeeSchema = new mongoose.Schema({
         panNumber: String,
         aadhaarNumber: String,
         bankAccount: String,
-        ifscCode: String
+        ifscCode: String,
+        bankAccountName: String,
+        bankName: String,
+        taxRegime: String,
+        ifscSwiftCode: String,
+        accountNumber: String
     },
 
     emergencyContact: {

@@ -17,7 +17,11 @@ const HRLogin = () => {
 
         try {
             const normalizedEmail = email.toLowerCase().trim();
-            const res = await axios.post('/api/onboarding/login', { email: normalizedEmail, password });
+            const res = await axios.post('/api/onboarding/login', {
+                email: normalizedEmail,
+                password,
+                isAdmin: true
+            });
             localStorage.setItem('hr_token', res.data.token);
             navigate('/hr/dashboard'); // Redirect to HR Dashboard
         } catch (err) {
