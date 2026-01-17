@@ -26,6 +26,16 @@ const HRDashboard = () => {
     const [activeCandidateTab, setActiveCandidateTab] = useState('Active'); // 'Active' | 'Pending' | 'Onboarded'
     const [showOfferPreview, setShowOfferPreview] = useState(false);
 
+    // Edit Mode State
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [editedData, setEditedData] = useState({});
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveMessage, setSaveMessage] = useState({ type: '', text: '' });
+
+    // Excel Export State
+    const [isExporting, setIsExporting] = useState(false);
+    const [exportFilter, setExportFilter] = useState('all');
+
     useEffect(() => {
         fetchCandidates();
         fetchHrUser();
@@ -177,6 +187,161 @@ const HRDashboard = () => {
         closeConfirmation();
     };
 
+    // Edit Mode Functions
+    const handleEditToggle = () => {
+        if (isEditMode) {
+            // Cancel edit
+            setIsEditMode(false);
+            setEditedData({});
+            setSaveMessage({ type: '', text: '' });
+        } else {
+            // Enter edit mode
+            setIsEditMode(true);
+            setEditedData({
+                personalInfo: { ...selectedCandidate.personalInfo },
+                education: { ...selectedCandidate.education },
+                employmentDetails: { ...selectedCandidate.employmentDetails },
+                experienceSummary: { ...selectedCandidate.experienceSummary },
+                legalFinancial: { ...selectedCandidate.legalFinancial },
+                emergencyContact: { ...selectedCandidate.emergencyContact }
+            });
+        }
+    };
+
+    const handleFieldChange = (section, field, value) => {
+        setEditedData(prev => ({
+            ...prev,
+            [section]: {
+                ...prev[section],
+                [field]: value
+            }
+        }));
+    };
+
+    const handleSaveChanges = async () => {
+        setIsSaving(true);
+        setSaveMessage({ type: '', text: '' });
+        try {
+            const token = localStorage.getItem('hr_token');
+            const res = await axios.post(`/api/onboarding/hr-update/${selectedCandidate._id}`, editedData, {
+                headers: { 'x-auth-token': token }
+            });
+
+            setSelectedCandidate(res.data.employee);
+            await fetchCandidates();
+            setIsEditMode(false);
+            setEditedData({});
+            setSaveMessage({ type: 'success', text: 'Changes saved successfully!' });
+            setTimeout(() => setSaveMessage({ type: '', text: '' }), 3000);
+        } catch (err) {
+            console.error('Save error:', err);
+            setSaveMessage({ type: 'error', text: 'Failed to save changes. Please try again.' });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    // Excel Export Function - Client-side generation
+    const handleExcelExport = async () => {
+        setIsExporting(true);
+        try {
+            // Import XLSX library
+            const XLSX = await import('xlsx');
+
+            const token = localStorage.getItem('hr_token');
+            // Fetch JSON data instead of Excel file
+            const response = await axios.get(`/api/onboarding/export-data?filter=${exportFilter}`, {
+                headers: { 'x-auth-token': token }
+            });
+
+            const employees = response.data;
+
+            // Prepare data for Excel
+            const excelData = employees.map(emp => {
+                const docs = emp.documents || [];
+                const getDocUrl = (type) => {
+                    const doc = docs.find(d => d.type === type);
+                    return doc ? doc.path : '';
+                };
+
+                return {
+                    'Full Name': emp.personalInfo?.fullName || '',
+                    'Email': emp.email || '',
+                    'Mobile': emp.personalInfo?.mobileNumber || '',
+                    'DOB': emp.personalInfo?.dob || '',
+                    'Current City': emp.personalInfo?.currentCity || '',
+                    'Current Address': emp.personalInfo?.currentAddress || '',
+                    'School Name': emp.personalInfo?.schoolName || '',
+                    'Highest Qualification': emp.education?.highestQualification || '',
+                    'Institution Name': emp.education?.institutionName || '',
+                    'Institution Location': emp.education?.institutionLocation || '',
+                    'Total Experience': emp.experienceSummary?.totalExperience || '',
+                    'Current Employer': emp.experienceSummary?.currentEmployer || '',
+                    'Current Designation': emp.experienceSummary?.currentDesignation || '',
+                    'Relevant Experience': emp.experienceSummary?.relevantExperience || '',
+                    'Current CTC': emp.experienceSummary?.currentCtc || '',
+                    'Expected CTC': emp.experienceSummary?.expectedCtc || '',
+                    'Position': emp.employmentDetails?.position || '',
+                    'Work Mode': emp.employmentDetails?.workMode || '',
+                    'Preferred Location': emp.employmentDetails?.preferredLocation || '',
+                    'Joining Date': emp.employmentDetails?.joiningDate || '',
+                    'Notice Period': emp.employmentDetails?.noticePeriod || '',
+                    'PAN Number': emp.legalFinancial?.panNumber || '',
+                    'Aadhaar Number': emp.legalFinancial?.aadhaarNumber || '',
+                    'Bank Name': emp.legalFinancial?.bankName || '',
+                    'Account Holder': emp.legalFinancial?.bankAccountName || '',
+                    'Account Number': emp.legalFinancial?.accountNumber || emp.legalFinancial?.bankAccount || '',
+                    'IFSC/SWIFT': emp.legalFinancial?.ifscSwiftCode || emp.legalFinancial?.ifscCode || '',
+                    'Tax Regime': emp.legalFinancial?.taxRegime || '',
+                    'Emergency Contact Name': emp.emergencyContact?.name || '',
+                    'Emergency Phone': emp.emergencyContact?.phone || '',
+                    'Emergency Relationship': emp.emergencyContact?.relationship || '',
+                    'Onboarding Status': emp.onboardingStatus || '',
+                    'Stage': emp.stage || '',
+                    'Progress %': emp.progressPercentage || 0,
+                    'Resume URL': getDocUrl('resume'),
+                    'Signed Offer Letter URL': getDocUrl('signedOfferLetter'),
+                    'Aadhaar Copy URL': getDocUrl('aadhaarCopy'),
+                    'PAN Copy URL': getDocUrl('panCopy'),
+                    'Address Proof URL': getDocUrl('addressProof'),
+                    'Passport Photo URL': getDocUrl('passportPhoto'),
+                    'Degree Certificate URL': getDocUrl('degreeCert'),
+                    'Mark Sheets URL': getDocUrl('markSheets'),
+                    'Professional Certificates URL': getDocUrl('proCerts'),
+                    'Passbook Copy URL': getDocUrl('passbookCopy')
+                };
+            });
+
+            // Create workbook and worksheet
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(excelData);
+
+            // Set column widths
+            ws['!cols'] = [
+                { wch: 20 }, { wch: 30 }, { wch: 15 }, { wch: 12 }, { wch: 20 },
+                { wch: 40 }, { wch: 30 }, { wch: 30 }, { wch: 30 }, { wch: 25 },
+                { wch: 15 }, { wch: 25 }, { wch: 25 }, { wch: 15 }, { wch: 15 },
+                { wch: 15 }, { wch: 25 }, { wch: 12 }, { wch: 18 }, { wch: 12 },
+                { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 25 }, { wch: 25 },
+                { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 25 }, { wch: 15 },
+                { wch: 15 }, { wch: 20 }, { wch: 8 }, { wch: 10 }, { wch: 50 },
+                { wch: 50 }, { wch: 50 }, { wch: 50 }, { wch: 50 }, { wch: 50 },
+                { wch: 50 }, { wch: 50 }, { wch: 50 }, { wch: 50 }
+            ];
+
+            XLSX.utils.book_append_sheet(wb, ws, 'Employees');
+
+            // Generate and download file
+            const filename = `employees_${exportFilter}_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(wb, filename);
+        } catch (err) {
+            console.error('Export error:', err);
+            alert('Failed to export data. Please try again.');
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     const closeConfirmation = () => {
         setConfirmation({ ...confirmation, isOpen: false });
     };
@@ -256,7 +421,7 @@ const HRDashboard = () => {
                             <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                                 <div className="flex items-center gap-4">
                                     <button
-                                        onClick={() => setSelectedCandidate(null)}
+                                        onClick={() => { setSelectedCandidate(null); setIsEditMode(false); setEditedData({}); setSaveMessage({ type: '', text: '' }); }}
                                         className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:text-black hover:border-black transition-all bg-white"
                                     >
                                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -268,7 +433,49 @@ const HRDashboard = () => {
                                         <p className="text-[10px] text-gray-400 font-bold tracking-wider">{selectedCandidate.email} • {selectedCandidate.personalInfo?.mobileNumber || 'N/A'}</p>
                                     </div>
                                 </div>
-                                <StatusBadge status={selectedCandidate.onboardingStatus} stage={selectedCandidate.stage} />
+                                <div className="flex items-center gap-3">
+                                    {saveMessage.text && (
+                                        <span className={`text-xs font-bold px-3 py-1.5 rounded-lg ${saveMessage.type === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                                            {saveMessage.text}
+                                        </span>
+                                    )}
+                                    {isEditMode ? (
+                                        <>
+                                            <button
+                                                onClick={handleEditToggle}
+                                                className="px-4 py-2 text-xs font-bold text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                onClick={handleSaveChanges}
+                                                disabled={isSaving}
+                                                className="px-4 py-2 text-xs font-bold text-white bg-black rounded-lg hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                            >
+                                                {isSaving ? (
+                                                    <>
+                                                        <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                        </svg>
+                                                        Saving...
+                                                    </>
+                                                ) : 'Save Changes'}
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <button
+                                            onClick={handleEditToggle}
+                                            className="px-4 py-2 text-xs font-bold text-black border border-black rounded-lg hover:bg-black hover:text-white transition-all flex items-center gap-2"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                            Edit
+                                        </button>
+                                    )}
+                                    <StatusBadge status={selectedCandidate.onboardingStatus} stage={selectedCandidate.stage} />
+                                </div>
                             </div>
 
                             {/* Detail Tabs */}
@@ -322,12 +529,12 @@ const HRDashboard = () => {
                                                 <div className="space-y-4">
                                                     <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3 uppercase">1. Basic Information</h4>
                                                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
-                                                        <DetailItem label="Full Name" value={selectedCandidate.personalInfo?.fullName} />
-                                                        <DetailItem label="Personal Email" value={selectedCandidate.personalInfo?.personalEmail} />
-                                                        <DetailItem label="Mobile" value={selectedCandidate.personalInfo?.mobileNumber} />
-                                                        <DetailItem label="DOB" value={selectedCandidate.personalInfo?.dob} />
-                                                        <DetailItem label="Current City" value={selectedCandidate.personalInfo?.currentCity} />
-                                                        <DetailItem label="Higher Secondary School" value={selectedCandidate.personalInfo?.schoolName} mdSpan={2} />
+                                                        <DetailItem label="Full Name" value={isEditMode ? editedData.personalInfo?.fullName : selectedCandidate.personalInfo?.fullName} isEditable={isEditMode} section="personalInfo" field="fullName" onEdit={handleFieldChange} />
+                                                        <DetailItem label="Personal Email" value={isEditMode ? editedData.personalInfo?.personalEmail : selectedCandidate.personalInfo?.personalEmail} isEditable={isEditMode} section="personalInfo" field="personalEmail" onEdit={handleFieldChange} />
+                                                        <DetailItem label="Mobile" value={isEditMode ? editedData.personalInfo?.mobileNumber : selectedCandidate.personalInfo?.mobileNumber} isEditable={isEditMode} section="personalInfo" field="mobileNumber" onEdit={handleFieldChange} />
+                                                        <DetailItem label="DOB" value={isEditMode ? editedData.personalInfo?.dob : selectedCandidate.personalInfo?.dob} isEditable={isEditMode} section="personalInfo" field="dob" onEdit={handleFieldChange} />
+                                                        <DetailItem label="Current City" value={isEditMode ? editedData.personalInfo?.currentCity : selectedCandidate.personalInfo?.currentCity} isEditable={isEditMode} section="personalInfo" field="currentCity" onEdit={handleFieldChange} />
+                                                        <DetailItem label="Higher Secondary School" value={isEditMode ? editedData.personalInfo?.schoolName : selectedCandidate.personalInfo?.schoolName} mdSpan={2} isEditable={isEditMode} section="personalInfo" field="schoolName" onEdit={handleFieldChange} />
                                                     </div>
                                                 </div>
 
@@ -335,9 +542,9 @@ const HRDashboard = () => {
                                                 <div className="space-y-4">
                                                     <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3 uppercase">2. Education</h4>
                                                     <div className="grid grid-cols-2 lg:grid-cols-3 gap-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
-                                                        <DetailItem label="Highest Qualification" value={selectedCandidate.education?.highestQualification} />
-                                                        <DetailItem label="Institution Name" value={selectedCandidate.education?.institutionName} />
-                                                        <DetailItem label="Institution Location" value={selectedCandidate.education?.institutionLocation} />
+                                                        <DetailItem label="Highest Qualification" value={isEditMode ? editedData.education?.highestQualification : selectedCandidate.education?.highestQualification} isEditable={isEditMode} section="education" field="highestQualification" onEdit={handleFieldChange} />
+                                                        <DetailItem label="Institution Name" value={isEditMode ? editedData.education?.institutionName : selectedCandidate.education?.institutionName} isEditable={isEditMode} section="education" field="institutionName" onEdit={handleFieldChange} />
+                                                        <DetailItem label="Institution Location" value={isEditMode ? editedData.education?.institutionLocation : selectedCandidate.education?.institutionLocation} isEditable={isEditMode} section="education" field="institutionLocation" onEdit={handleFieldChange} />
                                                     </div>
                                                 </div>
 
@@ -345,14 +552,14 @@ const HRDashboard = () => {
                                                 <div className="space-y-4">
                                                     <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3 uppercase">3. Experience Summary</h4>
                                                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
-                                                        <DetailItem label="Total Experience" value={selectedCandidate.experienceSummary?.totalExperience} />
-                                                        {selectedCandidate.experienceSummary?.totalExperience !== 'Fresher' && (
+                                                        <DetailItem label="Total Experience" value={isEditMode ? editedData.experienceSummary?.totalExperience : selectedCandidate.experienceSummary?.totalExperience} isEditable={isEditMode} section="experienceSummary" field="totalExperience" onEdit={handleFieldChange} />
+                                                        {(isEditMode ? editedData.experienceSummary?.totalExperience : selectedCandidate.experienceSummary?.totalExperience) !== 'Fresher' && (
                                                             <>
-                                                                <DetailItem label="Current Employer" value={selectedCandidate.experienceSummary?.currentEmployer} />
-                                                                <DetailItem label="Current Designation" value={selectedCandidate.experienceSummary?.currentDesignation} />
-                                                                <DetailItem label="Relevant Experience" value={selectedCandidate.experienceSummary?.relevantExperience} />
-                                                                <DetailItem label="Current CTC" value={selectedCandidate.experienceSummary?.currentCtc} />
-                                                                <DetailItem label="Expected CTC" value={selectedCandidate.experienceSummary?.expectedCtc} />
+                                                                <DetailItem label="Current Employer" value={isEditMode ? editedData.experienceSummary?.currentEmployer : selectedCandidate.experienceSummary?.currentEmployer} isEditable={isEditMode} section="experienceSummary" field="currentEmployer" onEdit={handleFieldChange} />
+                                                                <DetailItem label="Current Designation" value={isEditMode ? editedData.experienceSummary?.currentDesignation : selectedCandidate.experienceSummary?.currentDesignation} isEditable={isEditMode} section="experienceSummary" field="currentDesignation" onEdit={handleFieldChange} />
+                                                                <DetailItem label="Relevant Experience" value={isEditMode ? editedData.experienceSummary?.relevantExperience : selectedCandidate.experienceSummary?.relevantExperience} isEditable={isEditMode} section="experienceSummary" field="relevantExperience" onEdit={handleFieldChange} />
+                                                                <DetailItem label="Current CTC" value={isEditMode ? editedData.experienceSummary?.currentCtc : selectedCandidate.experienceSummary?.currentCtc} isEditable={isEditMode} section="experienceSummary" field="currentCtc" onEdit={handleFieldChange} />
+                                                                <DetailItem label="Expected CTC" value={isEditMode ? editedData.experienceSummary?.expectedCtc : selectedCandidate.experienceSummary?.expectedCtc} isEditable={isEditMode} section="experienceSummary" field="expectedCtc" onEdit={handleFieldChange} />
                                                             </>
                                                         )}
                                                         <div className="col-span-2 lg:col-span-4 mt-2">
@@ -379,11 +586,11 @@ const HRDashboard = () => {
                                                 <div className="space-y-4">
                                                     <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3 uppercase">4. Employment Details</h4>
                                                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
-                                                        <DetailItem label="Position Applied For" value={selectedCandidate.employmentDetails?.position} />
-                                                        <DetailItem label="Work Mode" value={selectedCandidate.employmentDetails?.workMode} />
-                                                        <DetailItem label="Preferred Location" value={selectedCandidate.employmentDetails?.preferredLocation} />
-                                                        <DetailItem label="Proposed Joining Date" value={selectedCandidate.employmentDetails?.joiningDate} />
-                                                        <DetailItem label="Notice Period" value={selectedCandidate.employmentDetails?.noticePeriod} />
+                                                        <DetailItem label="Position Applied For" value={isEditMode ? editedData.employmentDetails?.position : selectedCandidate.employmentDetails?.position} isEditable={isEditMode} section="employmentDetails" field="position" onEdit={handleFieldChange} />
+                                                        <DetailItem label="Work Mode" value={isEditMode ? editedData.employmentDetails?.workMode : selectedCandidate.employmentDetails?.workMode} isEditable={isEditMode} section="employmentDetails" field="workMode" onEdit={handleFieldChange} />
+                                                        <DetailItem label="Preferred Location" value={isEditMode ? editedData.employmentDetails?.preferredLocation : selectedCandidate.employmentDetails?.preferredLocation} isEditable={isEditMode} section="employmentDetails" field="preferredLocation" onEdit={handleFieldChange} />
+                                                        <DetailItem label="Proposed Joining Date" value={isEditMode ? editedData.employmentDetails?.joiningDate : selectedCandidate.employmentDetails?.joiningDate} isEditable={isEditMode} section="employmentDetails" field="joiningDate" onEdit={handleFieldChange} />
+                                                        <DetailItem label="Notice Period" value={isEditMode ? editedData.employmentDetails?.noticePeriod : selectedCandidate.employmentDetails?.noticePeriod} isEditable={isEditMode} section="employmentDetails" field="noticePeriod" onEdit={handleFieldChange} />
                                                     </div>
                                                 </div>
                                             </>
@@ -450,14 +657,14 @@ const HRDashboard = () => {
                                         <div className="space-y-4">
                                             <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3 uppercase">Legal & Bank Details</h4>
                                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
-                                                <DetailItem label="PAN Number" value={selectedCandidate.legalFinancial?.panNumber} />
-                                                <DetailItem label="Aadhaar Number" value={selectedCandidate.legalFinancial?.aadhaarNumber} />
-                                                <DetailItem label="Bank Name" value={selectedCandidate.legalFinancial?.bankName} />
-                                                <DetailItem label="Account Holder" value={selectedCandidate.legalFinancial?.bankAccountName} />
-                                                <DetailItem label="Account Number" value={selectedCandidate.legalFinancial?.accountNumber || selectedCandidate.legalFinancial?.bankAccount} />
-                                                <DetailItem label="IFSC / SWIFT" value={selectedCandidate.legalFinancial?.ifscSwiftCode || selectedCandidate.legalFinancial?.ifscCode} />
-                                                <DetailItem label="Tax Regime" value={selectedCandidate.legalFinancial?.taxRegime} />
-                                                <DetailItem label="Permanent Address" value={selectedCandidate.personalInfo?.currentAddress} mdSpan={2} />
+                                                <DetailItem label="PAN Number" value={isEditMode ? editedData.legalFinancial?.panNumber : selectedCandidate.legalFinancial?.panNumber} isEditable={isEditMode} section="legalFinancial" field="panNumber" onEdit={handleFieldChange} />
+                                                <DetailItem label="Aadhaar Number" value={isEditMode ? editedData.legalFinancial?.aadhaarNumber : selectedCandidate.legalFinancial?.aadhaarNumber} isEditable={isEditMode} section="legalFinancial" field="aadhaarNumber" onEdit={handleFieldChange} />
+                                                <DetailItem label="Bank Name" value={isEditMode ? editedData.legalFinancial?.bankName : selectedCandidate.legalFinancial?.bankName} isEditable={isEditMode} section="legalFinancial" field="bankName" onEdit={handleFieldChange} />
+                                                <DetailItem label="Account Holder" value={isEditMode ? editedData.legalFinancial?.bankAccountName : selectedCandidate.legalFinancial?.bankAccountName} isEditable={isEditMode} section="legalFinancial" field="bankAccountName" onEdit={handleFieldChange} />
+                                                <DetailItem label="Account Number" value={isEditMode ? (editedData.legalFinancial?.accountNumber || editedData.legalFinancial?.bankAccount) : (selectedCandidate.legalFinancial?.accountNumber || selectedCandidate.legalFinancial?.bankAccount)} isEditable={isEditMode} section="legalFinancial" field="accountNumber" onEdit={handleFieldChange} />
+                                                <DetailItem label="IFSC / SWIFT" value={isEditMode ? (editedData.legalFinancial?.ifscSwiftCode || editedData.legalFinancial?.ifscCode) : (selectedCandidate.legalFinancial?.ifscSwiftCode || selectedCandidate.legalFinancial?.ifscCode)} isEditable={isEditMode} section="legalFinancial" field="ifscSwiftCode" onEdit={handleFieldChange} />
+                                                <DetailItem label="Tax Regime" value={isEditMode ? editedData.legalFinancial?.taxRegime : selectedCandidate.legalFinancial?.taxRegime} isEditable={isEditMode} section="legalFinancial" field="taxRegime" onEdit={handleFieldChange} />
+                                                <DetailItem label="Permanent Address" value={isEditMode ? editedData.personalInfo?.currentAddress : selectedCandidate.personalInfo?.currentAddress} mdSpan={2} isEditable={isEditMode} section="personalInfo" field="currentAddress" onEdit={handleFieldChange} />
                                             </div>
                                         </div>
 
@@ -465,9 +672,9 @@ const HRDashboard = () => {
                                         <div className="space-y-4">
                                             <h4 className="text-[10px] font-black tracking-wider text-gray-400 border-l-2 border-black pl-3 uppercase">Emergency Contact</h4>
                                             <div className="grid grid-cols-2 lg:grid-cols-3 gap-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
-                                                <DetailItem label="Contact Name" value={selectedCandidate.emergencyContact?.name} />
-                                                <DetailItem label="Phone" value={selectedCandidate.emergencyContact?.phone} />
-                                                <DetailItem label="Relationship" value={selectedCandidate.emergencyContact?.relationship} />
+                                                <DetailItem label="Contact Name" value={isEditMode ? editedData.emergencyContact?.name : selectedCandidate.emergencyContact?.name} isEditable={isEditMode} section="emergencyContact" field="name" onEdit={handleFieldChange} />
+                                                <DetailItem label="Phone" value={isEditMode ? editedData.emergencyContact?.phone : selectedCandidate.emergencyContact?.phone} isEditable={isEditMode} section="emergencyContact" field="phone" onEdit={handleFieldChange} />
+                                                <DetailItem label="Relationship" value={isEditMode ? editedData.emergencyContact?.relationship : selectedCandidate.emergencyContact?.relationship} isEditable={isEditMode} section="emergencyContact" field="relationship" onEdit={handleFieldChange} />
                                             </div>
                                         </div>
 
@@ -580,7 +787,47 @@ const HRDashboard = () => {
 
                                     {/* Candidates List */}
                                     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                                        <div className="px-8 py-6 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                        <div className="px-8 py-6 border-b border-gray-50 flex flex-col gap-4">
+                                            {/* Export Controls */}
+                                            <div className="flex items-center justify-end gap-2">
+                                                <select
+                                                    value={exportFilter}
+                                                    onChange={(e) => setExportFilter(e.target.value)}
+                                                    className="text-xs font-bold bg-gray-50 border-0 rounded-lg px-4 py-2.5 hover:bg-gray-100 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1 appearance-none pr-10"
+                                                    style={{
+                                                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23000'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                                                        backgroundRepeat: 'no-repeat',
+                                                        backgroundPosition: 'right 0.5rem center',
+                                                        backgroundSize: '1.25rem'
+                                                    }}
+                                                >
+                                                    <option value="all" className="bg-white text-gray-900 hover:bg-gray-50">All Candidates</option>
+                                                    <option value="onboarded" className="bg-white text-gray-900 hover:bg-gray-50">Onboarded Only</option>
+                                                </select>
+                                                <button
+                                                    onClick={handleExcelExport}
+                                                    disabled={isExporting}
+                                                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    {isExporting ? (
+                                                        <>
+                                                            <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                            </svg>
+                                                            Exporting...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                            </svg>
+                                                            Export to Excel
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+                                            {/* Tabs */}
                                             <div className="flex items-center gap-6">
                                                 {['Active', 'Draft', 'Pending', 'Onboarded'].map((tab) => {
                                                     const count = tab === 'Active'
@@ -855,10 +1102,19 @@ const StatusBadge = ({ status, stage }) => {
     );
 };
 
-const DetailItem = ({ label, value, mdSpan = 1 }) => (
+const DetailItem = ({ label, value, mdSpan = 1, isEditable = false, section, field, onEdit }) => (
     <div className={mdSpan > 1 ? `md:col-span-${mdSpan}` : ''}>
         <p className="text-[10px] font-bold text-gray-400 mb-1">{label}</p>
-        <p className="text-sm font-bold text-gray-900">{value || '-'}</p>
+        {isEditable ? (
+            <input
+                type="text"
+                value={value || ''}
+                onChange={(e) => onEdit(section, field, e.target.value)}
+                className="w-full text-sm font-bold text-gray-900 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-black transition-all"
+            />
+        ) : (
+            <p className="text-sm font-bold text-gray-900">{value || '-'}</p>
+        )}
     </div>
 );
 

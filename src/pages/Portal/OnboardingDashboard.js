@@ -404,6 +404,70 @@ const OnboardingDashboard = () => {
         fetchMe();
     }, [fetchMe]);
 
+    // Detect and capture autofilled values
+    useEffect(() => {
+        const handleAutofill = () => {
+            // Get all input and textarea elements in the form
+            const inputs = document.querySelectorAll('input[name], textarea[name]');
+            const updates = {};
+
+            inputs.forEach(input => {
+                const name = input.name;
+                const value = input.value;
+
+                // If the input has a value but formData doesn't, it was likely autofilled
+                if (value && name && formData[name] !== value) {
+                    updates[name] = value;
+                }
+            });
+
+            // Update formData if we found autofilled values
+            if (Object.keys(updates).length > 0) {
+                setFormData(prev => ({ ...prev, ...updates }));
+            }
+        };
+
+        // Check for autofill on mount and after a short delay
+        const timeoutId = setTimeout(handleAutofill, 500);
+
+        // Listen for animation events (Chrome/Edge autofill triggers animations)
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes onAutoFillStart { from { opacity: 0.99; } to { opacity: 1; } }
+            input:-webkit-autofill { animation: onAutoFillStart 0s; }
+        `;
+        document.head.appendChild(style);
+
+        const handleAnimationStart = (e) => {
+            if (e.animationName === 'onAutoFillStart') {
+                setTimeout(handleAutofill, 100);
+            }
+        };
+
+        document.addEventListener('animationstart', handleAnimationStart, true);
+
+        // Also listen for input events (fallback)
+        const handleInput = (e) => {
+            if (e.target.name && e.target.value) {
+                const name = e.target.name;
+                const value = e.target.value;
+                if (formData[name] !== value) {
+                    setFormData(prev => ({ ...prev, [name]: value }));
+                }
+            }
+        };
+
+        document.addEventListener('input', handleInput, true);
+
+        // Cleanup
+        return () => {
+            clearTimeout(timeoutId);
+            document.removeEventListener('animationstart', handleAnimationStart, true);
+            document.removeEventListener('input', handleInput, true);
+            document.head.removeChild(style);
+        };
+    }, [formData]);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
 

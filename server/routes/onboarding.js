@@ -405,4 +405,205 @@ router.post('/reset-password', async (req, res) => {
     }
 });
 
+// HR Update Candidate Data
+router.post('/hr-update/:id', auth, async (req, res) => {
+    const { id } = req.params;
+    const { personalInfo, education, employmentDetails, experienceSummary, legalFinancial, emergencyContact } = req.body;
+
+    try {
+        const employee = await Employee.findById(id);
+        if (!employee) return res.status(404).json({ message: 'Candidate not found' });
+
+        // Merge updates (only update provided fields)
+        if (personalInfo) employee.personalInfo = { ...employee.personalInfo, ...personalInfo };
+        if (education) employee.education = { ...employee.education, ...education };
+        if (employmentDetails) employee.employmentDetails = { ...employee.employmentDetails, ...employmentDetails };
+        if (experienceSummary) employee.experienceSummary = { ...employee.experienceSummary, ...experienceSummary };
+        if (legalFinancial) employee.legalFinancial = { ...employee.legalFinancial, ...legalFinancial };
+        if (emergencyContact) employee.emergencyContact = { ...employee.emergencyContact, ...emergencyContact };
+
+        await employee.save();
+        console.log(`[API] HR updated candidate ${id}`);
+        res.json({ success: true, employee });
+    } catch (err) {
+        console.error('[API] HR update error:', err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Export to Excel
+router.get('/export-excel', auth, async (req, res) => {
+    try {
+        const XLSX = require('xlsx');
+        const { filter } = req.query; // 'all' or 'onboarded'
+
+        let query = { email: { $ne: 'hr@antigraviity.com' } };
+        if (filter === 'onboarded') {
+            query.onboardingStatus = 'Completed';
+        }
+
+        const employees = await Employee.find(query).select('-password -resetPasswordToken -resetPasswordExpires');
+        console.log(`[API] Exporting ${employees.length} employees to Excel (filter: ${filter || 'all'})`);
+
+        // Prepare data for Excel
+        const excelData = employees.map(emp => {
+            const docs = emp.documents || [];
+            const getDocUrl = (type) => {
+                const doc = docs.find(d => d.type === type);
+                return doc ? doc.path : '';
+            };
+
+            return {
+                // Basic Info
+                'Full Name': emp.personalInfo?.fullName || '',
+                'Email': emp.email || '',
+                'Mobile': emp.personalInfo?.mobileNumber || '',
+                'DOB': emp.personalInfo?.dob || '',
+                'Current City': emp.personalInfo?.currentCity || '',
+                'Current Address': emp.personalInfo?.currentAddress || '',
+                'School Name': emp.personalInfo?.schoolName || '',
+
+                // Education
+                'Highest Qualification': emp.education?.highestQualification || '',
+                'Institution Name': emp.education?.institutionName || '',
+                'Institution Location': emp.education?.institutionLocation || '',
+
+                // Experience
+                'Total Experience': emp.experienceSummary?.totalExperience || '',
+                'Current Employer': emp.experienceSummary?.currentEmployer || '',
+                'Current Designation': emp.experienceSummary?.currentDesignation || '',
+                'Relevant Experience': emp.experienceSummary?.relevantExperience || '',
+                'Current CTC': emp.experienceSummary?.currentCtc || '',
+                'Expected CTC': emp.experienceSummary?.expectedCtc || '',
+
+                // Employment
+                'Position': emp.employmentDetails?.position || '',
+                'Work Mode': emp.employmentDetails?.workMode || '',
+                'Preferred Location': emp.employmentDetails?.preferredLocation || '',
+                'Joining Date': emp.employmentDetails?.joiningDate || '',
+                'Notice Period': emp.employmentDetails?.noticePeriod || '',
+
+                // Legal & Financial
+                'PAN Number': emp.legalFinancial?.panNumber || '',
+                'Aadhaar Number': emp.legalFinancial?.aadhaarNumber || '',
+                'Bank Name': emp.legalFinancial?.bankName || '',
+                'Account Holder': emp.legalFinancial?.bankAccountName || '',
+                'Account Number': emp.legalFinancial?.accountNumber || emp.legalFinancial?.bankAccount || '',
+                'IFSC/SWIFT': emp.legalFinancial?.ifscSwiftCode || emp.legalFinancial?.ifscCode || '',
+                'Tax Regime': emp.legalFinancial?.taxRegime || '',
+
+                // Emergency Contact
+                'Emergency Contact Name': emp.emergencyContact?.name || '',
+                'Emergency Phone': emp.emergencyContact?.phone || '',
+                'Emergency Relationship': emp.emergencyContact?.relationship || '',
+
+                // Status
+                'Onboarding Status': emp.onboardingStatus || '',
+                'Stage': emp.stage || '',
+                'Progress %': emp.progressPercentage || 0,
+
+                // Documents
+                'Resume URL': getDocUrl('resume'),
+                'Signed Offer Letter URL': getDocUrl('signedOfferLetter'),
+                'Aadhaar Copy URL': getDocUrl('aadhaarCopy'),
+                'PAN Copy URL': getDocUrl('panCopy'),
+                'Address Proof URL': getDocUrl('addressProof'),
+                'Passport Photo URL': getDocUrl('passportPhoto'),
+                'Degree Certificate URL': getDocUrl('degreeCert'),
+                'Mark Sheets URL': getDocUrl('markSheets'),
+                'Professional Certificates URL': getDocUrl('proCerts'),
+                'Passbook Copy URL': getDocUrl('passbookCopy')
+            };
+        });
+
+        // Create workbook and worksheet
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(excelData);
+
+        // Set column widths for better readability
+        const colWidths = [
+            { wch: 20 }, // Full Name
+            { wch: 30 }, // Email
+            { wch: 15 }, // Mobile
+            { wch: 12 }, // DOB
+            { wch: 20 }, // Current City
+            { wch: 40 }, // Current Address
+            { wch: 30 }, // School Name
+            { wch: 30 }, // Highest Qualification
+            { wch: 30 }, // Institution Name
+            { wch: 25 }, // Institution Location
+            { wch: 15 }, // Total Experience
+            { wch: 25 }, // Current Employer
+            { wch: 25 }, // Current Designation
+            { wch: 15 }, // Relevant Experience
+            { wch: 15 }, // Current CTC
+            { wch: 15 }, // Expected CTC
+            { wch: 25 }, // Position
+            { wch: 12 }, // Work Mode
+            { wch: 18 }, // Preferred Location
+            { wch: 12 }, // Joining Date
+            { wch: 15 }, // Notice Period
+            { wch: 15 }, // PAN Number
+            { wch: 15 }, // Aadhaar Number
+            { wch: 25 }, // Bank Name
+            { wch: 25 }, // Account Holder
+            { wch: 20 }, // Account Number
+            { wch: 15 }, // IFSC/SWIFT
+            { wch: 15 }, // Tax Regime
+            { wch: 25 }, // Emergency Contact Name
+            { wch: 15 }, // Emergency Phone
+            { wch: 15 }, // Emergency Relationship
+            { wch: 20 }, // Onboarding Status
+            { wch: 8 },  // Stage
+            { wch: 10 }, // Progress %
+            { wch: 50 }, // Resume URL
+            { wch: 50 }, // Signed Offer Letter URL
+            { wch: 50 }, // Aadhaar Copy URL
+            { wch: 50 }, // PAN Copy URL
+            { wch: 50 }, // Address Proof URL
+            { wch: 50 }, // Passport Photo URL
+            { wch: 50 }, // Degree Certificate URL
+            { wch: 50 }, // Mark Sheets URL
+            { wch: 50 }, // Professional Certificates URL
+            { wch: 50 }  // Passbook Copy URL
+        ];
+        ws['!cols'] = colWidths;
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Employees');
+
+        // Generate buffer with proper binary handling
+        const excelBuffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+        // Set headers for file download
+        const filename = `employees_${filter || 'all'}_${new Date().toISOString().split('T')[0]}.xlsx`;
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Length', excelBuffer.length);
+        res.end(excelBuffer, 'binary');
+    } catch (err) {
+        console.error('[API] Excel export error:', err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Export data as JSON for client-side Excel generation
+router.get('/export-data', auth, async (req, res) => {
+    try {
+        const { filter } = req.query;
+
+        let query = { email: { $ne: 'hr@antigraviity.com' } };
+        if (filter === 'onboarded') {
+            query.onboardingStatus = 'Completed';
+        }
+
+        const employees = await Employee.find(query).select('-password -resetPasswordToken -resetPasswordExpires');
+        console.log(`[API] Exporting ${employees.length} employees as JSON (filter: ${filter || 'all'})`);
+
+        res.json(employees);
+    } catch (err) {
+        console.error('[API] Export data error:', err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
 module.exports = router;
