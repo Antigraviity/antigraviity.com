@@ -49,38 +49,45 @@ try {
 // 3. MongoDB Connection with better error handling
 let MONGODB_URI = (process.env.MONGODB_URI || '').trim();
 
-// Remove literal quotes if the user literally typed them into the Vercel box
-if (MONGODB_URI.startsWith('"') && MONGODB_URI.endsWith('"')) {
-    console.log('[Startup] Stripping literal quotes from MONGODB_URI...');
-    MONGODB_URI = MONGODB_URI.slice(1, -1).trim();
-}
-
-if (!MONGODB_URI) {
-    console.warn('--- WARNING: MONGODB_URI is missing! Defaulting to localhost (Local Dev Only) ---');
-} else if (MONGODB_URI.startsWith('mongodb+srv://')) {
-    console.log('[Startup] Cleaning mongodb-srv URI (Length:', MONGODB_URI.length, ')...');
-
-    // 1. Remove any port (Atlas doesn't support them)
-    // Robustly remove :port if present, even without trailing slash
-    MONGODB_URI = MONGODB_URI.replace(/:(\d+)(?=[/?]|$)/g, '');
-
-    // 2. Encode '#' as '%23' in any part of the string (usually password)
-    if (MONGODB_URI.includes('#')) {
-        console.log('[Startup] Encoding # in MONGODB_URI...');
-        MONGODB_URI = MONGODB_URI.replace(/#/g, '%23');
+function cleanURI(uri) {
+    if (!uri) return '';
+    let cleaned = uri.trim();
+    // Remove literal quotes
+    if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+        cleaned = cleaned.slice(1, -1).trim();
+    }
+    if (cleaned.startsWith("'") && cleaned.endsWith("'")) {
+        cleaned = cleaned.slice(1, -1).trim();
     }
 
-    // 3. Crucial Truncation Check: Atlas URIs MUST have an '@' followed by a cluster host
-    if (!MONGODB_URI.includes('@')) {
-        console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
-        console.error('CRITICAL ERROR: MONGODB_URI is TRUNCATED / BROKEN.');
-        console.error('Expected format: mongodb+srv://user:pass@cluster.mongodb.net/db');
-        console.error('Current value (masked):', MONGODB_URI.replace(/:\/\/.*@/, '://****:****@'));
-        console.error('The "#" in your password has likely cut off the rest of the URI.');
-        console.error('PLEASE WRAP YOUR MONGODB_URI IN DOUBLE QUOTES IN THE VERCEL DASHBOARD.');
-        console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+    // Encode special characters in password if it's a standard SRV URI
+    if (cleaned.startsWith('mongodb+srv://') || cleaned.startsWith('mongodb://')) {
+        try {
+            const parts = cleaned.split('://');
+            const protocol = parts[0];
+            const rest = parts[1];
+
+            if (rest.includes('@')) {
+                const authParts = rest.split('@');
+                const credentials = authParts[0];
+                const hostPart = authParts.slice(1).join('@');
+
+                if (credentials.includes(':')) {
+                    const [user, ...passParts] = credentials.split(':');
+                    const pass = passParts.join(':');
+                    // Encode password but keep other characters
+                    const encodedPass = encodeURIComponent(pass);
+                    cleaned = `${protocol}://${user}:${encodedPass}@${hostPart}`;
+                }
+            }
+        } catch (e) {
+            console.error('[Startup] URI Parsing failed, using original:', e.message);
+        }
     }
+    return cleaned;
 }
+
+MONGODB_URI = cleanURI(MONGODB_URI);
 
 // Masked URI for log verification
 const maskedURI = MONGODB_URI.replace(/:\/\/.*@/, '://****:****@');
@@ -91,9 +98,10 @@ mongoose.connect(MONGODB_URI || 'mongodb://localhost:27017/antigraviity')
     .catch(err => {
         console.error('--- MongoDB Connection Error ---');
         console.error('Message:', err.message);
-        console.error('URI Provided:', MONGODB_URI ? `${MONGODB_URI.substring(0, 20)}...` : 'NONE');
+        console.error('Stack:', err.stack);
         console.error('--------------------------------');
     });
+
 
 // 4. Strictly clean credentials
 console.log('[Startup] Phase 3: Cleaning credentials...');

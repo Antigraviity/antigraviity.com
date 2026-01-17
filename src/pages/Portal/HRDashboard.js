@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import OfferLetter from '../../components/OfferLetter';
 
 const HRDashboard = () => {
     const API_BASE_URL = 'http://localhost:5000';
@@ -23,6 +24,7 @@ const HRDashboard = () => {
     const [activeMenu, setActiveMenu] = useState('Dashboard'); // 'Dashboard' | 'Jobs' | 'Employees' | 'Settings'
     const [activeDetailTab, setActiveDetailTab] = useState('Pre-Offer'); // 'Pre-Offer' | 'Post-Offer'
     const [activeCandidateTab, setActiveCandidateTab] = useState('Active'); // 'Active' | 'Pending' | 'Onboarded'
+    const [showOfferPreview, setShowOfferPreview] = useState(false);
 
     useEffect(() => {
         fetchCandidates();
@@ -31,7 +33,7 @@ const HRDashboard = () => {
 
     const fetchHrUser = async () => {
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('hr_token');
             const res = await axios.get('/api/onboarding/me', {
                 headers: { 'x-auth-token': token }
             });
@@ -76,7 +78,7 @@ const HRDashboard = () => {
 
                 <div className="p-4 border-t border-gray-50 bg-gray-50/30">
                     <button
-                        onClick={() => { localStorage.removeItem('token'); navigate('/hr/login'); }}
+                        onClick={() => { localStorage.removeItem('hr_token'); navigate('/hr/login'); }}
                         className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-gray-400 hover:bg-red-50 hover:text-red-600 transition-all tracking-wide"
                     >
                         <SignOutIcon />
@@ -90,7 +92,14 @@ const HRDashboard = () => {
     const fetchCandidates = async () => {
         try {
             console.log('[Frontend] Fetching candidates...');
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('hr_token');
+            console.log('[Frontend] HR Token present in localStorage:', !!token);
+            if (token) {
+                console.log('[Frontend] Token (first 20 chars):', token.substring(0, 20) + '...');
+            } else {
+                console.error('[Frontend] NO HR TOKEN FOUND! User may need to re-login.');
+            }
+
             const res = await axios.get('/api/onboarding/candidates', {
                 headers: { 'x-auth-token': token }
             });
@@ -99,6 +108,9 @@ const HRDashboard = () => {
 
             if (Array.isArray(res.data)) {
                 console.log(`[Frontend] Received ${res.data.length} candidates`);
+                res.data.forEach(c => {
+                    console.log(`[Frontend] Candidate: ${c.email} | Status: ${c.onboardingStatus} | Stage: ${c.stage}`);
+                });
                 setCandidates(res.data);
             } else {
                 console.error('[Frontend] Invalid response format. Expected array, got:', res.data);
@@ -141,7 +153,7 @@ const HRDashboard = () => {
 
         if (type === 'approve') {
             try {
-                const token = localStorage.getItem('token');
+                const token = localStorage.getItem('hr_token');
                 const res = await axios.post(`/api/onboarding/hr-approve/${candidateId}`, {}, {
                     headers: { 'x-auth-token': token }
                 });
@@ -172,6 +184,9 @@ const HRDashboard = () => {
     // Helper to construct correctly encoded file URLs
     const getFileUrl = (path) => {
         if (!path) return '#';
+        // If path is already a full URL (like Cloudinary), return it directly
+        if (path.startsWith('http')) return path;
+
         // Convert Windows backslashes to forward slashes
         const normalizedPath = path.replace(/\\/g, '/');
         // Strip leading 'uploads/' if present to match the backend's manual route
@@ -261,7 +276,13 @@ const HRDashboard = () => {
                                 {activeDetailTab === 'Pre-Offer' && (
                                     <div className="space-y-12 animate-in fade-in slide-in-from-left-4 duration-500">
                                         {selectedCandidate.stage >= 2 && (
-                                            <div className="flex justify-end -mb-8">
+                                            <div className="flex justify-between items-center -mb-8">
+                                                <button
+                                                    onClick={() => setShowOfferPreview(true)}
+                                                    className="bg-black text-white px-6 py-2 rounded-lg text-[10px] font-black tracking-widest hover:bg-gray-800 transition-all shadow-lg uppercase"
+                                                >
+                                                    View / Export Offer Letter
+                                                </button>
                                                 <span className="bg-green-50 text-green-600 border border-green-100 px-4 py-1.5 rounded-full text-[11px] font-bold tracking-wide">
                                                     Stage 1 Selected (Pre-Offer Approved)
                                                 </span>
@@ -402,13 +423,13 @@ const HRDashboard = () => {
                                         {selectedCandidate.onboardingStatus === 'Pending Verification' && (
                                             <div className="flex items-center justify-end gap-3 pt-12 border-t border-gray-100 mt-8">
                                                 <button
-                                                    onClick={() => initiateReject(selectedCandidate.id)}
+                                                    onClick={() => initiateReject(selectedCandidate._id)}
                                                     className="px-8 py-3 bg-white text-red-600 text-[10px] font-black rounded-lg hover:bg-red-50 transition-all border border-red-100 tracking-widest"
                                                 >
                                                     REJECT
                                                 </button>
                                                 <button
-                                                    onClick={() => initiateApprove(selectedCandidate.id)}
+                                                    onClick={() => initiateApprove(selectedCandidate._id)}
                                                     className="px-8 py-3 bg-green-600 text-white text-[10px] font-black rounded-lg hover:bg-green-700 transition-all border border-green-500 tracking-widest"
                                                 >
                                                     APPROVE POST-OFFER
@@ -424,16 +445,16 @@ const HRDashboard = () => {
                                     activeDetailTab === 'Pre-Offer' && (
                                         <div className="flex items-center justify-end gap-4 pt-10 border-t border-gray-100 mt-12">
                                             <button
-                                                onClick={() => initiateReject(selectedCandidate.id)}
+                                                onClick={() => initiateReject(selectedCandidate._id)}
                                                 className="px-10 py-3.5 bg-white text-red-600 text-[10px] font-black rounded-lg hover:bg-red-50 transition-all border border-red-100 tracking-wider"
                                             >
-                                                Reject Application
+                                                Reject
                                             </button>
                                             <button
-                                                onClick={() => initiateApprove(selectedCandidate.id)}
+                                                onClick={() => initiateApprove(selectedCandidate._id)}
                                                 className="px-10 py-3.5 bg-black text-white text-[10px] font-black rounded-lg transition-all tracking-wider"
                                             >
-                                                Approve Pre-Offer (Move to Stage 2)
+                                                Approve
                                             </button>
                                         </div>
                                     )}
@@ -454,12 +475,14 @@ const HRDashboard = () => {
                                     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                                         <div className="px-8 py-6 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                             <div className="flex items-center gap-6">
-                                                {['Active', 'Pending', 'Onboarded'].map((tab) => {
+                                                {['Active', 'Draft', 'Pending', 'Onboarded'].map((tab) => {
                                                     const count = tab === 'Active'
-                                                        ? candidates.filter(c => c.onboardingStatus !== 'Completed').length
-                                                        : tab === 'Pending'
-                                                            ? candidates.filter(c => c.onboardingStatus === 'Pending Verification').length
-                                                            : candidates.filter(c => c.onboardingStatus === 'Completed').length;
+                                                        ? candidates.filter(c => c.onboardingStatus !== 'Completed' && c.onboardingStatus !== 'Draft').length
+                                                        : tab === 'Draft'
+                                                            ? candidates.filter(c => c.onboardingStatus === 'Draft').length
+                                                            : tab === 'Pending'
+                                                                ? candidates.filter(c => c.onboardingStatus === 'Pending Verification').length
+                                                                : candidates.filter(c => c.onboardingStatus === 'Completed').length;
 
                                                     const isActive = activeCandidateTab === tab;
                                                     return (
@@ -493,12 +516,14 @@ const HRDashboard = () => {
                                                 <tbody>
                                                     {candidates
                                                         .filter(candidate => {
+                                                            if (activeCandidateTab === 'Draft') return candidate.onboardingStatus === 'Draft';
                                                             if (activeCandidateTab === 'Pending') return candidate.onboardingStatus === 'Pending Verification';
                                                             if (activeCandidateTab === 'Onboarded') return candidate.onboardingStatus === 'Completed';
-                                                            return candidate.onboardingStatus !== 'Completed'; // Active tab
+                                                            // Active tab: Not Draft and Not Completed
+                                                            return candidate.onboardingStatus !== 'Completed' && candidate.onboardingStatus !== 'Draft';
                                                         })
                                                         .map((candidate) => (
-                                                            <tr key={candidate.id} className="group hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0">
+                                                            <tr key={candidate._id} className="group hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0">
                                                                 <td className="px-8 py-5">
                                                                     <div>
                                                                         <p className="font-bold text-gray-900 text-sm">{candidate.personalInfo?.fullName || 'N/A'}</p>
@@ -575,7 +600,7 @@ const HRDashboard = () => {
                                                     {candidates
                                                         .filter(c => c.onboardingStatus === 'Completed')
                                                         .map((candidate) => (
-                                                            <tr key={candidate.id} className="group hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0">
+                                                            <tr key={candidate._id} className="group hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0">
                                                                 <td className="px-8 py-5">
                                                                     <div>
                                                                         <p className="font-bold text-gray-900 text-sm">{candidate.personalInfo?.fullName || 'N/A'}</p>
@@ -668,6 +693,14 @@ const HRDashboard = () => {
                 </div>
             )
             }
+
+            {/* Offer Letter Preview Modal */}
+            {showOfferPreview && (
+                <OfferLetter
+                    candidate={selectedCandidate}
+                    onClose={() => setShowOfferPreview(false)}
+                />
+            )}
 
         </div >
     );

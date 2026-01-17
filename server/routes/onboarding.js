@@ -20,7 +20,8 @@ console.log('[Onboarding] Registering check-email route...');
 
 // Check email existence
 router.post('/check-email', async (req, res) => {
-    console.log('[API] /check-email received data:', req.body);
+    console.log('[API] /check-email request received');
+    console.log('[API] Request body:', JSON.stringify(req.body));
     const { email } = req.body;
 
     if (!email) {
@@ -29,19 +30,23 @@ router.post('/check-email', async (req, res) => {
     }
 
     try {
-        console.log('[API] Searching for employee:', email);
+        console.log('[API] Searching for employee with email:', email);
+        if (!Employee) {
+            throw new Error('Employee model is not defined!');
+        }
         const employee = await Employee.findOne({ email: email.toLowerCase().trim() });
-        console.log('[API] Search complete. Found:', !!employee);
+        console.log('[API] Search complete. Found employee:', !!employee);
         res.json({ exists: !!employee });
     } catch (err) {
-        console.error('[API] /check-email error:', err);
+        console.error('[API] /check-email CRITICAL ERROR:', err);
         res.status(500).json({
             message: 'Internal server error during email check',
             error: err.message,
-            stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+            stack: err.stack
         });
     }
 });
+
 
 // Register/Login
 router.post('/login', async (req, res) => {
@@ -52,6 +57,13 @@ router.post('/login', async (req, res) => {
         }
 
         let normalizedEmail = email.toLowerCase().trim();
+
+        // Block HR user from candidate login
+        if (normalizedEmail === 'hr@antigraviity.com' || normalizedEmail === 'hr@antigravity.com') {
+            console.warn('[AUTH] Attempted HR login via candidate portal blocked');
+            return res.status(403).json({ message: 'HR users must use the HR Portal' });
+        }
+
         let employee = await Employee.findOne({ email: normalizedEmail });
 
         if (!employee) {
@@ -82,9 +94,14 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// Auth middleware
 const auth = (req, res, next) => {
     const token = req.header('x-auth-token');
+    console.log('[AUTH] Middleware called for:', req.method, req.path);
+    console.log('[AUTH] Token present:', !!token);
+    if (token) {
+        console.log('[AUTH] Token (first 20 chars):', token.substring(0, 20) + '...');
+    }
+
     if (!token) {
         console.warn('[AUTH] No token provided in header');
         return res.status(401).json({ message: 'No token, authorization denied' });
@@ -134,13 +151,14 @@ router.get('/me', auth, async (req, res) => {
 });
 
 router.post('/update', auth, async (req, res) => {
-    const { personalInfo, employmentDetails, experienceSummary, legalFinancial, emergencyContact, isFinalSubmission } = req.body;
+    const { personalInfo, education, employmentDetails, experienceSummary, legalFinancial, emergencyContact, isFinalSubmission } = req.body;
     try {
         const employee = await Employee.findById(req.user.id);
         if (!employee) return res.status(404).json({ message: 'User not found' });
 
         // Merge updates
         if (personalInfo) employee.personalInfo = { ...employee.personalInfo, ...personalInfo };
+        if (education) employee.education = { ...employee.education, ...education };
         if (employmentDetails) employee.employmentDetails = { ...employee.employmentDetails, ...employmentDetails };
         if (experienceSummary) employee.experienceSummary = { ...employee.experienceSummary, ...experienceSummary };
         if (legalFinancial) employee.legalFinancial = { ...employee.legalFinancial, ...legalFinancial };
@@ -178,6 +196,7 @@ router.post('/update', auth, async (req, res) => {
         await employee.save();
         res.json(employee);
     } catch (err) {
+        console.error('Error in /update:', err);
         res.status(500).json({ message: err.message });
     }
 });
@@ -188,6 +207,12 @@ router.get('/candidates', auth, async (req, res) => {
         console.log('[API] GET /candidates requested');
         const employees = await Employee.find({ email: { $ne: 'hr@antigraviity.com' } }).select('-password');
         console.log(`[API] Found ${employees.length} candidates`);
+
+        // Log each candidate's email and status for debugging
+        employees.forEach(emp => {
+            console.log(`[API] Candidate: ${emp.email} | Status: ${emp.onboardingStatus} | Stage: ${emp.stage}`);
+        });
+
         res.json(employees);
     } catch (err) {
         console.error('[API] GET /candidates error:', err);
@@ -224,10 +249,42 @@ router.post('/upload', auth, uploadDocs.single('document'), async (req, res) => 
         const employee = await Employee.findById(req.user.id);
         if (!employee) return res.status(404).json({ message: 'User not found' });
 
+        const newDocType = req.body.type;
+        // Remove existing document of the same type if it exists
+        if (employee.documents && employee.documents.length > 0) {
+            employee.documents = employee.documents.filter(doc => doc.type !== newDocType);
+        }
+
+        console.log('[API] New Upload Request Detected');
+        console.log('[API] req.file properties:', JSON.stringify({
+            originalname: req.file.originalname,
+            filename: req.file.filename,
+            path: req.file.path,
+            size: req.file.size
+        }, null, 2));
+
         employee.documents.push({
-            type: req.body.type,
-            path: req.file.path // For Cloudinary, path is the URL
+            type: newDocType,
+            path: req.file.path, // For Cloudinary, path is the URL
+            originalName: req.file.originalname
         });
+
+        await employee.save();
+        res.json(employee);
+    } catch (err) {
+        console.error('[API] Upload error:', err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
+router.post('/remove-doc', auth, async (req, res) => {
+    try {
+        const { type } = req.body;
+        const employee = await Employee.findById(req.user.id);
+        if (!employee) return res.status(404).json({ message: 'User not found' });
+
+        // Remove document of specified type
+        employee.documents = employee.documents.filter(doc => doc.type !== type);
 
         await employee.save();
         res.json(employee);
@@ -240,9 +297,10 @@ router.post('/upload', auth, uploadDocs.single('document'), async (req, res) => 
 router.post('/forgot-password', async (req, res) => {
     const { email } = req.body;
     try {
+        console.log('[API] /forgot-password request for:', email);
         const employee = await Employee.findOne({ email: email.toLowerCase().trim() });
         if (!employee) {
-            // To prevent email harvesting, don't reveal if email exists
+            console.log('[API] /forgot-password: User not found, but returning success to prevent harvesting.');
             return res.json({ success: true, message: 'If an account with that email exists, a reset link has been sent.' });
         }
 
@@ -259,7 +317,9 @@ router.post('/forgot-password', async (req, res) => {
             }
         });
 
-        const resetUrl = `${req.protocol}://${req.get('host')}/hr/reset-password?token=${token}`;
+        // Use origin for the reset link to handle localhost:3000 (frontend) correctly
+        const origin = req.get('origin') || `${req.protocol}://${req.get('host')}`;
+        const resetUrl = `${origin}/hr/reset-password?token=${token}`;
         console.log(`[PASS_RESET] Reset link for ${email}: ${resetUrl}`);
 
         const mailOptions = {
@@ -272,11 +332,20 @@ router.post('/forgot-password', async (req, res) => {
                 `If you did not request this, please ignore this email and your password will remain unchanged.\n`
         };
 
+        if (process.env.NODE_ENV === 'development' || !process.env.EMAIL_USER) {
+            console.log('[PASS_RESET] DEVELOPMENT MODE: Skipping actual email send. Link:', resetUrl);
+            return res.json({ success: true, message: 'Reset link generated (check server logs in dev).' });
+        }
+
         await transporter.sendMail(mailOptions);
         res.json({ success: true, message: 'Reset link sent to your email.' });
     } catch (err) {
-        console.error('Forgot password error:', err);
-        res.status(500).json({ message: 'Internal server error' });
+        console.error('[API] Forgot password error:', err);
+        res.status(500).json({
+            message: 'Internal server error',
+            error: err.message,
+            stack: err.stack
+        });
     }
 });
 

@@ -72,7 +72,7 @@ const Confetti = () => {
     );
 };
 
-const VerifiedDocItem = ({ label, type, getDocPath, getFileUrl }) => {
+const VerifiedDocItem = ({ label, type, getDocPath, getFileUrl, getDocName }) => {
     const path = getDocPath(type);
     return (
         <div className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-lg shadow-sm">
@@ -84,7 +84,7 @@ const VerifiedDocItem = ({ label, type, getDocPath, getFileUrl }) => {
                 </div>
                 <div>
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{label}</p>
-                    <p className="text-[11px] font-bold text-gray-900 truncate max-w-[150px]">{path ? path.split(/\\|\//).pop() : 'Not Uploaded'}</p>
+                    <p className="text-[11px] font-bold text-gray-900 truncate max-w-[150px]">{getDocName(type) || 'Not Uploaded'}</p>
                 </div>
             </div>
             {path && (
@@ -105,11 +105,23 @@ const VerifiedDocItem = ({ label, type, getDocPath, getFileUrl }) => {
     );
 };
 
-const SectionHeader = ({ number, title }) => (
+const SectionHeader = ({ number, title, onClear }) => (
     <div className="flex items-center gap-3 mb-6 mt-2">
         <span className="w-7 h-7 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center font-bold text-gray-900 text-[10px]">{number}</span>
         <h3 className="text-xs font-bold text-gray-900 capitalize tracking-wide">{title}</h3>
         <div className="h-px bg-gray-200 flex-grow" />
+        {onClear && (
+            <button
+                type="button"
+                onClick={onClear}
+                className="text-[10px] font-bold text-red-500 hover:text-red-700 uppercase tracking-wider flex items-center gap-1 hover:bg-red-50 px-2 py-1 rounded transition-colors"
+            >
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Clear
+            </button>
+        )}
     </div>
 );
 
@@ -151,31 +163,39 @@ const OnboardingDashboard = () => {
     const [showVerifiedInfo, setShowVerifiedInfo] = useState(false);
     const [showAllDetails, setShowAllDetails] = useState(false);
     const [employee, setEmployee] = useState(null);
-    const [loading, setLoading] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [clearKey, setClearKey] = useState(0); // To force re-render of file inputs
 
     // Form State
     const [formData, setFormData] = useState({
-        // A. Basic Info
+        // A. Basic Candidate Information
         fullName: '',
         personalEmail: '',
         mobileNumber: '',
         currentCity: '',
         dob: '',
+        schoolName: '',  // NEW
 
-        // B. Employment Details
+        // B. Education
+        highestQualification: '',
+        institutionName: '',  // NEW
+        institutionLocation: '',  // NEW
+
+        // C. Experience Summary
+        totalExperience: '',  // Fresher / 1-2 years / 2-5 years / 5+ years
+        currentEmployer: '',
+        relevantExperience: '',
+        currentDesignation: '',
+        currentCtc: '',  // Moved from D
+        expectedCtc: '',  // Moved from D
+
+        // D. Employment Details (Offer Inputs)
         position: '',
         workMode: '',
         joiningDate: '',
-        currentCtc: '',
-        expectedCtc: '',
+        preferredLocation: '',  // NEW: Bangalore / Chennai
         noticePeriod: '',
-
-        // C. Education & Experience
-        highestQualification: '',
-        totalExperience: '',
-        relevantExperience: '',
-        currentEmployer: '',
-        currentDesignation: '',
 
         // Post-Offer (Stage 2)
         currentAddress: '',
@@ -229,8 +249,19 @@ const OnboardingDashboard = () => {
         return employee?.documents?.find(doc => doc.type === type)?.path;
     };
 
+    const getDocName = (type) => {
+        const doc = employee?.documents?.find(d => d.type === type);
+        if (!doc) return null;
+        if (doc.originalName) return doc.originalName;
+        // Fallback for old documents
+        return doc.path ? doc.path.split(/\\|\//).pop() : 'Document';
+    };
+
     const getFileUrl = (path) => {
         if (!path) return '#';
+        // If path is already a full URL (like Cloudinary), return it directly
+        if (path.startsWith('http')) return path;
+
         const API_BASE_URL = 'http://localhost:5000';
         const normalizedPath = path.replace(/\\/g, '/');
         const cleanPath = normalizedPath.startsWith('uploads/') ? normalizedPath.slice(8) : normalizedPath;
@@ -238,13 +269,60 @@ const OnboardingDashboard = () => {
         return `${API_BASE_URL}/candidate-docs/${encodedPath}`;
     };
 
+    const handleRemoveFile = async (type) => {
+        if (!window.confirm('Are you sure you want to remove this file?')) return;
+        try {
+            const token = localStorage.getItem('candidate_token');
+            const res = await axios.post('/api/onboarding/remove-doc', { type }, {
+                headers: { 'x-auth-token': token }
+            });
+            setEmployee(res.data);
+            setFormData(prev => ({ ...prev, [type]: null })); // Clear from formData if present
+            setClearKey(prev => prev + 1); // Reset file input DOM elements
+        } catch (err) {
+            console.error('Error removing file:', err);
+            alert('Failed to remove file.');
+        }
+    };
+
     const UploadIndicator = ({ type }) => {
         if (!hasDocument(type)) return null;
+        const path = getDocPath(type);
+        const fileName = getDocName(type) || 'Document';
+
         return (
             <div className="flex items-center gap-2 mt-2 ml-4 animate-in fade-in slide-in-from-left-2 duration-500">
                 <div className="flex items-center gap-1.5 px-2 py-1 bg-green-50 rounded-md border border-green-100">
                     <CheckIcon className="w-3 h-3 text-green-600" />
-                    <span className="text-[10px] font-black text-green-700 uppercase tracking-wider">File Uploaded</span>
+                    <span className="text-[10px] font-black text-green-700 uppercase tracking-wider truncate max-w-[200px]" title={fileName}>
+                        File Uploaded: {fileName}
+                    </span>
+                </div>
+                <div className="flex items-center gap-1">
+                    <a
+                        href={getFileUrl(path)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1 hover:bg-black hover:text-white rounded-md transition-all text-gray-500 border border-transparent hover:border-black/10"
+                        title="View Document"
+                    >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                    </a>
+                    {!isReadOnly && (
+                        <button
+                            onClick={() => handleRemoveFile(type)}
+                            className="p-1 hover:bg-red-500 hover:text-white rounded-md transition-all text-gray-400 border border-transparent hover:border-red-500/10"
+                            title="Remove File"
+                            type="button"
+                        >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    )}
                 </div>
             </div>
         );
@@ -252,41 +330,56 @@ const OnboardingDashboard = () => {
 
     const fetchMe = useCallback(async () => {
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('candidate_token');
             const res = await axios.get('/api/onboarding/me', {
                 headers: { 'x-auth-token': token }
             });
+
+            // Safeguard: If somehow an HR user gets in, log them out
+            if (res.data.email === 'hr@antigraviity.com' || res.data.email === 'hr@antigravity.com') {
+                localStorage.removeItem('candidate_token');
+                navigate('/candidate/login');
+                return;
+            }
+
             setEmployee(res.data);
 
             // Populate Form Data
             const p = res.data.personalInfo || {};
-            const emp = res.data.employmentDetails || {};
+            const edu = res.data.education || {};
             const exp = res.data.experienceSummary || {};
+            const emp = res.data.employmentDetails || {};
             const leg = res.data.legalFinancial || {};
             const emg = res.data.emergencyContact || {};
 
             setFormData(prev => ({
                 ...prev,
-                // A
+                // A. Basic Candidate Information
                 fullName: p.fullName || '',
                 personalEmail: p.personalEmail || '',
                 mobileNumber: p.mobileNumber || '',
                 currentCity: p.currentCity || '',
                 dob: p.dob || '',
-                // B
+                schoolName: p.schoolName || '',
+                // B. Education
+                highestQualification: edu.highestQualification || '',
+                institutionName: edu.institutionName || '',
+                institutionLocation: edu.institutionLocation || '',
+                // C. Experience Summary
+                totalExperience: exp.totalExperience || '',
+                currentEmployer: exp.currentEmployer || '',
+                relevantExperience: exp.relevantExperience || '',
+                currentDesignation: exp.currentDesignation || '',
+                currentCtc: exp.currentCtc || '',
+                expectedCtc: exp.expectedCtc || '',
+                // D. Employment Details (Offer Inputs)
                 position: emp.position || '',
                 workMode: emp.workMode || '',
                 joiningDate: emp.joiningDate || '',
-                currentCtc: emp.currentCtc || '',
-                expectedCtc: emp.expectedCtc || '',
+                preferredLocation: emp.preferredLocation || '',
                 noticePeriod: emp.noticePeriod || '',
-                // C
-                highestQualification: exp.highestQualification || '',
-                totalExperience: exp.totalExperience || '',
-                relevantExperience: exp.relevantExperience || '',
-                currentEmployer: exp.currentEmployer || '',
-                currentDesignation: exp.currentDesignation || '',
                 // Stage 2
+                currentAddress: p.currentAddress || '',
                 panNumber: leg.panNumber || '',
                 aadhaarNumber: leg.aadhaarNumber || '',
                 bankAccount: leg.bankAccount || '',
@@ -345,9 +438,15 @@ const OnboardingDashboard = () => {
 
     const handleSubmit = async (e, isFinal = false) => {
         if (e) e.preventDefault();
-        setLoading(true);
+
+        if (isFinal) {
+            setIsSubmitting(true);
+        } else {
+            setIsSaving(true);
+        }
+
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('candidate_token');
 
             // 1. Handle File Uploads first
             const fileFields = [
@@ -379,22 +478,28 @@ const OnboardingDashboard = () => {
                     personalEmail: formData.personalEmail,
                     currentCity: formData.currentCity,
                     dob: formData.dob,
-                    currentAddress: formData.currentAddress
+                    currentAddress: formData.currentAddress,
+                    schoolName: formData.schoolName
+                },
+                education: {
+                    highestQualification: formData.highestQualification,
+                    institutionName: formData.institutionName,
+                    institutionLocation: formData.institutionLocation
+                },
+                experienceSummary: {
+                    totalExperience: formData.totalExperience,
+                    currentEmployer: formData.currentEmployer,
+                    relevantExperience: formData.relevantExperience,
+                    currentDesignation: formData.currentDesignation,
+                    currentCtc: formData.currentCtc,
+                    expectedCtc: formData.expectedCtc
                 },
                 employmentDetails: {
                     position: formData.position,
                     workMode: formData.workMode,
                     joiningDate: formData.joiningDate,
-                    currentCtc: formData.currentCtc,
-                    expectedCtc: formData.expectedCtc,
+                    preferredLocation: formData.preferredLocation,
                     noticePeriod: formData.noticePeriod
-                },
-                experienceSummary: {
-                    highestQualification: formData.highestQualification,
-                    totalExperience: formData.totalExperience,
-                    relevantExperience: formData.relevantExperience,
-                    currentEmployer: formData.currentEmployer,
-                    currentDesignation: formData.currentDesignation
                 },
                 legalFinancial: {
                     panNumber: formData.panNumber,
@@ -428,7 +533,8 @@ const OnboardingDashboard = () => {
             console.error(err);
             alert('Error updating profile. Please check your connection and try again.');
         } finally {
-            setLoading(false);
+            setIsSaving(false);
+            setIsSubmitting(false);
         }
     };
 
@@ -451,6 +557,52 @@ const OnboardingDashboard = () => {
         { value: 'Remote', label: 'Remote' }
     ];
 
+    const locationOptions = [
+        { value: '', label: 'Select Location' },
+        { value: 'Bangalore', label: 'Bangalore' },
+        { value: 'Chennai', label: 'Chennai' }
+    ];
+
+    const handleClearSection = async (fields) => {
+        if (!window.confirm('Are you sure you want to clear this section? All entered data in this section will be lost.')) return;
+
+        // 1. Check for file fields and remove them from server if they exist
+        const fileFields = ['resume', 'signedOfferLetter', 'aadhaarCopy', 'addressProof', 'panCopy', 'passportPhoto', 'degreeCert', 'markSheets', 'proCerts', 'passbookCopy'];
+        const fieldsToClearDocs = fields.filter(f => fileFields.includes(f));
+
+        if (fieldsToClearDocs.length > 0) {
+            try {
+                const token = localStorage.getItem('candidate_token');
+                for (const type of fieldsToClearDocs) {
+                    if (hasDocument(type)) {
+                        await axios.post('/api/onboarding/remove-doc', { type }, {
+                            headers: { 'x-auth-token': token }
+                        });
+                    }
+                }
+                // Refresh employee state after clearing docs
+                const res = await axios.get('/api/onboarding/me', {
+                    headers: { 'x-auth-token': token }
+                });
+                setEmployee(res.data);
+            } catch (err) {
+                console.error('Error clearing documents:', err);
+            }
+        }
+
+        // 2. Clear local form state
+        setFormData(prev => {
+            const newData = { ...prev };
+            fields.forEach(field => {
+                newData[field] = fileFields.includes(field) ? null : '';
+            });
+            return newData;
+        });
+
+        // 3. Increment clearKey to reset file input DOM elements
+        setClearKey(prev => prev + 1);
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
             {/* Fixed Header */}
@@ -469,7 +621,7 @@ const OnboardingDashboard = () => {
                             <p className="text-[11px] font-bold text-gray-900 lowercase">{employee.email}</p>
                         </div>
                         <button
-                            onClick={() => { localStorage.removeItem('token'); navigate('/candidate/login'); }}
+                            onClick={() => { localStorage.removeItem('candidate_token'); navigate('/candidate/login'); }}
                             className="group flex items-center gap-1.5 text-gray-400 hover:text-red-500 text-[10px] font-black tracking-widest uppercase transition-all duration-200 pr-2"
                         >
                             <LogoutIcon className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
@@ -584,12 +736,60 @@ const OnboardingDashboard = () => {
                                                     <div className="flex-grow h-px bg-gray-100" />
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 grayscale-[0.5] pointer-events-none">
-                                                    <InputField label="Full Legal Name" value={formData.fullName} disabled />
-                                                    <InputField label="Personal Email ID" value={formData.personalEmail} disabled />
-                                                    <InputField label="Mobile Number" value={formData.mobileNumber} disabled />
-                                                    <InputField label="Date of Birth" value={formData.dob} disabled />
-                                                    <InputField label="Position" value={formData.position} disabled />
-                                                    <InputField label="Joining Date" value={formData.joiningDate} disabled />
+                                                    {/* Basic Information */}
+                                                    <div className="md:col-span-2">
+                                                        <SectionHeader number="1" title="Basic Information" />
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                                                            <InputField label="Full Legal Name" value={formData.fullName} disabled />
+                                                            <InputField label="Personal Email ID" value={formData.personalEmail} disabled />
+                                                            <InputField label="Mobile Number" value={formData.mobileNumber} disabled />
+                                                            <InputField label="Date of Birth" value={formData.dob} disabled />
+                                                            <InputField label="Current City & Country" value={formData.currentCity} mdSpan={2} disabled />
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Education Details */}
+                                                    <div className="md:col-span-2 mt-4">
+                                                        <SectionHeader number="2" title="Education" />
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                            <InputField label="Higher Secondary School" value={formData.schoolName} disabled />
+                                                            <InputField label="Highest Qualification" value={formData.highestQualification} disabled />
+                                                            <InputField label="Institution Name" value={formData.institutionName} disabled />
+                                                            <InputField label="Institution Location" value={formData.institutionLocation} disabled />
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Experience Summary */}
+                                                    <div className="md:col-span-2 mt-4">
+                                                        <SectionHeader number="3" title="Experience Summary" />
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                            <InputField label="Total Experience" value={formData.totalExperience} mdSpan={formData.totalExperience === 'Fresher' ? 2 : 1} disabled />
+                                                            {formData.totalExperience !== 'Fresher' && (
+                                                                <>
+                                                                    <InputField label="Current Employer" value={formData.currentEmployer} disabled />
+                                                                    <InputField label="Relevant Experience" value={formData.relevantExperience} disabled />
+                                                                    <InputField label="Current Designation" value={formData.currentDesignation} disabled />
+                                                                    <InputField label="Current CTC" value={formData.currentCtc} disabled />
+                                                                    <InputField label="Expected CTC" value={formData.expectedCtc} disabled />
+                                                                </>
+                                                            )}
+                                                            <div className="md:col-span-2">
+                                                                <VerifiedDocItem label="Resume / CV" type="resume" getDocPath={getDocPath} getFileUrl={getFileUrl} getDocName={getDocName} />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Employment Details */}
+                                                    <div className="md:col-span-2 mt-4">
+                                                        <SectionHeader number="4" title="Employment Details" />
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                            <InputField label="Position Applied For" value={formData.position} disabled />
+                                                            <InputField label="Work Mode" value={formData.workMode} disabled />
+                                                            <InputField label="Joining Date" value={formData.joiningDate} disabled />
+                                                            <InputField label="Preferred Location" value={formData.preferredLocation} disabled />
+                                                            <InputField label="Notice Period" value={formData.noticePeriod} mdSpan={2} disabled />
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
 
@@ -602,54 +802,62 @@ const OnboardingDashboard = () => {
                                                 </div>
 
                                                 <div className="space-y-12 grayscale-[0.5] pointer-events-none">
-                                                    {/* A. Offer Acceptance */}
+                                                    {/* 1. Offer Acceptance */}
                                                     <div className="space-y-4">
-                                                        <SectionHeader number="A" title="Offer Acceptance" />
+                                                        <SectionHeader number="1" title="Offer Acceptance" />
                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                            <VerifiedDocItem label="Signed Offer Letter" type="signedOfferLetter" getDocPath={getDocPath} getFileUrl={getFileUrl} />
+                                                            <VerifiedDocItem label="Signed Offer Letter" type="signedOfferLetter" getDocPath={getDocPath} getFileUrl={getFileUrl} getDocName={getDocName} />
                                                         </div>
                                                     </div>
 
-                                                    {/* B. Identity & Address Proof */}
+                                                    {/* 2. Identity & Address Proof */}
                                                     <div className="space-y-4">
-                                                        <SectionHeader number="B" title="Identity & Address Proof" />
+                                                        <SectionHeader number="2" title="Identity & Address Proof" />
                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                             <InputField label="Aadhaar Card Number" value={formData.aadhaarNumber} disabled />
                                                             <InputField label="PAN Card Number" value={formData.panNumber} disabled />
                                                             <InputField label="Permanent Address" value={formData.currentAddress} mdSpan={2} isTextArea disabled />
-                                                            <VerifiedDocItem label="Aadhaar ID Copy" type="aadhaarCopy" getDocPath={getDocPath} getFileUrl={getFileUrl} />
-                                                            <VerifiedDocItem label="Address Proof" type="addressProof" getDocPath={getDocPath} getFileUrl={getFileUrl} />
-                                                            <VerifiedDocItem label="PAN ID Copy" type="panCopy" getDocPath={getDocPath} getFileUrl={getFileUrl} />
-                                                            <VerifiedDocItem label="Passport-size Photo" type="passportPhoto" getDocPath={getDocPath} getFileUrl={getFileUrl} />
+                                                            <VerifiedDocItem label="Aadhaar ID Copy" type="aadhaarCopy" getDocPath={getDocPath} getFileUrl={getFileUrl} getDocName={getDocName} />
+                                                            <VerifiedDocItem label="Address Proof" type="addressProof" getDocPath={getDocPath} getFileUrl={getFileUrl} getDocName={getDocName} />
+                                                            <VerifiedDocItem label="PAN ID Copy" type="panCopy" getDocPath={getDocPath} getFileUrl={getFileUrl} getDocName={getDocName} />
+                                                            <VerifiedDocItem label="Passport-size Photo" type="passportPhoto" getDocPath={getDocPath} getFileUrl={getFileUrl} getDocName={getDocName} />
                                                         </div>
                                                     </div>
 
-                                                    {/* C. Education Documents */}
+                                                    {/* 3. Education Documents */}
                                                     <div className="space-y-4">
-                                                        <SectionHeader number="C" title="Education Documents" />
+                                                        <SectionHeader
+                                                            number="3"
+                                                            title="Education Documents"
+                                                            onClear={() => handleClearSection(['degreeCert', 'markSheets', 'proCerts'])}
+                                                        />
                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                            <VerifiedDocItem label="Degree Certificates" type="degreeCert" getDocPath={getDocPath} getFileUrl={getFileUrl} />
-                                                            <VerifiedDocItem label="Mark Sheets" type="markSheets" getDocPath={getDocPath} getFileUrl={getFileUrl} />
-                                                            <VerifiedDocItem label="Professional Certifications" type="proCerts" getDocPath={getDocPath} getFileUrl={getFileUrl} />
+                                                            <VerifiedDocItem label="Degree Certificates" type="degreeCert" getDocPath={getDocPath} getFileUrl={getFileUrl} getDocName={getDocName} />
+                                                            <VerifiedDocItem label="Mark Sheets" type="markSheets" getDocPath={getDocPath} getFileUrl={getFileUrl} getDocName={getDocName} />
+                                                            <VerifiedDocItem label="Professional Certifications" type="proCerts" getDocPath={getDocPath} getFileUrl={getFileUrl} getDocName={getDocName} />
                                                         </div>
                                                     </div>
 
-                                                    {/* D. Bank & Payroll Details */}
+                                                    {/* 4. Bank & Payroll Details */}
                                                     <div className="space-y-4">
-                                                        <SectionHeader number="D" title="Bank & Payroll Details" />
+                                                        <SectionHeader
+                                                            number="4"
+                                                            title="Bank & Payroll Details"
+                                                            onClear={() => handleClearSection(['bankName', 'bankAccountName', 'accountNumber', 'ifscSwiftCode', 'taxRegime', 'passbookCopy'])}
+                                                        />
                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                             <InputField label="Bank Name" value={formData.bankName} disabled />
                                                             <InputField label="Account Holder" value={formData.bankAccountName} disabled />
                                                             <InputField label="Account Number" value={formData.accountNumber} disabled />
                                                             <InputField label="IFSC / SWIFT" value={formData.ifscSwiftCode} disabled />
                                                             <InputField label="Tax Regime" value={formData.taxRegime} disabled />
-                                                            <VerifiedDocItem label="Passbook Frontpage Copy" type="passbookCopy" getDocPath={getDocPath} getFileUrl={getFileUrl} />
+                                                            <VerifiedDocItem label="Passbook Frontpage Copy" type="passbookCopy" getDocPath={getDocPath} getFileUrl={getFileUrl} getDocName={getDocName} />
                                                         </div>
                                                     </div>
 
-                                                    {/* Emergency Contact */}
+                                                    {/* 5. Emergency Contact */}
                                                     <div className="space-y-4">
-                                                        <SectionHeader number="E" title="Emergency Contact" />
+                                                        <SectionHeader number="5" title="Emergency Contact" />
                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                             <InputField label="Contact Name" value={formData.emergencyName} disabled />
                                                             <InputField label="Phone" value={formData.emergencyPhone} disabled />
@@ -689,12 +897,60 @@ const OnboardingDashboard = () => {
                                     {showVerifiedInfo && (
                                         <div className="mt-8 space-y-10 animate-in fade-in slide-in-from-top-4 duration-500 grayscale-[0.5] pointer-events-none">
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                <InputField label="Full Legal Name" value={formData.fullName} disabled />
-                                                <InputField label="Personal Email ID" value={formData.personalEmail} disabled />
-                                                <InputField label="Mobile Number" value={formData.mobileNumber} disabled />
-                                                <InputField label="Date of Birth" value={formData.dob} disabled />
-                                                <InputField label="Position" value={formData.position} disabled />
-                                                <InputField label="Joining Date" value={formData.joiningDate} disabled />
+                                                {/* Basic Information */}
+                                                <div className="md:col-span-2">
+                                                    <SectionHeader number="1" title="Basic Information" />
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                                                        <InputField label="Full Legal Name" value={formData.fullName} disabled />
+                                                        <InputField label="Personal Email ID" value={formData.personalEmail} disabled />
+                                                        <InputField label="Mobile Number" value={formData.mobileNumber} disabled />
+                                                        <InputField label="Date of Birth" value={formData.dob} disabled />
+                                                        <InputField label="Current City & Country" value={formData.currentCity} mdSpan={2} disabled />
+                                                    </div>
+                                                </div>
+
+                                                {/* Education Details */}
+                                                <div className="md:col-span-2 mt-4">
+                                                    <SectionHeader number="2" title="Education" />
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                        <InputField label="Higher Secondary School" value={formData.schoolName} disabled />
+                                                        <InputField label="Highest Qualification" value={formData.highestQualification} disabled />
+                                                        <InputField label="Institution Name" value={formData.institutionName} disabled />
+                                                        <InputField label="Institution Location" value={formData.institutionLocation} disabled />
+                                                    </div>
+                                                </div>
+
+                                                {/* Experience Summary */}
+                                                <div className="md:col-span-2 mt-4">
+                                                    <SectionHeader number="3" title="Experience Summary" />
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                        <InputField label="Total Experience" value={formData.totalExperience} mdSpan={formData.totalExperience === 'Fresher' ? 2 : 1} disabled />
+                                                        {formData.totalExperience !== 'Fresher' && (
+                                                            <>
+                                                                <InputField label="Current Employer" value={formData.currentEmployer} disabled />
+                                                                <InputField label="Relevant Experience" value={formData.relevantExperience} disabled />
+                                                                <InputField label="Current Designation" value={formData.currentDesignation} disabled />
+                                                                <InputField label="Current CTC" value={formData.currentCtc} disabled />
+                                                                <InputField label="Expected CTC" value={formData.expectedCtc} disabled />
+                                                            </>
+                                                        )}
+                                                        <div className="md:col-span-2">
+                                                            <VerifiedDocItem label="Resume / CV" type="resume" getDocPath={getDocPath} getFileUrl={getFileUrl} getDocName={getDocName} />
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Employment Details */}
+                                                <div className="md:col-span-2 mt-4">
+                                                    <SectionHeader number="4" title="Employment Details" />
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                        <InputField label="Position Applied For" value={formData.position} disabled />
+                                                        <InputField label="Work Mode" value={formData.workMode} disabled />
+                                                        <InputField label="Joining Date" value={formData.joiningDate} disabled />
+                                                        <InputField label="Preferred Location" value={formData.preferredLocation} disabled />
+                                                        <InputField label="Notice Period" value={formData.noticePeriod} mdSpan={2} disabled />
+                                                    </div>
+                                                </div>
                                             </div>
                                             <p className="text-[10px] text-center text-gray-400 font-bold italic">This information is now locked and verified.</p>
                                         </div>
@@ -710,7 +966,9 @@ const OnboardingDashboard = () => {
                                         <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin" />
                                     </div>
                                     <div className="space-y-2 relative z-10">
-                                        <h2 className="text-xl font-bold tracking-tight text-gray-900">Documents Verification Pending</h2>
+                                        <h2 className="text-xl font-bold tracking-tight text-gray-900">
+                                            {currentStage === 1 ? 'Application Submitted & Under Review' : 'Documents Verification Pending'}
+                                        </h2>
                                         <p className="text-gray-500 text-xs max-w-sm mx-auto lowercase font-bold tracking-wide leading-relaxed">
                                             <span className="capitalize">Our</span> hr team is validating your details.<br />check back soon for the next steps.
                                         </p>
@@ -746,7 +1004,11 @@ const OnboardingDashboard = () => {
 
                                     <form onSubmit={(e) => handleSubmit(e, true)} className="space-y-12">
                                         <div className="space-y-6">
-                                            <SectionHeader number="A" title="Basic Candidate Information" />
+                                            <SectionHeader
+                                                number="1"
+                                                title="Basic Candidate Information"
+                                                onClear={() => handleClearSection(['fullName', 'personalEmail', 'mobileNumber', 'dob', 'currentCity', 'currentAddress'])}
+                                            />
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 <InputField label="Full Legal Name" name="fullName" value={formData.fullName} onChange={handleChange} placeholder="As per aadhar ID" disabled={isReadOnly} required />
                                                 <InputField label="Personal Email ID" name="personalEmail" value={formData.personalEmail} onChange={handleChange} placeholder="email@example.com" disabled={isReadOnly} required />
@@ -756,48 +1018,36 @@ const OnboardingDashboard = () => {
                                             </div>
                                         </div>
 
-                                        {/* B. Employment Details (Offer Inputs) */}
+                                        {/* B. Education */}
                                         <div className="space-y-6">
-                                            <SectionHeader number="B" title="Employment Details (Offer Inputs)" />
+                                            <SectionHeader
+                                                number="2"
+                                                title="Education"
+                                                onClear={() => handleClearSection(['schoolName', 'highestQualification', 'institutionName', 'institutionLocation'])}
+                                            />
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                <InputField label="Position Applied For" name="position" value={formData.position} onChange={handleChange} placeholder="e.g. Frontend Developer" disabled={isReadOnly} required />
-                                                <div className="space-y-1.5">
-                                                    <label className="text-[11px] font-bold capitalize tracking-wide text-gray-900 ml-4">Work Mode <span className="text-red-400">*</span></label>
-                                                    <CustomSelect name="workMode" value={formData.workMode} onChange={handleChange} options={workModeOptions} isLightTheme disabled={isReadOnly} />
-                                                </div>
-                                                <InputField label="Proposed Joining Date" name="joiningDate" type="date" value={formData.joiningDate} onChange={handleChange} placeholder="" disabled={isReadOnly} required />
-                                                <div className="hidden md:block"></div> {/* Spacer */}
-                                                <InputField label="Current CTC" name="currentCtc" value={formData.currentCtc} onChange={handleChange} placeholder="e.g. 10 LPA" disabled={isReadOnly} required />
-                                                <InputField label="Expected CTC" name="expectedCtc" value={formData.expectedCtc} onChange={handleChange} placeholder="e.g. 15 LPA" disabled={isReadOnly} required />
-                                                <InputField label="Notice Period" name="noticePeriod" value={formData.noticePeriod} onChange={handleChange} placeholder="Days (mention LWD if serving)" mdSpan={2} disabled={isReadOnly} required />
+                                                <InputField label="Higher Secondary School Name" name="schoolName" value={formData.schoolName} onChange={handleChange} placeholder="School Name" disabled={isReadOnly} required />
+                                                <InputField label="Highest Qualification" name="highestQualification" value={formData.highestQualification} onChange={handleChange} placeholder="e.g. B.Tech Computer Science" disabled={isReadOnly} required />
+                                                <InputField label="Institution Name" name="institutionName" value={formData.institutionName} onChange={handleChange} placeholder="College/University Name" disabled={isReadOnly} required />
+                                                <InputField label="Institution Location" name="institutionLocation" value={formData.institutionLocation} onChange={handleChange} placeholder="City, State" disabled={isReadOnly} required />
                                             </div>
                                         </div>
 
-                                        {/* C. Education & Experience Summary */}
+                                        {/* C. Experience Summary */}
                                         <div className="space-y-6">
-                                            <SectionHeader number="C" title="Education & Experience Summary" />
+                                            <SectionHeader
+                                                number="3"
+                                                title="Experience Summary"
+                                                onClear={() => handleClearSection(['resume', 'totalExperience', 'currentEmployer', 'relevantExperience', 'currentDesignation', 'currentCtc', 'expectedCtc'])}
+                                            />
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                <InputField label="Highest Qualification" name="highestQualification" value={formData.highestQualification} onChange={handleChange} placeholder="e.g. B.Tech Computer Science" disabled={isReadOnly} required />
-
-                                                <div className="space-y-1.5">
-                                                    <label className="text-[11px] font-bold capitalize tracking-wide text-gray-900 ml-4">Total Experience <span className="text-red-400">*</span></label>
-                                                    <CustomSelect name="totalExperience" value={formData.totalExperience} onChange={handleChange} options={experienceOptions} isLightTheme disabled={isReadOnly} />
-                                                </div>
-
-                                                {formData.totalExperience && formData.totalExperience !== 'Fresher' && (
-                                                    <>
-                                                        <InputField label="Relevant Experience" name="relevantExperience" value={formData.relevantExperience} onChange={handleChange} placeholder="e.g. 2.5 Years" disabled={isReadOnly} required />
-                                                        <InputField label="Current Designation" name="currentDesignation" value={formData.currentDesignation} onChange={handleChange} placeholder="e.g. Associate Engineer" disabled={isReadOnly} required />
-                                                        <InputField label="Current Employer Name" name="currentEmployer" value={formData.currentEmployer} onChange={handleChange} placeholder="Company Name" mdSpan={2} disabled={isReadOnly} required />
-                                                    </>
-                                                )}
-
                                                 <div className="md:col-span-2 space-y-1.5">
                                                     <label className="text-[11px] font-bold capitalize tracking-wide text-gray-900 ml-4">
                                                         Upload Resume <span className="text-gray-400 font-normal normal-case tracking-normal">(PDF, DOCX - Max 5MB)</span>
                                                     </label>
                                                     <div className="relative group overflow-hidden rounded-xl">
                                                         <input
+                                                            key={`${clearKey}-resume`}
                                                             type="file"
                                                             name="resume"
                                                             onChange={handleFileChange}
@@ -810,18 +1060,65 @@ const OnboardingDashboard = () => {
                                                         </div>
                                                         {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                     </div>
+                                                    <UploadIndicator type="resume" />
                                                 </div>
+
+                                                <div className="md:col-span-2 space-y-1.5">
+                                                    <label className="text-[11px] font-bold capitalize tracking-wide text-gray-900 ml-4">Total Experience <span className="text-red-400">*</span></label>
+                                                    <CustomSelect name="totalExperience" value={formData.totalExperience} onChange={handleChange} options={experienceOptions} isLightTheme disabled={isReadOnly} />
+                                                </div>
+
+                                                {formData.totalExperience && formData.totalExperience !== 'Fresher' && (
+                                                    <>
+                                                        <InputField label="Current Employer Name" name="currentEmployer" value={formData.currentEmployer} onChange={handleChange} placeholder="Company Name" mdSpan={2} disabled={isReadOnly} required />
+                                                        <InputField label="Relevant Experience" name="relevantExperience" value={formData.relevantExperience} onChange={handleChange} placeholder="e.g. 2.5 Years" disabled={isReadOnly} required />
+                                                        <InputField label="Current Designation" name="currentDesignation" value={formData.currentDesignation} onChange={handleChange} placeholder="e.g. Associate Engineer" disabled={isReadOnly} required />
+                                                        <InputField label="Current CTC" name="currentCtc" value={formData.currentCtc} onChange={handleChange} placeholder="e.g. 10 LPA" disabled={isReadOnly} required />
+                                                        <InputField label="Expected CTC" name="expectedCtc" value={formData.expectedCtc} onChange={handleChange} placeholder="e.g. 15 LPA" disabled={isReadOnly} required />
+                                                    </>
+                                                )}
                                             </div>
                                         </div>
 
+                                        {/* D. Employment Details (Offer Inputs) */}
+                                        <div className="space-y-6">
+                                            <SectionHeader
+                                                number="4"
+                                                title="Employment Details (Offer Inputs)"
+                                                onClear={() => handleClearSection(['position', 'workMode', 'joiningDate', 'preferredLocation', 'noticePeriod'])}
+                                            />
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <InputField label="Position Applied For" name="position" value={formData.position} onChange={handleChange} placeholder="e.g. Frontend Developer" disabled={isReadOnly} required />
+                                                <div className="space-y-1.5">
+                                                    <label className="text-[11px] font-bold capitalize tracking-wide text-gray-900 ml-4">Work Mode <span className="text-red-400">*</span></label>
+                                                    <CustomSelect name="workMode" value={formData.workMode} onChange={handleChange} options={workModeOptions} isLightTheme disabled={isReadOnly} />
+                                                </div>
+                                                <InputField label="Proposed Joining Date" name="joiningDate" type="date" value={formData.joiningDate} onChange={handleChange} placeholder="" disabled={isReadOnly} required />
+                                                <div className="space-y-1.5">
+                                                    <label className="text-[11px] font-bold capitalize tracking-wide text-gray-900 ml-4">Preferred Location <span className="text-red-400">*</span></label>
+                                                    <CustomSelect name="preferredLocation" value={formData.preferredLocation} onChange={handleChange} options={locationOptions} isLightTheme disabled={isReadOnly} />
+                                                </div>
+                                                <InputField label="Notice Period" name="noticePeriod" value={formData.noticePeriod} onChange={handleChange} placeholder="Days (mention LWD if serving)" mdSpan={2} disabled={isReadOnly} required />
+                                            </div>
+                                        </div>
+
+
                                         {currentStage === 1 && currentStatus !== 'Pending Verification' && (
-                                            <div className="pt-8 border-t border-gray-50 flex justify-center">
+                                            <div className="pt-8 border-t border-gray-50 flex justify-center gap-4">
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => handleSubmit(e, false)}
+                                                    disabled={isSaving || isSubmitting}
+                                                    className="px-8 py-4 bg-white text-gray-900 border border-gray-200 font-bold rounded-lg hover:bg-gray-50 transition-all text-sm capitalize tracking-wide disabled:opacity-50"
+                                                >
+                                                    {isSaving ? 'Saving...' : 'Save Draft'}
+                                                </button>
                                                 <button
                                                     type="submit"
-                                                    disabled={loading}
+                                                    disabled={isSaving || isSubmitting}
                                                     className="px-8 py-4 bg-black text-white font-bold rounded-lg hover:bg-gray-900 transition-all text-sm capitalize tracking-wide disabled:opacity-50"
                                                 >
-                                                    {loading ? 'Submitting...' : 'Submit'}
+                                                    {isSubmitting ? 'Submitting...' : 'Submit Final'}
                                                 </button>
                                             </div>
                                         )}
@@ -845,14 +1142,18 @@ const OnboardingDashboard = () => {
 
                                         {/* A. Offer Acceptance */}
                                         <div className="space-y-6">
-                                            <SectionHeader number="A" title="Offer Acceptance" />
+                                            <SectionHeader
+                                                number="1"
+                                                title="Offer Acceptance"
+                                                onClear={() => handleClearSection(['signedOfferLetter'])}
+                                            />
                                             <div className="grid grid-cols-1 gap-6">
                                                 <div className="space-y-1.5">
                                                     <label className="text-[11px] font-bold capitalize tracking-wide text-gray-900 ml-4">
                                                         Upload Signed Offer Letter <span className="text-red-500">*</span>
                                                     </label>
                                                     <div className="relative group overflow-hidden rounded-xl">
-                                                        <input type="file" name="signedOfferLetter" onChange={handleFileChange} accept=".pdf,.png,.jpg,.jpeg" className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required={!hasDocument('signedOfferLetter')} />
+                                                        <input key={`${clearKey}-signedOfferLetter`} type="file" name="signedOfferLetter" onChange={handleFileChange} accept=".pdf,.png,.jpg,.jpeg" className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required={!hasDocument('signedOfferLetter')} />
                                                         <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-black transition-colors">
                                                             <UploadIcon />
                                                         </div>
@@ -865,7 +1166,11 @@ const OnboardingDashboard = () => {
 
                                         {/* B. Identity & Address Proof */}
                                         <div className="space-y-6">
-                                            <SectionHeader number="B" title="Identity & Address Proof" />
+                                            <SectionHeader
+                                                number="2"
+                                                title="Identity & Address Proof"
+                                                onClear={() => handleClearSection(['aadhaarNumber', 'panNumber', 'aadhaarCopy', 'addressProof', 'panCopy', 'passportPhoto', 'currentAddress'])}
+                                            />
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 <InputField label="Aadhaar Card Number" name="aadhaarNumber" value={formData.aadhaarNumber} onChange={handleChange} placeholder="12-digit number" disabled={isReadOnly} required />
                                                 <InputField label="PAN Card Number" name="panNumber" value={formData.panNumber} onChange={handleChange} placeholder="ABCDE1234F" disabled={isReadOnly} required />
@@ -873,7 +1178,7 @@ const OnboardingDashboard = () => {
                                                 <div className="space-y-1.5">
                                                     <label className="text-[11px] font-bold capitalize tracking-wide text-gray-900 ml-4">Aadhaar ID Copy <span className="text-red-500">*</span></label>
                                                     <div className="relative group overflow-hidden rounded-xl">
-                                                        <input type="file" name="aadhaarCopy" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required={!hasDocument('aadhaarCopy')} />
+                                                        <input key={`${clearKey}-aadhaarCopy`} type="file" name="aadhaarCopy" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required={!hasDocument('aadhaarCopy')} />
                                                         <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-black transition-colors">
                                                             <UploadIcon />
                                                         </div>
@@ -884,7 +1189,7 @@ const OnboardingDashboard = () => {
                                                 <div className="space-y-1.5">
                                                     <label className="text-[11px] font-bold capitalize tracking-wide text-gray-900 ml-4">Address Proof <span className="text-red-500">*</span></label>
                                                     <div className="relative group overflow-hidden rounded-xl">
-                                                        <input type="file" name="addressProof" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required={!hasDocument('addressProof')} />
+                                                        <input key={`${clearKey}-addressProof`} type="file" name="addressProof" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required={!hasDocument('addressProof')} />
                                                         <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-black transition-colors">
                                                             <UploadIcon />
                                                         </div>
@@ -895,7 +1200,7 @@ const OnboardingDashboard = () => {
                                                 <div className="space-y-1.5">
                                                     <label className="text-[11px] font-bold capitalize tracking-wide text-gray-900 ml-4">PAN ID Copy <span className="text-red-500">*</span></label>
                                                     <div className="relative group overflow-hidden rounded-xl">
-                                                        <input type="file" name="panCopy" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required={!hasDocument('panCopy')} />
+                                                        <input key={`${clearKey}-panCopy`} type="file" name="panCopy" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required={!hasDocument('panCopy')} />
                                                         <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-black transition-colors">
                                                             <UploadIcon />
                                                         </div>
@@ -906,7 +1211,7 @@ const OnboardingDashboard = () => {
                                                 <div className="space-y-1.5">
                                                     <label className="text-[11px] font-bold capitalize tracking-wide text-gray-900 ml-4">Passport-size Photo <span className="text-red-500">*</span></label>
                                                     <div className="relative group overflow-hidden rounded-xl">
-                                                        <input type="file" name="passportPhoto" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required={!hasDocument('passportPhoto')} />
+                                                        <input key={`${clearKey}-passportPhoto`} type="file" name="passportPhoto" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required={!hasDocument('passportPhoto')} />
                                                         <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-black transition-colors">
                                                             <UploadIcon />
                                                         </div>
@@ -920,12 +1225,16 @@ const OnboardingDashboard = () => {
 
                                         {/* C. Education Documents */}
                                         <div className="space-y-6">
-                                            <SectionHeader number="C" title="Education Documents" />
+                                            <SectionHeader
+                                                number="3"
+                                                title="Education Documents"
+                                                onClear={() => handleClearSection(['degreeCert', 'markSheets', 'proCerts'])}
+                                            />
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 <div className="space-y-1.5">
                                                     <label className="text-[11px] font-bold capitalize tracking-wide text-gray-900 ml-4">Degree Certificates <span className="text-red-500">*</span></label>
                                                     <div className="relative group overflow-hidden rounded-xl">
-                                                        <input type="file" name="degreeCert" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required={!hasDocument('degreeCert')} />
+                                                        <input key={`${clearKey}-degreeCert`} type="file" name="degreeCert" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required={!hasDocument('degreeCert')} />
                                                         <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-black transition-colors">
                                                             <UploadIcon />
                                                         </div>
@@ -936,7 +1245,7 @@ const OnboardingDashboard = () => {
                                                 <div className="space-y-1.5">
                                                     <label className="text-[11px] font-bold capitalize tracking-wide text-gray-900 ml-4">Mark Sheets <span className="text-red-500">*</span></label>
                                                     <div className="relative group overflow-hidden rounded-xl">
-                                                        <input type="file" name="markSheets" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required={!hasDocument('markSheets')} />
+                                                        <input key={`${clearKey}-markSheets`} type="file" name="markSheets" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required={!hasDocument('markSheets')} />
                                                         <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-black transition-colors">
                                                             <UploadIcon />
                                                         </div>
@@ -947,7 +1256,7 @@ const OnboardingDashboard = () => {
                                                 <div className="md:col-span-2 space-y-1.5">
                                                     <label className="text-[11px] font-bold capitalize tracking-wide text-gray-900 ml-4">Professional Certifications</label>
                                                     <div className="relative group overflow-hidden rounded-xl">
-                                                        <input type="file" name="proCerts" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} />
+                                                        <input key={`${clearKey}-proCerts`} type="file" name="proCerts" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} />
                                                         <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-black transition-colors">
                                                             <UploadIcon />
                                                         </div>
@@ -958,9 +1267,13 @@ const OnboardingDashboard = () => {
                                             </div>
                                         </div>
 
-                                        {/* E. Bank & Payroll Details */}
+                                        {/* 4. Bank & Payroll Details */}
                                         <div className="space-y-6">
-                                            <SectionHeader number="E" title="Bank & Payroll Details" />
+                                            <SectionHeader
+                                                number="4"
+                                                title="Bank & Payroll Details"
+                                                onClear={() => handleClearSection(['bankAccountName', 'bankName', 'accountNumber', 'ifscSwiftCode', 'taxRegime', 'passbookCopy'])}
+                                            />
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 <InputField label="Bank Account Holder Name" name="bankAccountName" value={formData.bankAccountName} onChange={handleChange} placeholder="As per bank records" disabled={isReadOnly} required />
                                                 <InputField label="Bank Name" name="bankName" value={formData.bankName} onChange={handleChange} placeholder="e.g. HDFC Bank" disabled={isReadOnly} required />
@@ -973,7 +1286,7 @@ const OnboardingDashboard = () => {
                                                 <div className="space-y-1.5">
                                                     <label className="text-[11px] font-bold capitalize tracking-wide text-gray-900 ml-4">Passbook Frontpage Copy <span className="text-red-500">*</span></label>
                                                     <div className="relative group overflow-hidden rounded-xl">
-                                                        <input type="file" name="passbookCopy" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required={!hasDocument('passbookCopy')} />
+                                                        <input key={`${clearKey}-passbookCopy`} type="file" name="passbookCopy" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-4 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100/50 file:text-gray-900 hover:file:bg-gray-100 transition-all cursor-pointer border border-gray-100 rounded-xl bg-gray-50/50 focus:outline-none focus:border-black" disabled={isReadOnly} required={!hasDocument('passbookCopy')} />
                                                         <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-black transition-colors">
                                                             <UploadIcon />
                                                         </div>
@@ -984,9 +1297,8 @@ const OnboardingDashboard = () => {
                                             </div>
                                         </div>
 
-                                        {/* Emergency Contact */}
                                         <div className="space-y-6">
-                                            <SectionHeader number="F" title="Emergency Contact" />
+                                            <SectionHeader number="5" title="Emergency Contact" />
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 <InputField label="Contact Name" name="emergencyName" value={formData.emergencyName} onChange={handleChange} placeholder="Full name" disabled={isReadOnly} required />
                                                 <InputField label="Phone Number" name="emergencyPhone" value={formData.emergencyPhone} onChange={handleChange} placeholder="10 digit mobile" disabled={isReadOnly} required />
@@ -995,13 +1307,21 @@ const OnboardingDashboard = () => {
                                         </div>
 
                                         {currentStatus !== 'Pending Verification' && currentStatus !== 'Completed' && (
-                                            <div className="pt-8 border-t border-gray-50 flex justify-center">
+                                            <div className="pt-8 border-t border-gray-50 flex justify-center gap-4">
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => handleSubmit(e, false)}
+                                                    disabled={isSaving || isSubmitting}
+                                                    className="px-8 py-4 bg-white text-gray-900 border border-gray-200 font-bold rounded-lg hover:bg-gray-50 transition-all text-sm capitalize tracking-wide disabled:opacity-50"
+                                                >
+                                                    {isSaving ? 'Saving...' : 'Save Draft'}
+                                                </button>
                                                 <button
                                                     onClick={(e) => handleSubmit(e, true)}
-                                                    disabled={loading}
+                                                    disabled={isSaving || isSubmitting}
                                                     className="px-10 py-4 bg-black text-white font-bold rounded-lg hover:bg-gray-900 transition-all text-sm capitalize tracking-wide disabled:opacity-50"
                                                 >
-                                                    {loading ? 'Submitting...' : 'Submit'}
+                                                    {isSubmitting ? 'Submitting...' : 'Submit Final'}
                                                 </button>
                                             </div>
                                         )}

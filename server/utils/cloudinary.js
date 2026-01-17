@@ -15,7 +15,9 @@ const onboardingStorage = new CloudinaryStorage({
     params: {
         folder: 'antigraviity/onboarding',
         allowed_formats: ['jpg', 'png', 'pdf'],
-        resource_type: 'auto'
+        resource_type: 'auto',
+        access_mode: 'public',
+        type: 'upload'
     }
 });
 
@@ -25,7 +27,9 @@ const careerStorage = new CloudinaryStorage({
     params: {
         folder: 'antigraviity/resumes',
         allowed_formats: ['pdf', 'doc', 'docx'],
-        resource_type: 'auto'
+        resource_type: 'auto',
+        access_mode: 'public',
+        type: 'upload'
     }
 });
 

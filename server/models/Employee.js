@@ -6,31 +6,49 @@ const employeeSchema = new mongoose.Schema({
     password: { type: String, required: true },
     onboardingStatus: {
         type: String,
-        enum: ['Draft', 'Submitted', 'Offered', 'Accepted', 'In-Process', 'Completed'],
+        enum: ['Draft', 'Submitted', 'Offered', 'Accepted', 'In-Process', 'Pending Verification', 'Approved', 'Completed'],
         default: 'Draft'
     },
     stage: { type: Number, default: 1 }, // 1: Pre-Offer, 2: Post-Offer
     progressPercentage: { type: Number, default: 0 },
 
     // Stage 1: Pre-Offer Details
+    // Section A: Basic Candidate Information
     personalInfo: {
         fullName: String,
+        personalEmail: String,
+        mobileNumber: String,
+        dob: String,
+        currentCity: String,
         currentAddress: String,
+        schoolName: String  // NEW: Higher Secondary School Name
+    },
+
+    // Section B: Education
+    education: {
         highestQualification: String,
-        totalExperience: String
+        institutionName: String,  // NEW
+        institutionLocation: String  // NEW
     },
 
-    employmentDetails: {
-        currentDesignation: String,
-        currentCompany: String,
-        lastWorkingDay: Date,
-        noticePeriod: String
-    },
-
+    // Section C: Experience Summary
     experienceSummary: {
-        skills: [String],
-        industries: [String],
-        yearsOfExperience: Number
+        totalExperience: String,  // Fresher / 1-2 years / 2-5 years / 5+ years
+        currentEmployer: String,
+        relevantExperience: String,
+        currentDesignation: String,
+        currentCtc: String,  // Moved from employmentDetails
+        expectedCtc: String,  // Moved from employmentDetails
+        resumePath: String
+    },
+
+    // Section D: Employment Details (Offer Inputs)
+    employmentDetails: {
+        position: String,
+        workMode: String,
+        joiningDate: String,
+        preferredLocation: String,  // NEW: Bangalore / Chennai
+        noticePeriod: String
     },
 
     // Stage 2: Post-Offer Details
@@ -50,6 +68,7 @@ const employeeSchema = new mongoose.Schema({
     documents: [{
         type: { type: String }, // e.g., 'aadhaar', 'pan', 'degree'
         path: String,
+        originalName: String,
         uploadedAt: { type: Date, default: Date.now }
     }],
     resetPasswordToken: String,
