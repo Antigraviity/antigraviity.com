@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import OfferLetter from '../../components/OfferLetter';
+import * as XLSX from 'xlsx';
 
 const HRDashboard = () => {
     const API_BASE_URL = 'http://localhost:5000';
@@ -254,7 +255,18 @@ const HRDashboard = () => {
                 headers: { 'x-auth-token': token }
             });
 
-            const employees = response.data;
+            // Ensure employees is an array
+            let employees = [];
+            if (Array.isArray(response.data)) {
+                employees = response.data;
+            } else if (response.data && Array.isArray(response.data.data)) {
+                employees = response.data.data;
+            } else if (response.data && Array.isArray(response.data.employees)) {
+                employees = response.data.employees;
+            } else {
+                console.error('Export Data Error: Response is not an array', response.data);
+                throw new Error('Invalid data format received from server');
+            }
 
             // Prepare data for Excel
             const excelData = employees.map(emp => {

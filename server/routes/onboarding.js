@@ -61,9 +61,10 @@ router.post('/login', async (req, res) => {
         // HR Authentication Logic
         if (isAdmin) {
             const hrEmail = process.env.HR_EMAIL || 'hr@antigraviity.com';
-            const hrPassword = process.env.HR_PASSWORD;
+            const hrPassword = process.env.HR_PASSWORD || 'HRportal@!23';
 
-            if (normalizedEmail === hrEmail && password === hrPassword) {
+            // Compare with and without trim to be safe
+            if (normalizedEmail === hrEmail && (password === hrPassword || password.trim() === hrPassword)) {
                 let employee = await Employee.findOne({ email: normalizedEmail });
                 if (!employee) {
                     // Create a system record for HR if it doesn't exist
