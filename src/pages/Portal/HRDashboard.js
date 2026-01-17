@@ -509,7 +509,7 @@ const HRDashboard = () => {
                             <div className="p-8 min-h-[500px]">
                                 {activeDetailTab === 'Pre Offer' && (
                                     <div className="space-y-12 animate-in fade-in slide-in-from-left-4 duration-500">
-                                        {selectedCandidate.onboardingStatus === 'Draft' ? (
+                                        {selectedCandidate.onboardingStatus === 'Draft' && selectedCandidate.stage === 1 ? (
                                             <div className="min-h-[400px] flex flex-col items-center justify-center space-y-4 bg-gray-50/30 rounded-2xl border border-dashed border-gray-200 p-12">
                                                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
                                                     <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
