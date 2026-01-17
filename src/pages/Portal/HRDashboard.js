@@ -574,9 +574,12 @@ const HRDashboard = () => {
                                                             </>
                                                         )}
                                                         <div className="col-span-2 lg:col-span-4 mt-2">
-                                                            {selectedCandidate.documents?.find(d => d.type === 'resume') ? (
+                                                            {(selectedCandidate.documents?.find(d => d.type === 'resume') || selectedCandidate.experienceSummary?.resumePath) ? (
                                                                 <a
-                                                                    href={getFileUrl(selectedCandidate.documents.find(d => d.type === 'resume'))}
+                                                                    href={getFileUrl(
+                                                                        selectedCandidate.documents?.find(d => d.type === 'resume') ||
+                                                                        { path: selectedCandidate.experienceSummary?.resumePath }
+                                                                    )}
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
                                                                     className="inline-flex items-center gap-2 px-4 py-2 bg-black text-white text-[10px] font-black rounded-lg hover:bg-gray-800 transition-all tracking-widest uppercase shadow-sm"

@@ -301,6 +301,12 @@ router.post('/upload', auth, uploadDocs.single('document'), async (req, res) => 
             originalName: req.file.originalname
         });
 
+        // REDUNDANCY FIX: Also save resume path to experienceSummary for easier access
+        if (newDocType === 'resume') {
+            if (!employee.experienceSummary) employee.experienceSummary = {};
+            employee.experienceSummary.resumePath = req.file.path;
+        }
+
         await employee.save();
         res.json(employee);
     } catch (err) {

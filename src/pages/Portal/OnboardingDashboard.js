@@ -243,19 +243,33 @@ const OnboardingDashboard = () => {
     ];
 
     const hasDocument = (type) => {
-        return employee?.documents?.some(doc => doc.type === type);
+        if (employee?.documents?.some(doc => doc.type === type)) return true;
+        // Fallback check for resume
+        if (type === 'resume' && employee?.experienceSummary?.resumePath) return true;
+        return false;
     };
 
     const getDocPath = (type) => {
-        return employee?.documents?.find(doc => doc.type === type)?.path;
+        const doc = employee?.documents?.find(d => d.type === type);
+        if (doc) return doc.path;
+        // Fallback for resume
+        if (type === 'resume' && employee?.experienceSummary?.resumePath) {
+            return employee.experienceSummary.resumePath;
+        }
+        return null;
     };
 
     const getDocName = (type) => {
         const doc = employee?.documents?.find(d => d.type === type);
-        if (!doc) return null;
-        if (doc.originalName) return doc.originalName;
-        // Fallback for old documents
-        return doc.path ? doc.path.split(/\\|\//).pop() : 'Document';
+        if (doc) {
+            if (doc.originalName) return doc.originalName;
+            return doc.path ? doc.path.split(/\\|\//).pop() : 'Document';
+        }
+        // Fallback for resume
+        if (type === 'resume' && employee?.experienceSummary?.resumePath) {
+            return employee.experienceSummary.resumePath.split(/\\|\//).pop();
+        }
+        return null;
     };
 
     const getFileUrl = (path) => {
