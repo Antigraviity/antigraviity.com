@@ -39,6 +39,7 @@ const HRDashboard = () => {
     useEffect(() => {
         fetchCandidates();
         fetchHrUser();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchHrUser = async () => {
