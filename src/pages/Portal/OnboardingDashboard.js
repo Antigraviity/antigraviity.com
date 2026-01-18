@@ -163,10 +163,13 @@ const OnboardingDashboard = () => {
     const [showVerifiedInfo, setShowVerifiedInfo] = useState(false);
     const [showAllDetails, setShowAllDetails] = useState(false);
     const [employee, setEmployee] = useState(null);
-    const [isSaving, setIsSaving] = useState(false);
+    const [uploadingField, setUploadingField] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [clearKey, setClearKey] = useState(0); // To force re-render of file inputs
     const [showPostOfferForm, setShowPostOfferForm] = useState(false);
+
+    // Use ref to store actual File objects (React state doesn't preserve File instances well)
+    const fileRefs = React.useRef({});
 
     // Form State
     const [formData, setFormData] = useState({
@@ -293,10 +296,58 @@ const OnboardingDashboard = () => {
             });
             setEmployee(res.data);
             setFormData(prev => ({ ...prev, [type]: null })); // Clear from formData if present
+            delete fileRefs.current[type]; // Also clear from ref
             setClearKey(prev => prev + 1); // Reset file input DOM elements
         } catch (err) {
             console.error('Error removing file:', err);
             alert('Failed to remove file.');
+        }
+    };
+
+    const handleDirectUpload = async (type) => {
+        console.log(`[Frontend] handleDirectUpload called for type: ${type}`);
+
+        // Get file from ref instead of formData (React state doesn't preserve File instances)
+        const file = fileRefs.current[type];
+        console.log('[Frontend] File object from ref:', file);
+
+        if (!file || !(file instanceof File)) {
+            console.warn('[Frontend] No valid file selected');
+            alert('Please select a file first.');
+            return;
+        }
+
+        try {
+            setUploadingField(type);
+            const token = localStorage.getItem('candidate_token');
+            console.log('[Frontend] Uploading with token:', token ? 'Present' : 'Missing');
+
+            const fileData = new FormData();
+            fileData.append('document', file);
+            fileData.append('type', type);
+
+            console.log('[Frontend] Sending POST request to /api/onboarding/upload');
+            const res = await axios.post('/api/onboarding/upload', fileData, {
+                headers: {
+                    'x-auth-token': token,
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            console.log('[Frontend] Upload success:', res.data);
+
+            setEmployee(res.data);
+            // Clear the file from ref after successful upload
+            delete fileRefs.current[type];
+            alert(`${type === 'resume' ? 'Resume' : 'Document'} uploaded successfully!`);
+        } catch (err) {
+            console.error('[Frontend] Error uploading file:', err);
+            if (err.response) {
+                console.error('[Frontend] Server response:', err.response.data);
+                console.error('[Frontend] Status:', err.response.status);
+            }
+            alert('Failed to upload file. Check console for details.');
+        } finally {
+            setUploadingField(null);
         }
     };
 
@@ -418,6 +469,12 @@ const OnboardingDashboard = () => {
         fetchMe();
     }, [fetchMe]);
 
+    // Debug: Log when formData.resume changes
+    useEffect(() => {
+        console.log('[Frontend] formData.resume changed:', formData.resume);
+        console.log('[Frontend] Is File?', formData.resume instanceof File);
+    }, [formData.resume]);
+
     // Detect and capture autofilled values
     useEffect(() => {
         const handleAutofill = () => {
@@ -510,8 +567,17 @@ const OnboardingDashboard = () => {
     const handleFileChange = (e) => {
         const { name, files } = e.target;
         const file = files[0];
+        console.log(`[Frontend] File changed: ${name}`, file);
         if (file) {
-            setFormData(prev => ({ ...prev, [name]: file }));
+            // Store the actual File object in ref (React state doesn't preserve File instances)
+            fileRefs.current[name] = file;
+            console.log('[Frontend] Stored file in ref:', name, file);
+
+            // Also update formData with a marker (for UI state tracking)
+            setFormData(prev => {
+                console.log('[Frontend] Updating formData with file marker');
+                return { ...prev, [name]: file };
+            });
         }
     };
 
@@ -1137,6 +1203,28 @@ const OnboardingDashboard = () => {
                                                         </div>
                                                         {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                     </div>
+                                                    {!isReadOnly && !hasDocument('resume') && (
+                                                        <div className="mt-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    console.log('[Frontend] Upload button clicked!');
+                                                                    console.log('[Frontend] fileRefs.current.resume:', fileRefs.current.resume);
+                                                                    console.log('[Frontend] Is File?', fileRefs.current.resume instanceof File);
+                                                                    handleDirectUpload('resume');
+                                                                }}
+                                                                disabled={!fileRefs.current.resume || !(fileRefs.current.resume instanceof File) || !!uploadingField}
+                                                                className="px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                                            >
+                                                                {uploadingField === 'resume' ? 'Uploading...' : 'Upload Resume Now'}
+                                                            </button>
+                                                            {(!fileRefs.current.resume || !(fileRefs.current.resume instanceof File)) && (
+                                                                <p className="text-[10px] text-gray-400 mt-1 ml-1">
+                                                                    {!fileRefs.current.resume ? 'Please select a file first' : 'Invalid file selected'}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                     <UploadIndicator type="resume" />
                                                 </div>
 
@@ -1185,14 +1273,14 @@ const OnboardingDashboard = () => {
                                                 <button
                                                     type="button"
                                                     onClick={(e) => handleSubmit(e, false)}
-                                                    disabled={isSaving || isSubmitting}
+                                                    disabled={!!uploadingField || isSubmitting}
                                                     className="px-8 py-4 bg-white text-gray-900 border border-gray-200 font-bold rounded-lg hover:bg-gray-50 transition-all text-sm capitalize tracking-wide disabled:opacity-50"
                                                 >
-                                                    {isSaving ? 'Saving...' : 'Save Draft'}
+                                                    {uploadingField ? 'Saving...' : 'Save Draft'}
                                                 </button>
                                                 <button
                                                     type="submit"
-                                                    disabled={isSaving || isSubmitting}
+                                                    disabled={!!uploadingField || isSubmitting}
                                                     className="px-8 py-4 bg-black text-white font-bold rounded-lg hover:bg-gray-900 transition-all text-sm capitalize tracking-wide disabled:opacity-50"
                                                 >
                                                     {isSubmitting ? 'Submitting...' : 'Submit Final'}
@@ -1278,7 +1366,6 @@ const OnboardingDashboard = () => {
                                             </div>
 
                                             <form onSubmit={handleSubmit} className="space-y-12">
-
                                                 {/* A. Offer Acceptance */}
                                                 <div className="space-y-6">
                                                     <SectionHeader
@@ -1298,6 +1385,13 @@ const OnboardingDashboard = () => {
                                                                 </div>
                                                                 {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                             </div>
+                                                            {!isReadOnly && !hasDocument('signedOfferLetter') && (
+                                                                <div className="mt-2">
+                                                                    <button type="button" onClick={() => handleDirectUpload('signedOfferLetter')} disabled={!fileRefs.current.signedOfferLetter || !!uploadingField} className="px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all">
+                                                                        {uploadingField === 'signedOfferLetter' ? 'Uploading...' : 'Upload Now'}
+                                                                    </button>
+                                                                </div>
+                                                            )}
                                                             <UploadIndicator type="signedOfferLetter" />
                                                         </div>
                                                     </div>
@@ -1323,6 +1417,13 @@ const OnboardingDashboard = () => {
                                                                 </div>
                                                                 {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                             </div>
+                                                            {!isReadOnly && !hasDocument('aadhaarCopy') && (
+                                                                <div className="mt-2">
+                                                                    <button type="button" onClick={() => handleDirectUpload('aadhaarCopy')} disabled={!fileRefs.current.aadhaarCopy || !!uploadingField} className="px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all">
+                                                                        {uploadingField === 'aadhaarCopy' ? 'Uploading...' : 'Upload Now'}
+                                                                    </button>
+                                                                </div>
+                                                            )}
                                                             <UploadIndicator type="aadhaarCopy" />
                                                         </div>
                                                         <div className="space-y-1.5">
@@ -1334,6 +1435,13 @@ const OnboardingDashboard = () => {
                                                                 </div>
                                                                 {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                             </div>
+                                                            {!isReadOnly && !hasDocument('addressProof') && (
+                                                                <div className="mt-2">
+                                                                    <button type="button" onClick={() => handleDirectUpload('addressProof')} disabled={!fileRefs.current.addressProof || !!uploadingField} className="px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all">
+                                                                        {uploadingField === 'addressProof' ? 'Uploading...' : 'Upload Now'}
+                                                                    </button>
+                                                                </div>
+                                                            )}
                                                             <UploadIndicator type="addressProof" />
                                                         </div>
                                                         <div className="space-y-1.5">
@@ -1345,6 +1453,13 @@ const OnboardingDashboard = () => {
                                                                 </div>
                                                                 {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                             </div>
+                                                            {!isReadOnly && !hasDocument('panCopy') && (
+                                                                <div className="mt-2">
+                                                                    <button type="button" onClick={() => handleDirectUpload('panCopy')} disabled={!fileRefs.current.panCopy || !!uploadingField} className="px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all">
+                                                                        {uploadingField === 'panCopy' ? 'Uploading...' : 'Upload Now'}
+                                                                    </button>
+                                                                </div>
+                                                            )}
                                                             <UploadIndicator type="panCopy" />
                                                         </div>
                                                         <div className="space-y-1.5">
@@ -1356,6 +1471,13 @@ const OnboardingDashboard = () => {
                                                                 </div>
                                                                 {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                             </div>
+                                                            {!isReadOnly && !hasDocument('passportPhoto') && (
+                                                                <div className="mt-2">
+                                                                    <button type="button" onClick={() => handleDirectUpload('passportPhoto')} disabled={!fileRefs.current.passportPhoto || !!uploadingField} className="px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all">
+                                                                        {uploadingField === 'passportPhoto' ? 'Uploading...' : 'Upload Now'}
+                                                                    </button>
+                                                                </div>
+                                                            )}
                                                             <UploadIndicator type="passportPhoto" />
                                                         </div>
                                                         <InputField label="Permanent Address" name="currentAddress" value={formData.currentAddress} onChange={handleChange} placeholder="Full residential address" mdSpan={2} isTextArea disabled={isReadOnly} required />
@@ -1379,6 +1501,13 @@ const OnboardingDashboard = () => {
                                                                 </div>
                                                                 {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                             </div>
+                                                            {!isReadOnly && !hasDocument('degreeCert') && (
+                                                                <div className="mt-2">
+                                                                    <button type="button" onClick={() => handleDirectUpload('degreeCert')} disabled={!fileRefs.current.degreeCert || !!uploadingField} className="px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all">
+                                                                        {uploadingField === 'degreeCert' ? 'Uploading...' : 'Upload Now'}
+                                                                    </button>
+                                                                </div>
+                                                            )}
                                                             <UploadIndicator type="degreeCert" />
                                                         </div>
                                                         <div className="space-y-1.5">
@@ -1390,6 +1519,13 @@ const OnboardingDashboard = () => {
                                                                 </div>
                                                                 {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                             </div>
+                                                            {!isReadOnly && !hasDocument('markSheets') && (
+                                                                <div className="mt-2">
+                                                                    <button type="button" onClick={() => handleDirectUpload('markSheets')} disabled={!fileRefs.current.markSheets || !!uploadingField} className="px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all">
+                                                                        {uploadingField === 'markSheets' ? 'Uploading...' : 'Upload Now'}
+                                                                    </button>
+                                                                </div>
+                                                            )}
                                                             <UploadIndicator type="markSheets" />
                                                         </div>
                                                         <div className="md:col-span-2 space-y-1.5">
@@ -1401,6 +1537,13 @@ const OnboardingDashboard = () => {
                                                                 </div>
                                                                 {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                             </div>
+                                                            {!isReadOnly && fileRefs.current.proCerts && (
+                                                                <div className="mt-2">
+                                                                    <button type="button" onClick={() => handleDirectUpload('proCerts')} disabled={!!uploadingField} className="px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all">
+                                                                        {uploadingField === 'proCerts' ? 'Uploading...' : 'Upload Now'}
+                                                                    </button>
+                                                                </div>
+                                                            )}
                                                             <UploadIndicator type="proCerts" />
                                                         </div>
                                                     </div>
@@ -1431,6 +1574,13 @@ const OnboardingDashboard = () => {
                                                                 </div>
                                                                 {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                             </div>
+                                                            {!isReadOnly && !hasDocument('passbookCopy') && (
+                                                                <div className="mt-2">
+                                                                    <button type="button" onClick={() => handleDirectUpload('passbookCopy')} disabled={!fileRefs.current.passbookCopy || !!uploadingField} className="px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all">
+                                                                        {uploadingField === 'passbookCopy' ? 'Uploading...' : 'Upload Now'}
+                                                                    </button>
+                                                                </div>
+                                                            )}
                                                             <UploadIndicator type="passbookCopy" />
                                                         </div>
                                                     </div>
@@ -1450,14 +1600,14 @@ const OnboardingDashboard = () => {
                                                         <button
                                                             type="button"
                                                             onClick={(e) => handleSubmit(e, false)}
-                                                            disabled={isSaving || isSubmitting}
+                                                            disabled={!!uploadingField || isSubmitting}
                                                             className="px-8 py-4 bg-white text-gray-900 border border-gray-200 font-bold rounded-lg hover:bg-gray-50 transition-all text-sm capitalize tracking-wide disabled:opacity-50"
                                                         >
-                                                            {isSaving ? 'Saving...' : 'Save Draft'}
+                                                            {uploadingField ? 'Saving...' : 'Save Draft'}
                                                         </button>
                                                         <button
                                                             onClick={(e) => handleSubmit(e, true)}
-                                                            disabled={isSaving || isSubmitting}
+                                                            disabled={!!uploadingField || isSubmitting}
                                                             className="px-10 py-4 bg-black text-white font-bold rounded-lg hover:bg-gray-900 transition-all text-sm capitalize tracking-wide disabled:opacity-50"
                                                         >
                                                             {isSubmitting ? 'Submitting...' : 'Submit Final'}
@@ -1471,9 +1621,7 @@ const OnboardingDashboard = () => {
                             )}
                         </div>
                     </div>
-
-
-                </main >
+                </main>
             </div >
         </div >
     );

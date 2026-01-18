@@ -362,21 +362,8 @@ const HRDashboard = () => {
         if (!doc || !doc.path) return '#';
         const path = doc.path;
 
-        // If path is already a full URL (like Cloudinary), handle it
+        // If path is already a full URL (like Cloudinary), return it directly
         if (path.startsWith('http')) {
-            if (path.includes('res.cloudinary.com')) {
-                let url = path;
-                // For PDFs, we want to force download/attachment to avoid layout issues in some browsers
-                const isPdf = path.toLowerCase().endsWith('.pdf') || doc.type?.toLowerCase().includes('pdf') || doc.originalName?.toLowerCase().endsWith('.pdf');
-
-                if (isPdf && url.includes('/upload/')) {
-                    // Inject fl_attachment and optionally the original filename for cleaner saving
-                    // format: /upload/fl_attachment:filename_here/v123/...
-                    const sanitizedName = (doc.originalName || 'document.pdf').replace(/[^a-z0-9.]/gi, '_');
-                    url = url.replace('/upload/', `/upload/fl_attachment:${sanitizedName}/`);
-                }
-                return url;
-            }
             return path;
         }
 
@@ -843,14 +830,12 @@ const HRDashboard = () => {
                                             </div>
                                             {/* Tabs */}
                                             <div className="flex items-center gap-6">
-                                                {['Active', 'Draft', 'Pending', 'Onboarded'].map((tab) => {
+                                                {['Active', 'Pending', 'Onboarded'].map((tab) => {
                                                     const count = tab === 'Active'
-                                                        ? candidates.filter(c => c.onboardingStatus !== 'Completed' && !(c.onboardingStatus === 'Draft' && c.stage === 1)).length
-                                                        : tab === 'Draft'
-                                                            ? candidates.filter(c => c.onboardingStatus === 'Draft' && c.stage === 1).length
-                                                            : tab === 'Pending'
-                                                                ? candidates.filter(c => c.onboardingStatus === 'Pending Verification').length
-                                                                : candidates.filter(c => c.onboardingStatus === 'Completed').length;
+                                                        ? candidates.filter(c => c.onboardingStatus !== 'Completed' && c.onboardingStatus !== 'Draft').length
+                                                        : tab === 'Pending'
+                                                            ? candidates.filter(c => c.onboardingStatus === 'Pending Verification').length
+                                                            : candidates.filter(c => c.onboardingStatus === 'Completed').length;
 
                                                     const isActive = activeCandidateTab === tab;
                                                     return (
@@ -884,11 +869,10 @@ const HRDashboard = () => {
                                                 <tbody>
                                                     {candidates
                                                         .filter(candidate => {
-                                                            if (activeCandidateTab === 'Draft') return candidate.onboardingStatus === 'Draft' && candidate.stage === 1;
                                                             if (activeCandidateTab === 'Pending') return candidate.onboardingStatus === 'Pending Verification';
                                                             if (activeCandidateTab === 'Onboarded') return candidate.onboardingStatus === 'Completed';
-                                                            // Active tab: All except Stage 1 drafts and Completed
-                                                            return candidate.onboardingStatus !== 'Completed' && !(candidate.onboardingStatus === 'Draft' && candidate.stage === 1);
+                                                            // Active tab: All except Drafts and Completed
+                                                            return candidate.onboardingStatus !== 'Completed' && candidate.onboardingStatus !== 'Draft';
                                                         })
                                                         .map((candidate) => (
                                                             <tr key={candidate._id} className="group hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0">

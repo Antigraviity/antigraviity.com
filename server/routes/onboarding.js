@@ -315,6 +315,38 @@ router.post('/upload', auth, uploadDocs.single('document'), async (req, res) => 
     }
 });
 
+// Proxy route to serve Cloudinary files (bypasses 401 errors)
+router.get('/view-document/:candidateId/:filename', auth, async (req, res) => {
+    try {
+        const { candidateId, filename } = req.params;
+        const axios = require('axios');
+
+        // Construct the Cloudinary URL
+        const cloudinaryUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/antigraviity/onboarding/candidate_${candidateId}/${filename}`;
+
+        console.log('[API] Proxying document:', cloudinaryUrl);
+
+        // Fetch from Cloudinary with authentication
+        const response = await axios.get(cloudinaryUrl, {
+            responseType: 'stream',
+            auth: {
+                username: process.env.CLOUDINARY_API_KEY,
+                password: process.env.CLOUDINARY_API_SECRET
+            }
+        });
+
+        // Set appropriate headers
+        res.setHeader('Content-Type', response.headers['content-type'] || 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+
+        // Pipe the response
+        response.data.pipe(res);
+    } catch (err) {
+        console.error('[API] Document proxy error:', err.message);
+        res.status(500).json({ message: 'Failed to fetch document' });
+    }
+});
+
 router.post('/remove-doc', auth, async (req, res) => {
     try {
         const { type } = req.body;
