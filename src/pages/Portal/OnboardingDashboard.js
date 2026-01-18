@@ -136,6 +136,7 @@ const InputField = ({ label, name, value, onChange, placeholder, type = "text", 
                     name={name}
                     value={value}
                     onChange={onChange}
+                    onBlur={onChange} // Sync on blur to capture autofill
                     placeholder={placeholder}
                     rows="3"
                     disabled={disabled}
@@ -148,9 +149,11 @@ const InputField = ({ label, name, value, onChange, placeholder, type = "text", 
                     type={type}
                     value={value}
                     onChange={onChange}
+                    onBlur={onChange} // Sync on blur to capture autofill
                     placeholder={placeholder}
                     disabled={disabled}
                     required={required}
+                    onClick={(e) => type === 'date' && e.target.showPicker && e.target.showPicker()}
                     className="w-full bg-gray-50/50 border border-gray-100 rounded-xl px-6 py-4 text-gray-900 placeholder-gray-400 text-sm font-medium focus:outline-none focus:bg-white focus:border-black transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
                 />
             )}
@@ -167,6 +170,7 @@ const OnboardingDashboard = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [clearKey, setClearKey] = useState(0); // To force re-render of file inputs
     const [showPostOfferForm, setShowPostOfferForm] = useState(false);
+    const [validationError, setValidationError] = useState(null);
 
     // Use ref to store actual File objects (React state doesn't preserve File instances well)
     const fileRefs = React.useRef({});
@@ -294,6 +298,10 @@ const OnboardingDashboard = () => {
             const res = await axios.post('/api/onboarding/remove-doc', { type }, {
                 headers: { 'x-auth-token': token }
             });
+            console.log('[Frontend] Remove file response:', res.data);
+            if (res.data.experienceSummary) {
+                console.log('[Frontend] Updated resumePath:', res.data.experienceSummary.resumePath);
+            }
             setEmployee(res.data);
             setFormData(prev => ({ ...prev, [type]: null })); // Clear from formData if present
             delete fileRefs.current[type]; // Also clear from ref
@@ -321,6 +329,11 @@ const OnboardingDashboard = () => {
             setUploadingField(type);
             const token = localStorage.getItem('candidate_token');
             console.log('[Frontend] Uploading with token:', token ? 'Present' : 'Missing');
+            console.log('[Frontend] File details:', {
+                name: file.name,
+                size: file.size,
+                type: file.type
+            });
 
             const fileData = new FormData();
             fileData.append('document', file);
@@ -338,7 +351,8 @@ const OnboardingDashboard = () => {
             setEmployee(res.data);
             // Clear the file from ref after successful upload
             delete fileRefs.current[type];
-            alert(`${type === 'resume' ? 'Resume' : 'Document'} uploaded successfully!`);
+            // alert(`${type === 'resume' ? 'Resume' : 'Document'} uploaded successfully!`);
+            console.log(`${type} uploaded successfully`);
         } catch (err) {
             console.error('[Frontend] Error uploading file:', err);
             if (err.response) {
@@ -475,27 +489,29 @@ const OnboardingDashboard = () => {
         console.log('[Frontend] Is File?', formData.resume instanceof File);
     }, [formData.resume]);
 
-    // Detect and capture autofilled values
+    // Detect and capture autofilled values - Optimized to avoid re-rendering loops
     useEffect(() => {
         const handleAutofill = () => {
             // Get all input and textarea elements in the form
             const inputs = document.querySelectorAll('input[name], textarea[name]');
-            const updates = {};
 
-            inputs.forEach(input => {
-                const name = input.name;
-                const value = input.value;
+            setFormData(prev => {
+                const updates = {};
+                let hasUpdates = false;
 
-                // If the input has a value but formData doesn't, it was likely autofilled
-                if (value && name && formData[name] !== value) {
-                    updates[name] = value;
-                }
+                inputs.forEach(input => {
+                    const name = input.name;
+                    const value = input.value;
+
+                    // If the input has a value but prev state doesn't, it was likely autofilled
+                    if (value && name && prev[name] !== value) {
+                        updates[name] = value;
+                        hasUpdates = true;
+                    }
+                });
+
+                return hasUpdates ? { ...prev, ...updates } : prev;
             });
-
-            // Update formData if we found autofilled values
-            if (Object.keys(updates).length > 0) {
-                setFormData(prev => ({ ...prev, ...updates }));
-            }
         };
 
         // Check for autofill on mount and after a short delay
@@ -515,19 +531,21 @@ const OnboardingDashboard = () => {
             }
         };
 
-        document.addEventListener('animationstart', handleAnimationStart, true);
-
-        // Also listen for input events (fallback)
+        // Capture all input events globally to catch autofills that trigger 'input'
         const handleInput = (e) => {
             if (e.target.name && e.target.value) {
                 const name = e.target.name;
                 const value = e.target.value;
-                if (formData[name] !== value) {
-                    setFormData(prev => ({ ...prev, [name]: value }));
-                }
+                setFormData(prev => {
+                    if (prev[name] !== value) {
+                        return { ...prev, [name]: value };
+                    }
+                    return prev;
+                });
             }
         };
 
+        document.addEventListener('animationstart', handleAnimationStart, true);
         document.addEventListener('input', handleInput, true);
 
         // Cleanup
@@ -535,9 +553,11 @@ const OnboardingDashboard = () => {
             clearTimeout(timeoutId);
             document.removeEventListener('animationstart', handleAnimationStart, true);
             document.removeEventListener('input', handleInput, true);
-            document.head.removeChild(style);
+            if (document.head.contains(style)) {
+                document.head.removeChild(style);
+            }
         };
-    }, [formData]);
+    }, []); // Empty dependency array ensures listeners attach only ONCE
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -578,6 +598,9 @@ const OnboardingDashboard = () => {
                 console.log('[Frontend] Updating formData with file marker');
                 return { ...prev, [name]: file };
             });
+
+            // Auto-upload immediately
+            handleDirectUpload(name);
         }
     };
 
@@ -585,6 +608,100 @@ const OnboardingDashboard = () => {
         if (e) e.preventDefault();
 
         if (isFinal) {
+            setValidationError(null); // Clear previous errors
+
+            // VALIDATION LOGIC
+            const missingFields = [];
+
+            // Helper to check text fields
+            const checkField = (field, label) => {
+                if (!formData[field] || formData[field].toString().trim() === '') {
+                    missingFields.push(label);
+                }
+            };
+
+            // Helper to check docs
+            const checkDoc = (type, label) => {
+                // Check if file is in refs (just uploaded) OR if backend says we have it
+                const inRefs = fileRefs.current[type] && fileRefs.current[type] instanceof File;
+                if (!inRefs && !hasDocument(type)) {
+                    missingFields.push(label);
+                }
+            };
+
+            if (currentStage === 1) {
+                // A. Basic Info
+                checkField('fullName', 'Full Legal Name');
+                checkField('personalEmail', 'Personal Email ID');
+                checkField('mobileNumber', 'Mobile Number');
+                checkField('dob', 'Date of Birth');
+                checkField('currentCity', 'Current City & Country');
+
+                // B. Education
+                checkField('schoolName', 'Higher Secondary School Name');
+                checkField('highestQualification', 'Highest Qualification');
+                checkField('institutionName', 'Institution Name');
+                checkField('institutionLocation', 'Institution Location');
+
+                // C. Experience
+                checkField('totalExperience', 'Total Experience');
+                if (formData.totalExperience && formData.totalExperience !== 'Fresher') {
+                    checkField('currentEmployer', 'Current Employer Name');
+                    checkField('relevantExperience', 'Relevant Experience');
+                    checkField('currentDesignation', 'Current Designation');
+                    checkField('currentCtc', 'Current CTC');
+                    checkField('expectedCtc', 'Expected CTC');
+                }
+                checkDoc('resume', 'Resume / CV');
+
+                // D. Employment
+                checkField('position', 'Position Applied For');
+                checkField('workMode', 'Work Mode');
+                checkField('joiningDate', 'Proposed Joining Date');
+                checkField('preferredLocation', 'Preferred Location');
+                checkField('noticePeriod', 'Notice Period');
+            } else if (currentStage === 3) {
+                // 1. Offer
+                checkDoc('signedOfferLetter', 'Signed Offer Letter');
+
+                // 2. Identity
+                checkField('aadhaarNumber', 'Aadhaar Card Number');
+                checkField('panNumber', 'PAN Card Number');
+                checkField('currentAddress', 'Permanent Address');
+                checkDoc('aadhaarCopy', 'Aadhaar ID Copy');
+                checkDoc('addressProof', 'Address Proof');
+                checkDoc('panCopy', 'PAN ID Copy');
+                checkDoc('passportPhoto', 'Passport-size Photo');
+
+                // 3. Education Docs
+                checkDoc('degreeCert', 'Degree Certificates');
+                checkDoc('markSheets', 'Mark Sheets');
+                // proCerts is optional usually
+
+                // 4. Bank
+                checkField('bankAccountName', 'Bank Account Holder Name');
+                checkField('bankName', 'Bank Name');
+                checkField('accountNumber', 'Account Number');
+                checkField('ifscSwiftCode', 'IFSC / SWIFT Code');
+                checkField('taxRegime', 'Tax Regime Selection');
+                checkDoc('passbookCopy', 'Passbook Frontpage Copy');
+
+                // 5. Emergency
+                checkField('emergencyName', 'Emergency Contact Name');
+                checkField('emergencyPhone', 'Emergency Phone Number');
+                checkField('emergencyRelationship', 'Emergency Relationship');
+            }
+
+            if (missingFields.length > 0) {
+                setValidationError(missingFields);
+                // alert(`Please fill in the following mandatory fields before submitting:\n\n- ${missingFields.join('\n- ')}`);
+                // Scroll to bottom to show error
+                setTimeout(() => {
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                }, 100);
+                return;
+            }
+
             setIsSubmitting(true);
         } else {
             setUploadingField('form');
@@ -602,6 +719,7 @@ const OnboardingDashboard = () => {
 
             for (const fieldName of fileFields) {
                 if (formData[fieldName] && formData[fieldName] instanceof File) {
+                    console.log(`[Frontend] Uploading file for field: ${fieldName}`);
                     const fileData = new FormData();
                     fileData.append('document', formData[fieldName]);
                     fileData.append('type', fieldName);
@@ -1203,26 +1321,10 @@ const OnboardingDashboard = () => {
                                                         </div>
                                                         {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                     </div>
-                                                    {!isReadOnly && !hasDocument('resume') && (
-                                                        <div className="mt-2">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    console.log('[Frontend] Upload button clicked!');
-                                                                    console.log('[Frontend] fileRefs.current.resume:', fileRefs.current.resume);
-                                                                    console.log('[Frontend] Is File?', fileRefs.current.resume instanceof File);
-                                                                    handleDirectUpload('resume');
-                                                                }}
-                                                                disabled={!fileRefs.current.resume || !(fileRefs.current.resume instanceof File) || !!uploadingField}
-                                                                className="px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                                                            >
-                                                                {uploadingField === 'resume' ? 'Uploading...' : 'Upload Resume Now'}
-                                                            </button>
-                                                            {(!fileRefs.current.resume || !(fileRefs.current.resume instanceof File)) && (
-                                                                <p className="text-[10px] text-gray-400 mt-1 ml-1">
-                                                                    {!fileRefs.current.resume ? 'Please select a file first' : 'Invalid file selected'}
-                                                                </p>
-                                                            )}
+                                                    {uploadingField === 'resume' && (
+                                                        <div className="flex items-center gap-2 mt-2 ml-1">
+                                                            <div className="w-3 h-3 border-2 border-gray-200 border-t-black rounded-full animate-spin" />
+                                                            <span className="text-xs font-medium text-gray-500 animate-pulse">Uploading...</span>
                                                         </div>
                                                     )}
                                                     <UploadIndicator type="resume" />
@@ -1385,11 +1487,10 @@ const OnboardingDashboard = () => {
                                                                 </div>
                                                                 {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                             </div>
-                                                            {!isReadOnly && !hasDocument('signedOfferLetter') && (
-                                                                <div className="mt-2">
-                                                                    <button type="button" onClick={() => handleDirectUpload('signedOfferLetter')} disabled={!fileRefs.current.signedOfferLetter || !!uploadingField} className="px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all">
-                                                                        {uploadingField === 'signedOfferLetter' ? 'Uploading...' : 'Upload Now'}
-                                                                    </button>
+                                                            {uploadingField === 'signedOfferLetter' && (
+                                                                <div className="flex items-center gap-2 mt-2 ml-1">
+                                                                    <div className="w-3 h-3 border-2 border-gray-200 border-t-black rounded-full animate-spin" />
+                                                                    <span className="text-xs font-medium text-gray-500 animate-pulse">Uploading...</span>
                                                                 </div>
                                                             )}
                                                             <UploadIndicator type="signedOfferLetter" />
@@ -1417,11 +1518,10 @@ const OnboardingDashboard = () => {
                                                                 </div>
                                                                 {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                             </div>
-                                                            {!isReadOnly && !hasDocument('aadhaarCopy') && (
-                                                                <div className="mt-2">
-                                                                    <button type="button" onClick={() => handleDirectUpload('aadhaarCopy')} disabled={!fileRefs.current.aadhaarCopy || !!uploadingField} className="px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all">
-                                                                        {uploadingField === 'aadhaarCopy' ? 'Uploading...' : 'Upload Now'}
-                                                                    </button>
+                                                            {uploadingField === 'aadhaarCopy' && (
+                                                                <div className="flex items-center gap-2 mt-2 ml-1">
+                                                                    <div className="w-3 h-3 border-2 border-gray-200 border-t-black rounded-full animate-spin" />
+                                                                    <span className="text-xs font-medium text-gray-500 animate-pulse">Uploading...</span>
                                                                 </div>
                                                             )}
                                                             <UploadIndicator type="aadhaarCopy" />
@@ -1435,11 +1535,10 @@ const OnboardingDashboard = () => {
                                                                 </div>
                                                                 {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                             </div>
-                                                            {!isReadOnly && !hasDocument('addressProof') && (
-                                                                <div className="mt-2">
-                                                                    <button type="button" onClick={() => handleDirectUpload('addressProof')} disabled={!fileRefs.current.addressProof || !!uploadingField} className="px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all">
-                                                                        {uploadingField === 'addressProof' ? 'Uploading...' : 'Upload Now'}
-                                                                    </button>
+                                                            {uploadingField === 'addressProof' && (
+                                                                <div className="flex items-center gap-2 mt-2 ml-1">
+                                                                    <div className="w-3 h-3 border-2 border-gray-200 border-t-black rounded-full animate-spin" />
+                                                                    <span className="text-xs font-medium text-gray-500 animate-pulse">Uploading...</span>
                                                                 </div>
                                                             )}
                                                             <UploadIndicator type="addressProof" />
@@ -1453,11 +1552,10 @@ const OnboardingDashboard = () => {
                                                                 </div>
                                                                 {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                             </div>
-                                                            {!isReadOnly && !hasDocument('panCopy') && (
-                                                                <div className="mt-2">
-                                                                    <button type="button" onClick={() => handleDirectUpload('panCopy')} disabled={!fileRefs.current.panCopy || !!uploadingField} className="px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all">
-                                                                        {uploadingField === 'panCopy' ? 'Uploading...' : 'Upload Now'}
-                                                                    </button>
+                                                            {uploadingField === 'panCopy' && (
+                                                                <div className="flex items-center gap-2 mt-2 ml-1">
+                                                                    <div className="w-3 h-3 border-2 border-gray-200 border-t-black rounded-full animate-spin" />
+                                                                    <span className="text-xs font-medium text-gray-500 animate-pulse">Uploading...</span>
                                                                 </div>
                                                             )}
                                                             <UploadIndicator type="panCopy" />
@@ -1471,11 +1569,10 @@ const OnboardingDashboard = () => {
                                                                 </div>
                                                                 {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                             </div>
-                                                            {!isReadOnly && !hasDocument('passportPhoto') && (
-                                                                <div className="mt-2">
-                                                                    <button type="button" onClick={() => handleDirectUpload('passportPhoto')} disabled={!fileRefs.current.passportPhoto || !!uploadingField} className="px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all">
-                                                                        {uploadingField === 'passportPhoto' ? 'Uploading...' : 'Upload Now'}
-                                                                    </button>
+                                                            {uploadingField === 'passportPhoto' && (
+                                                                <div className="flex items-center gap-2 mt-2 ml-1">
+                                                                    <div className="w-3 h-3 border-2 border-gray-200 border-t-black rounded-full animate-spin" />
+                                                                    <span className="text-xs font-medium text-gray-500 animate-pulse">Uploading...</span>
                                                                 </div>
                                                             )}
                                                             <UploadIndicator type="passportPhoto" />
@@ -1501,11 +1598,10 @@ const OnboardingDashboard = () => {
                                                                 </div>
                                                                 {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                             </div>
-                                                            {!isReadOnly && !hasDocument('degreeCert') && (
-                                                                <div className="mt-2">
-                                                                    <button type="button" onClick={() => handleDirectUpload('degreeCert')} disabled={!fileRefs.current.degreeCert || !!uploadingField} className="px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all">
-                                                                        {uploadingField === 'degreeCert' ? 'Uploading...' : 'Upload Now'}
-                                                                    </button>
+                                                            {uploadingField === 'degreeCert' && (
+                                                                <div className="flex items-center gap-2 mt-2 ml-1">
+                                                                    <div className="w-3 h-3 border-2 border-gray-200 border-t-black rounded-full animate-spin" />
+                                                                    <span className="text-xs font-medium text-gray-500 animate-pulse">Uploading...</span>
                                                                 </div>
                                                             )}
                                                             <UploadIndicator type="degreeCert" />
@@ -1519,11 +1615,10 @@ const OnboardingDashboard = () => {
                                                                 </div>
                                                                 {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                             </div>
-                                                            {!isReadOnly && !hasDocument('markSheets') && (
-                                                                <div className="mt-2">
-                                                                    <button type="button" onClick={() => handleDirectUpload('markSheets')} disabled={!fileRefs.current.markSheets || !!uploadingField} className="px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all">
-                                                                        {uploadingField === 'markSheets' ? 'Uploading...' : 'Upload Now'}
-                                                                    </button>
+                                                            {uploadingField === 'markSheets' && (
+                                                                <div className="flex items-center gap-2 mt-2 ml-1">
+                                                                    <div className="w-3 h-3 border-2 border-gray-200 border-t-black rounded-full animate-spin" />
+                                                                    <span className="text-xs font-medium text-gray-500 animate-pulse">Uploading...</span>
                                                                 </div>
                                                             )}
                                                             <UploadIndicator type="markSheets" />
@@ -1537,11 +1632,10 @@ const OnboardingDashboard = () => {
                                                                 </div>
                                                                 {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                             </div>
-                                                            {!isReadOnly && fileRefs.current.proCerts && (
-                                                                <div className="mt-2">
-                                                                    <button type="button" onClick={() => handleDirectUpload('proCerts')} disabled={!!uploadingField} className="px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all">
-                                                                        {uploadingField === 'proCerts' ? 'Uploading...' : 'Upload Now'}
-                                                                    </button>
+                                                            {uploadingField === 'proCerts' && (
+                                                                <div className="flex items-center gap-2 mt-2 ml-1">
+                                                                    <div className="w-3 h-3 border-2 border-gray-200 border-t-black rounded-full animate-spin" />
+                                                                    <span className="text-xs font-medium text-gray-500 animate-pulse">Uploading...</span>
                                                                 </div>
                                                             )}
                                                             <UploadIndicator type="proCerts" />
@@ -1574,11 +1668,10 @@ const OnboardingDashboard = () => {
                                                                 </div>
                                                                 {!isReadOnly && <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />}
                                                             </div>
-                                                            {!isReadOnly && !hasDocument('passbookCopy') && (
-                                                                <div className="mt-2">
-                                                                    <button type="button" onClick={() => handleDirectUpload('passbookCopy')} disabled={!fileRefs.current.passbookCopy || !!uploadingField} className="px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all">
-                                                                        {uploadingField === 'passbookCopy' ? 'Uploading...' : 'Upload Now'}
-                                                                    </button>
+                                                            {uploadingField === 'passbookCopy' && (
+                                                                <div className="flex items-center gap-2 mt-2 ml-1">
+                                                                    <div className="w-3 h-3 border-2 border-gray-200 border-t-black rounded-full animate-spin" />
+                                                                    <span className="text-xs font-medium text-gray-500 animate-pulse">Uploading...</span>
                                                                 </div>
                                                             )}
                                                             <UploadIndicator type="passbookCopy" />
@@ -1596,22 +1689,41 @@ const OnboardingDashboard = () => {
                                                 </div>
 
                                                 {currentStatus !== 'Pending Verification' && currentStatus !== 'Completed' && (
-                                                    <div className="pt-8 border-t border-gray-50 flex justify-center gap-4">
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => handleSubmit(e, false)}
-                                                            disabled={!!uploadingField || isSubmitting}
-                                                            className="px-8 py-4 bg-white text-gray-900 border border-gray-200 font-bold rounded-lg hover:bg-gray-50 transition-all text-sm capitalize tracking-wide disabled:opacity-50"
-                                                        >
-                                                            {uploadingField ? 'Saving...' : 'Save Draft'}
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => handleSubmit(e, true)}
-                                                            disabled={!!uploadingField || isSubmitting}
-                                                            className="px-10 py-4 bg-black text-white font-bold rounded-lg hover:bg-gray-900 transition-all text-sm capitalize tracking-wide disabled:opacity-50"
-                                                        >
-                                                            {isSubmitting ? 'Submitting...' : 'Submit Final'}
-                                                        </button>
+                                                    <div className="pt-8 border-t border-gray-50 flex flex-col items-center gap-6">
+                                                        {validationError && (
+                                                            <div className="w-full max-w-2xl p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-bottom-2">
+                                                                <div className="p-2 bg-red-100 rounded-full shrink-0 mt-0.5">
+                                                                    <svg className="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                                                    </svg>
+                                                                </div>
+                                                                <div>
+                                                                    <h4 className="text-sm font-bold text-red-900 mb-1">Please complete the following mandatory fields:</h4>
+                                                                    <ul className="list-disc list-inside text-xs text-red-700 space-y-1 pl-1">
+                                                                        {validationError.map((field, i) => (
+                                                                            <li key={i}>{field}</li>
+                                                                        ))}
+                                                                    </ul>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        <div className="flex justify-center gap-4">
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => handleSubmit(e, false)}
+                                                                disabled={!!uploadingField || isSubmitting}
+                                                                className="px-8 py-4 bg-white text-gray-900 border border-gray-200 font-bold rounded-lg hover:bg-gray-50 transition-all text-sm capitalize tracking-wide disabled:opacity-50"
+                                                            >
+                                                                {uploadingField ? 'Saving...' : 'Save Draft'}
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => handleSubmit(e, true)}
+                                                                disabled={!!uploadingField || isSubmitting}
+                                                                className="px-10 py-4 bg-black text-white font-bold rounded-lg hover:bg-gray-900 transition-all text-sm capitalize tracking-wide disabled:opacity-50"
+                                                            >
+                                                                {isSubmitting ? 'Submitting...' : 'Submit Final'}
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 )}
                                             </form>

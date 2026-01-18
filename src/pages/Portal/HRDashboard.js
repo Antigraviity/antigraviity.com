@@ -102,6 +102,7 @@ const HRDashboard = () => {
     const fetchCandidates = async () => {
         try {
             console.log('[Frontend] Fetching candidates...');
+            setLoading(true); // Ensure loading state is shown during manual refresh
             const token = localStorage.getItem('hr_token');
             console.log('[Frontend] HR Token present in localStorage:', !!token);
             if (token) {
@@ -120,11 +121,24 @@ const HRDashboard = () => {
                 console.log(`[Frontend] Received ${res.data.length} candidates`);
                 res.data.forEach(c => {
                     console.log(`[Frontend] Candidate: ${c.email} | Status: ${c.onboardingStatus} | Stage: ${c.stage}`);
+                    if (c.documents && c.documents.length > 0) {
+                        console.log(`[Frontend] - Documents (${c.documents.length}):`, c.documents.map(d => `${d.type}: ${d.originalName} (${d.path})`));
+                    } else {
+                        console.log(`[Frontend] - No documents found.`);
+                    }
                 });
                 setCandidates(res.data);
+
+                // If a candidate is currently selected, update their data
+                if (selectedCandidate) {
+                    const updated = res.data.find(c => c._id === selectedCandidate._id);
+                    if (updated) {
+                        console.log('[Frontend] Updating currently selected candidate with fresh data');
+                        setSelectedCandidate(updated);
+                    }
+                }
             } else {
                 console.error('[Frontend] Invalid response format. Expected array, got:', res.data);
-                // If we get HTML (string starting with <!DOCTYPE), it might be the catch-all
                 if (typeof res.data === 'string' && res.data.includes('<!DOCTYPE')) {
                     console.error('[Frontend] Received HTML instead of JSON. Catch-all route hit?');
                 }
@@ -171,6 +185,7 @@ const HRDashboard = () => {
                 await fetchCandidates();
                 // Instead of closing, refresh the selected candidate data
                 const updatedCandidate = res.data.employee;
+                console.log('[Frontend] Selected candidate updated. Documents:', updatedCandidate.documents);
                 setSelectedCandidate(updatedCandidate);
             } catch (err) {
                 console.error('[Frontend] Approve error:', err);
@@ -401,6 +416,17 @@ const HRDashboard = () => {
                         <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded tracking-wider">Portal</span>
                     </div>
                     <div className="flex items-center gap-4">
+                        <button
+                            onClick={fetchCandidates}
+                            disabled={loading}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-xs font-bold"
+                            title="Refresh Data"
+                        >
+                            <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Refresh
+                        </button>
                         <div className="text-right hidden sm:block">
                             <p className="text-xs font-bold text-gray-900 leading-none">Human Resource</p>
                             <p className="text-[10px] text-gray-400 font-bold tracking-tight">{hrUser?.email || 'hr@antigraviity.com'}</p>

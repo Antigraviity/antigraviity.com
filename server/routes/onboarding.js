@@ -238,7 +238,7 @@ router.get('/candidates', auth, async (req, res) => {
 
         // Log each candidate's email and status for debugging
         employees.forEach(emp => {
-            console.log(`[API] Candidate: ${emp.email} | Status: ${emp.onboardingStatus} | Stage: ${emp.stage}`);
+            console.log(`[API] Candidate: ${emp.email} | Status: ${emp.onboardingStatus} | Stage: ${emp.stage} | Docs: ${emp.documents ? emp.documents.length : 0}`);
         });
 
         res.json(employees);
@@ -301,13 +301,19 @@ router.post('/upload', auth, uploadDocs.single('document'), async (req, res) => 
             originalName: req.file.originalname
         });
 
+        console.log(`[API] Document pushed to array. Current documents count: ${employee.documents.length}`);
+        console.log(`[API] Document added: Type=${newDocType}, Path=${req.file.path}`);
+
         // REDUNDANCY FIX: Also save resume path to experienceSummary for easier access
         if (newDocType === 'resume') {
-            if (!employee.experienceSummary) employee.experienceSummary = {};
-            employee.experienceSummary.resumePath = req.file.path;
+            const exp = employee.experienceSummary || {};
+            exp.resumePath = req.file.path;
+            employee.experienceSummary = exp;
+            console.log('[API] Resume path also saved to experienceSummary');
         }
 
         await employee.save();
+        console.log('[API] Employee saved successfully with new document.');
         res.json(employee);
     } catch (err) {
         console.error('[API] Upload error:', err);
@@ -348,17 +354,57 @@ router.get('/view-document/:candidateId/:filename', auth, async (req, res) => {
 });
 
 router.post('/remove-doc', auth, async (req, res) => {
+    const fs = require('fs');
+    const path = require('path');
+    const debugFile = path.join(__dirname, '../../server_debug.txt');
+
+    const log = (msg) => {
+        const timestamp = new Date().toISOString();
+        fs.appendFileSync(debugFile, `[${timestamp}] ${msg}\n`);
+    };
+
     try {
         const { type } = req.body;
-        const employee = await Employee.findById(req.user.id);
-        if (!employee) return res.status(404).json({ message: 'User not found' });
+        const employeeId = req.user.id;
 
-        // Remove document of specified type
-        employee.documents = employee.documents.filter(doc => doc.type !== type);
+        log(`REMOVE-DOC Called. ID: ${employeeId}, Type: >${type}<`);
 
-        await employee.save();
+        const cleanType = type ? type.trim() : '';
+
+        const updateOps = {
+            $pull: { documents: { type: cleanType } }
+        };
+
+        // FIX: storage of redundant resume path must be cleared atomicaly
+        // Case insensitive check just in case
+        if (cleanType.toLowerCase() === 'resume') {
+            log('Detected resume. Adding $unset for experienceSummary.resumePath');
+            updateOps.$unset = { 'experienceSummary.resumePath': 1 };
+        }
+
+        log(`UpdateOps: ${JSON.stringify(updateOps)}`);
+
+        // Use updateOne first
+        const updateResult = await Employee.updateOne(
+            { _id: employeeId },
+            updateOps
+        );
+
+        log(`UpdateResult: ${JSON.stringify(updateResult)}`);
+
+        // Then fetch the fresh document
+        const employee = await Employee.findById(employeeId);
+
+        if (!employee) {
+            log('User not found after update');
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        log(`Fetched Doc ResumePath: >${employee?.experienceSummary?.resumePath}<`);
         res.json(employee);
     } catch (err) {
+        log(`ERROR: ${err.message}`);
+        console.error('[API] Remove document error:', err);
         res.status(500).json({ message: err.message });
     }
 });
