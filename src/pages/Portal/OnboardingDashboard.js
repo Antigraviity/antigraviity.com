@@ -587,7 +587,7 @@ const OnboardingDashboard = () => {
         if (isFinal) {
             setIsSubmitting(true);
         } else {
-            setIsSaving(true);
+            setUploadingField('form');
         }
 
         try {
@@ -678,7 +678,7 @@ const OnboardingDashboard = () => {
             console.error(err);
             alert('Error updating profile. Please check your connection and try again.');
         } finally {
-            setIsSaving(false);
+            setUploadingField(null);
             setIsSubmitting(false);
         }
     };
